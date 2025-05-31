@@ -7,19 +7,26 @@ from django.contrib.auth.models import User
 from django.db.models import Q
 from .models import Party, Product, Branch
 from .serializers import PartySerializer, ProductSerializer, BranchSerializer
+from django.views.decorators.csrf import csrf_exempt
 
+@csrf_exempt
 @api_view(['POST', 'GET'])
 @permission_classes([])
 def login_view(request):
     """Login endpoint"""
-    username = request.data.get('username')
-    password = request.data.get('password')
-    
+    try:
+        data = json.loads(request.body.decode('utf-8'))  # Explicit JSON parse
+    except Exception as e:
+        return Response({'error': 'Invalid JSON'}, status=400)
+
+    username = data.get('username')
+    password = data.get('password')
+
     if not username or not password:
         return Response({
             'error': 'Username and password are required'
         }, status=status.HTTP_400_BAD_REQUEST)
-    
+
     user = authenticate(request, username=username, password=password)
     if user:
         login(request, user)
