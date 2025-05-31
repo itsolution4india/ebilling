@@ -11,13 +11,15 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 
 @csrf_exempt
-@api_view(['POST', 'GET'])
+@api_view(['POST'])
 @permission_classes([])
 def login_view(request):
     """Login endpoint"""
     try:
-        data = json.loads(request.body.decode('utf-8'))  # Explicit JSON parse
+        print("Raw body:", request.body)  # Add this for debugging
+        data = json.loads(request.body.decode('utf-8'))
     except Exception as e:
+        print("JSON decode error:", e)
         return Response({'error': 'Invalid JSON'}, status=400)
 
     username = data.get('username')
