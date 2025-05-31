@@ -11,7 +11,7 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 
 @csrf_exempt
-@api_view(['POST'])
+@api_view(['POST', 'GET'])
 @permission_classes([])
 def login_view(request):
     """Login endpoint"""
