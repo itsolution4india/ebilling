@@ -8,7 +8,7 @@ from django.db.models import Q
 from .models import Party, Product, Branch
 from .serializers import PartySerializer, ProductSerializer, BranchSerializer
 
-@api_view(['POST'])
+@api_view(['POST', 'GET'])
 @permission_classes([])
 def login_view(request):
     """Login endpoint"""
