@@ -23,7 +23,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-iief5x7_0$a1x2$b1p!xpukmt9z(zposqthk&rw*-06kx6#1_8'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['ebilling.wtsmessage.xyz']
 
