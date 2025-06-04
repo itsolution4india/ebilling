@@ -9,9 +9,12 @@ from .models import Party, Product, Branch
 from .serializers import PartySerializer, ProductSerializer, BranchSerializer
 from django.views.decorators.csrf import csrf_exempt
 import json
+import logging
+
+logger = logging.getLogger('django')
 
 @csrf_exempt
-@api_view(['POST', 'GET'])
+@api_view(['POST'])
 @permission_classes([])
 def login_view(request):
     """Login endpoint"""
@@ -24,6 +27,7 @@ def login_view(request):
 
     username = data.get('username')
     password = data.get('password')
+    logger.info(f"{username}, {password}")
 
     if not username or not password:
         return Response({

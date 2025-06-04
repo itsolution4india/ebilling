@@ -145,3 +145,37 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 import os
 # settings.py
 STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs/error.log'),
+        },
+        '404_file': {
+            'level': 'WARNING',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs/404.log'),
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['file', '404_file'],  # Both handlers here
+            'level': 'WARNING',  # Handles WARNING and above (including ERROR)
+            'propagate': False,
+        },
+        'django.security.DisallowedHost': {
+            'handlers': ['file'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}
