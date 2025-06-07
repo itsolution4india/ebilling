@@ -113,7 +113,7 @@ def party_delete(request, party_id):
 # @permission_classes([IsAuthenticated])
 def product_list(request):
     """Get all products"""
-    products = Product.objects.filter(status=True, user=request.user)
+    products = Product.objects.filter(status=True)
     serializer = ProductSerializer(products, many=True)
     return Response(serializer.data)
 
@@ -135,7 +135,7 @@ def product_store(request):
 def product_edit(request, product_id):
     """Get product details for editing"""
     try:
-        product = Product.objects.get(id=product_id, user=request.user)
+        product = Product.objects.get(id=product_id)
         serializer = ProductSerializer(product)
         return Response(serializer.data)
     except Product.DoesNotExist:
@@ -146,7 +146,7 @@ def product_edit(request, product_id):
 def product_delete(request, product_id):
     """Delete a product (soft delete by setting status to False)"""
     try:
-        product = Product.objects.get(id=product_id, user=request.user)
+        product = Product.objects.get(id=product_id)
         product.status = False
         product.save()
         return Response({'message': 'Product deleted successfully'})
