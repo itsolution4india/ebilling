@@ -49,7 +49,7 @@ def login_view(request):
 
 # Party Views
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def party_list(request):
     """Get all parties with optional search"""
     party_name = request.GET.get('party_name', '')
@@ -62,7 +62,7 @@ def party_list(request):
     return Response(serializer.data)
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def party_store(request):
     """Create a new party"""
     serializer = PartySerializer(data=request.data)
@@ -72,7 +72,7 @@ def party_store(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def party_edit(request, party_id):
     """Get party details for editing"""
     try:
@@ -83,7 +83,7 @@ def party_edit(request, party_id):
         return Response({'error': 'Party not found'}, status=status.HTTP_404_NOT_FOUND)
 
 @api_view(['PUT'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def party_update(request, party_id):
     """Update party details"""
     try:
@@ -97,7 +97,7 @@ def party_update(request, party_id):
         return Response({'error': 'Party not found'}, status=status.HTTP_404_NOT_FOUND)
 
 @api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def party_delete(request, party_id):
     """Delete a party (soft delete by setting status to False)"""
     try:
@@ -110,7 +110,7 @@ def party_delete(request, party_id):
 
 # Product Views
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def product_list(request):
     """Get all products"""
     products = Product.objects.filter(status=True, user=request.user)
@@ -118,7 +118,7 @@ def product_list(request):
     return Response(serializer.data)
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def product_store(request):
     """Create a new product"""
     data = request.data.copy()
@@ -131,7 +131,7 @@ def product_store(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def product_edit(request, product_id):
     """Get product details for editing"""
     try:
@@ -142,7 +142,7 @@ def product_edit(request, product_id):
         return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
 
 @api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def product_delete(request, product_id):
     """Delete a product (soft delete by setting status to False)"""
     try:
