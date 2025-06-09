@@ -18,6 +18,6 @@ class BranchAdmin(admin.ModelAdmin):
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ['product_name', 'product_code', 'unit_price', 'stock_quantity', 'status', 'created_at']
-    list_filter = ['category', 'status', 'branch']
+    list_filter = ['category', 'status']
     search_fields = ['product_name', 'product_code', 'hsn_code']
     ordering = ['-created_at']
