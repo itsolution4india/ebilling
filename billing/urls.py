@@ -4,6 +4,7 @@ from . import views
 urlpatterns = [
     # Auth
     path('login/', views.login_view, name='login'),
+    path('user/<int:user_id>/branch/', views.get_user_branch, name='get-user-branch'),
     
     # Parties
     path('parties/', views.party_list, name='party-list'),
