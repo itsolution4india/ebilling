@@ -28,6 +28,11 @@ class Party(models.Model):
         ('company', 'Company'),
         ('partnership', 'Partnership'),
         ('trust', 'Trust'),
+        ('fashion', 'Fashion'),
+        ('appliances', 'Appliances'),
+        ('electronics', 'Electronics'),
+        ('groceries', 'Groceries'),
+        ('other', 'Other'),
     ]
 
     party_name = models.CharField(max_length=255, unique=True)
@@ -40,7 +45,7 @@ class Party(models.Model):
     party_pan = models.CharField(max_length=10)
     party_category = models.CharField(max_length=100, choices=PARTY_CATEGORIES)
     party_ob = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)  # Opening Balance
-    party_cp = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)  # Credit Period
+    party_cp = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)  # Credit Period (in days)
     party_cl = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)  # Credit Limit
     status = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

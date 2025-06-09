@@ -66,7 +66,13 @@ def party_list(request):
 @permission_classes([AllowAny])
 def party_store(request):
     """Create a new party"""
-    serializer = PartySerializer(data=request.data)
+    data = request.data.copy()
+    
+    # Handle user field - expect user_id from frontend
+    if 'user_id' in data:
+        data['user'] = data.pop('user_id')
+    
+    serializer = PartySerializer(data=data)
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -89,7 +95,13 @@ def party_update(request, party_id):
     """Update party details"""
     try:
         party = Party.objects.get(id=party_id)
-        serializer = PartySerializer(party, data=request.data)
+        data = request.data.copy()
+        
+        # Handle user field
+        if 'user_id' in data:
+            data['user'] = data.pop('user_id')
+            
+        serializer = PartySerializer(party, data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
@@ -123,7 +135,12 @@ def product_list(request):
 def product_store(request):
     """Create a new product"""
     data = request.data.copy()
-    data['user'] = request.user.id
+    
+    # Handle user field - expect user_id from frontend or user from authenticated request
+    if 'user_id' in data:
+        data['user'] = data.pop('user_id')
+    elif hasattr(request, 'user') and request.user.is_authenticated:
+        data['user'] = request.user.id
     
     serializer = ProductSerializer(data=data)
     if serializer.is_valid():
@@ -139,6 +156,26 @@ def product_edit(request, product_id):
         product = Product.objects.get(id=product_id)
         serializer = ProductSerializer(product)
         return Response(serializer.data)
+    except Product.DoesNotExist:
+        return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['PUT'])
+@permission_classes([AllowAny])
+def product_update(request, product_id):
+    """Update product details"""
+    try:
+        product = Product.objects.get(id=product_id)
+        data = request.data.copy()
+        
+        # Handle user field
+        if 'user_id' in data:
+            data['user'] = data.pop('user_id')
+            
+        serializer = ProductSerializer(product, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     except Product.DoesNotExist:
         return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
 
