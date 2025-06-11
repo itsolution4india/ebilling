@@ -18,4 +18,18 @@ urlpatterns = [
     path('products/edit/<int:product_id>/', views.product_edit, name='product-edit'),
     path('products/update/<int:product_id>/', views.product_update, name='product-update'),
     path('products/delete/<int:product_id>/', views.product_delete, name='product-delete'),
+    
+    # Invoice URLs
+    path('invoices/', views.invoice_list, name='invoice-list'),
+    path('invoices/store/', views.invoice_store, name='invoice-store'),
+    path('invoices/<int:invoice_id>/', views.invoice_detail, name='invoice-detail'),
+    path('invoices/edit/<int:invoice_id>/', views.invoice_edit, name='invoice-edit'),
+    path('invoices/update/<int:invoice_id>/', views.invoice_update, name='invoice-update'),
+    path('invoices/delete/<int:invoice_id>/', views.invoice_delete, name='invoice-delete'),
+    path('invoices/<int:invoice_id>/status/', views.invoice_status_update, name='invoice-status-update'),
+    
+    # Invoice Items URLs
+    path('invoices/<int:invoice_id>/items/', views.invoice_items, name='invoice-items'),
+    path('invoices/<int:invoice_id>/items/add/', views.invoice_item_add, name='invoice-item-add'),
+    path('invoices/<int:invoice_id>/items/<int:item_id>/delete/', views.invoice_item_delete, name='invoice-item-delete'),
 ]

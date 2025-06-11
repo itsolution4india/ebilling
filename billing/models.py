@@ -81,3 +81,49 @@ class Product(models.Model):
     class Meta:
         verbose_name = 'Product'
         verbose_name_plural = 'Products'
+        
+        
+class Invoice(models.Model):
+    STATUS_CHOICES = [
+        ('paid', 'Paid'),
+        ('unpaid', 'Unpaid'),
+    ]
+    
+    # Basic invoice information
+    name = models.CharField(max_length=255)  # Customer/Party name
+    number = models.CharField(max_length=100)  # Phone number
+    invoice_no = models.CharField(max_length=50, unique=True)  # Invoice number
+    invoice_date = models.DateField()
+    due_date = models.DateField()
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='unpaid')
+    
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    is_active = models.BooleanField(default=True)  # For soft delete
+    
+    class Meta:
+        ordering = ['-created_at']
+        
+    def __str__(self):
+        return f"Invoice #{self.invoice_no} - {self.name}"
+
+class InvoiceItem(models.Model):
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name='items')
+    product_id = models.IntegerField()  # Reference to Product ID
+    product_name = models.CharField(max_length=255)
+    product_description = models.TextField(blank=True)
+    quantity = models.IntegerField(default=1)
+    rate = models.DecimalField(max_digits=10, decimal_places=2)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def save(self, *args, **kwargs):
+        self.amount = self.quantity * self.rate
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.product_name} - {self.invoice.invoice_no}"

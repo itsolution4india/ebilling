@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from django.db.models import Q
-from .models import Party, Product, Branch
-from .serializers import PartySerializer, ProductSerializer, BranchSerializer
+from .models import Party, Product, Invoice, InvoiceItem
+from .serializers import PartySerializer, ProductSerializer, InvoiceSerializer, InvoiceListSerializer, InvoiceItemSerializer
 from django.views.decorators.csrf import csrf_exempt
 import json
 import logging
@@ -190,3 +190,184 @@ def product_delete(request, product_id):
         return Response({'message': 'Product deleted successfully'})
     except Product.DoesNotExist:
         return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+# Invoice Views
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def invoice_list(request):
+    """Get all invoices with optional filtering"""
+    invoices = Invoice.objects.filter(is_active=True)
+    
+    # Optional filtering
+    status_filter = request.GET.get('status')
+    search = request.GET.get('search')
+    
+    if status_filter:
+        invoices = invoices.filter(status=status_filter)
+    
+    if search:
+        invoices = invoices.filter(
+            Q(name__icontains=search) |
+            Q(invoice_no__icontains=search) |
+            Q(number__icontains=search)
+        )
+    
+    serializer = InvoiceListSerializer(invoices, many=True)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def invoice_store(request):
+    """Create a new invoice"""
+    data = request.data.copy()
+    
+    # Handle user field - expect user_id from frontend or user from authenticated request
+    if 'user_id' in data:
+        data['user'] = data.pop('user_id')
+    elif hasattr(request, 'user') and request.user.is_authenticated:
+        data['user'] = request.user.id
+    
+    # Generate invoice number if not provided
+    if not data.get('invoice_no'):
+        last_invoice = Invoice.objects.order_by('-id').first()
+        if last_invoice:
+            last_number = int(last_invoice.invoice_no) if last_invoice.invoice_no.isdigit() else 0
+            data['invoice_no'] = str(last_number + 1)
+        else:
+            data['invoice_no'] = '1'
+    
+    serializer = InvoiceSerializer(data=data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def invoice_detail(request, invoice_id):
+    """Get invoice details"""
+    try:
+        invoice = Invoice.objects.get(id=invoice_id, is_active=True)
+        serializer = InvoiceSerializer(invoice)
+        return Response(serializer.data)
+    except Invoice.DoesNotExist:
+        return Response({'error': 'Invoice not found'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def invoice_edit(request, invoice_id):
+    """Get invoice details for editing"""
+    try:
+        invoice = Invoice.objects.get(id=invoice_id, is_active=True)
+        serializer = InvoiceSerializer(invoice)
+        return Response(serializer.data)
+    except Invoice.DoesNotExist:
+        return Response({'error': 'Invoice not found'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['PUT'])
+@permission_classes([AllowAny])
+def invoice_update(request, invoice_id):
+    """Update invoice details"""
+    try:
+        invoice = Invoice.objects.get(id=invoice_id, is_active=True)
+        data = request.data.copy()
+        
+        # Handle user field
+        if 'user_id' in data:
+            data['user'] = data.pop('user_id')
+            
+        serializer = InvoiceSerializer(invoice, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except Invoice.DoesNotExist:
+        return Response({'error': 'Invoice not found'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['DELETE'])
+@permission_classes([AllowAny])
+def invoice_delete(request, invoice_id):
+    """Delete an invoice (soft delete by setting is_active to False)"""
+    try:
+        invoice = Invoice.objects.get(id=invoice_id, is_active=True)
+        invoice.is_active = False
+        invoice.save()
+        return Response({'message': 'Invoice deleted successfully'})
+    except Invoice.DoesNotExist:
+        return Response({'error': 'Invoice not found'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['PATCH'])
+@permission_classes([AllowAny])
+def invoice_status_update(request, invoice_id):
+    """Update invoice status (paid/unpaid)"""
+    try:
+        invoice = Invoice.objects.get(id=invoice_id, is_active=True)
+        new_status = request.data.get('status')
+        
+        if new_status not in ['paid', 'unpaid']:
+            return Response({'error': 'Invalid status. Must be "paid" or "unpaid"'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        invoice.status = new_status
+        invoice.save()
+        
+        serializer = InvoiceSerializer(invoice)
+        return Response(serializer.data)
+    except Invoice.DoesNotExist:
+        return Response({'error': 'Invoice not found'}, status=status.HTTP_404_NOT_FOUND)
+
+# Invoice Items Views
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def invoice_items(request, invoice_id):
+    """Get all items for a specific invoice"""
+    try:
+        invoice = Invoice.objects.get(id=invoice_id, is_active=True)
+        items = invoice.items.all()
+        serializer = InvoiceItemSerializer(items, many=True)
+        return Response(serializer.data)
+    except Invoice.DoesNotExist:
+        return Response({'error': 'Invoice not found'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def invoice_item_add(request, invoice_id):
+    """Add an item to an invoice"""
+    try:
+        invoice = Invoice.objects.get(id=invoice_id, is_active=True)
+        data = request.data.copy()
+        data['invoice'] = invoice.id
+        
+        serializer = InvoiceItemSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            
+            # Recalculate invoice total
+            total_amount = sum(item.amount for item in invoice.items.all())
+            invoice.amount = total_amount
+            invoice.save()
+            
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except Invoice.DoesNotExist:
+        return Response({'error': 'Invoice not found'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['DELETE'])
+@permission_classes([AllowAny])
+def invoice_item_delete(request, invoice_id, item_id):
+    """Delete an item from an invoice"""
+    try:
+        invoice = Invoice.objects.get(id=invoice_id, is_active=True)
+        item = invoice.items.get(id=item_id)
+        item.delete()
+        
+        # Recalculate invoice total
+        total_amount = sum(item.amount for item in invoice.items.all())
+        invoice.amount = total_amount
+        invoice.save()
+        
+        return Response({'message': 'Item deleted successfully'})
+    except Invoice.DoesNotExist:
+        return Response({'error': 'Invoice not found'}, status=status.HTTP_404_NOT_FOUND)
+    except InvoiceItem.DoesNotExist:
+        return Response({'error': 'Item not found'}, status=status.HTTP_404_NOT_FOUND)
