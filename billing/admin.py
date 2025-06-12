@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Party, Branch, Product, Invoice, InvoiceItem
+from .models import Party, Branch, Product, Invoice, InvoiceItem, Payment
 
 @admin.register(Party)
 class PartyAdmin(admin.ModelAdmin):
@@ -70,3 +70,27 @@ class InvoiceItemAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('invoice')
+    
+@admin.register(Payment)
+class PaymentAdmin(admin.ModelAdmin):
+    list_display = ['id', 'party_name', 'amount', 'payment_mode', 'date', 'status', 'created_at']
+    list_filter = ['payment_mode', 'status', 'date', 'created_at']
+    search_fields = ['party_name', 'party_phone', 'amount']
+    ordering = ['-created_at']
+    list_per_page = 25
+    
+    fieldsets = (
+        ('Payment Information', {
+            'fields': ('user', 'date', 'party_name', 'party_phone', 'amount', 'payment_mode')
+        }),
+        ('Status', {
+            'fields': ('status',)
+        }),
+    )
+    
+    readonly_fields = ['created_at', 'updated_at']
+    
+    def get_readonly_fields(self, request, obj=None):
+        if obj:  # editing an existing object
+            return self.readonly_fields + ['created_at', 'updated_at']
+        return self.readonly_fields

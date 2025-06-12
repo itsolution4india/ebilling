@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Party, Branch, Product, Invoice, InvoiceItem
+from .models import Party, Branch, Product, Invoice, InvoiceItem, Payment
 
 class PartySerializer(serializers.ModelSerializer):
     class Meta:
@@ -69,3 +69,31 @@ class InvoiceListSerializer(serializers.ModelSerializer):
     
     def get_items_count(self, obj):
         return obj.items.count()
+    
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = [
+            'id',
+            'user',
+            'date',
+            'party_name',
+            'party_phone',
+            'amount',
+            'payment_mode',
+            'status',
+            'created_at',
+            'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def validate_amount(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Amount must be greater than 0")
+        return value
+    
+    def validate_payment_mode(self, value):
+        valid_modes = ['UPI', 'Cash', 'Card', 'NetBanking', 'Bank Transfer', 'Cheque']
+        if value not in valid_modes:
+            raise serializers.ValidationError("Invalid payment mode")
+        return value

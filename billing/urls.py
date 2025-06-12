@@ -32,4 +32,13 @@ urlpatterns = [
     path('invoices/<int:invoice_id>/items/', views.invoice_items, name='invoice-items'),
     path('invoices/<int:invoice_id>/items/add/', views.invoice_item_add, name='invoice-item-add'),
     path('invoices/<int:invoice_id>/items/<int:item_id>/delete/', views.invoice_item_delete, name='invoice-item-delete'),
+    
+    # Payment URLs
+    path('payments/', views.payment_list, name='payment-list'),
+    path('payments/store/', views.payment_store, name='payment-store'),
+    path('payments/edit/<int:payment_id>/', views.payment_edit, name='payment-edit'),
+    path('payments/update/<int:payment_id>/', views.payment_update, name='payment-update'),
+    path('payments/delete/<int:payment_id>/', views.payment_delete, name='payment-delete'),
+    path('payments/party/<str:party_name>/', views.payment_by_party, name='payment-by-party'),
+    path('payments/statistics/', views.payment_statistics, name='payment-statistics'),
 ]

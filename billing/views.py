@@ -5,8 +5,8 @@ from rest_framework.response import Response
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.models import User
 from django.db.models import Q
-from .models import Party, Product, Invoice, InvoiceItem
-from .serializers import PartySerializer, ProductSerializer, InvoiceSerializer, InvoiceListSerializer, InvoiceItemSerializer
+from .models import Party, Product, Invoice, InvoiceItem, Payment
+from .serializers import PartySerializer, ProductSerializer, InvoiceSerializer, InvoiceListSerializer, InvoiceItemSerializer, PaymentSerializer
 from django.views.decorators.csrf import csrf_exempt
 import json
 import logging
@@ -371,3 +371,106 @@ def invoice_item_delete(request, invoice_id, item_id):
         return Response({'error': 'Invoice not found'}, status=status.HTTP_404_NOT_FOUND)
     except InvoiceItem.DoesNotExist:
         return Response({'error': 'Item not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+# Payment Views
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def payment_list(request):
+    """Get all payments"""
+    payments = Payment.objects.filter(status=True)
+    serializer = PaymentSerializer(payments, many=True)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def payment_store(request):
+    """Create a new payment record"""
+    data = request.data.copy()
+    
+    # Handle user field - expect user_id from frontend or user from authenticated request
+    if 'user_id' in data:
+        data['user'] = data.pop('user_id')
+    elif hasattr(request, 'user') and request.user.is_authenticated:
+        data['user'] = request.user.id
+    else:
+        # For demo purposes, using user id 1 if no user specified
+        # In production, you should handle authentication properly
+        data['user'] = 1
+    
+    serializer = PaymentSerializer(data=data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def payment_edit(request, payment_id):
+    """Get payment details for editing"""
+    try:
+        payment = Payment.objects.get(id=payment_id)
+        serializer = PaymentSerializer(payment)
+        return Response(serializer.data)
+    except Payment.DoesNotExist:
+        return Response({'error': 'Payment not found'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['PUT'])
+@permission_classes([AllowAny])
+def payment_update(request, payment_id):
+    """Update payment details"""
+    try:
+        payment = Payment.objects.get(id=payment_id)
+        data = request.data.copy()
+        
+        # Handle user field
+        if 'user_id' in data:
+            data['user'] = data.pop('user_id')
+            
+        serializer = PaymentSerializer(payment, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except Payment.DoesNotExist:
+        return Response({'error': 'Payment not found'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['DELETE'])
+@permission_classes([AllowAny])
+def payment_delete(request, payment_id):
+    """Delete a payment (soft delete by setting status to False)"""
+    try:
+        payment = Payment.objects.get(id=payment_id)
+        payment.status = False
+        payment.save()
+        return Response({'message': 'Payment deleted successfully'})
+    except Payment.DoesNotExist:
+        return Response({'error': 'Payment not found'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def payment_by_party(request, party_name):
+    """Get all payments for a specific party"""
+    payments = Payment.objects.filter(party_name__icontains=party_name, status=True)
+    serializer = PaymentSerializer(payments, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def payment_statistics(request):
+    """Get payment statistics"""
+    from django.db.models import Sum, Count
+    
+    total_amount = Payment.objects.filter(status=True).aggregate(Sum('amount'))['amount__sum'] or 0
+    total_count = Payment.objects.filter(status=True).count()
+    
+    # Payment mode wise statistics
+    payment_modes = Payment.objects.filter(status=True).values('payment_mode').annotate(
+        count=Count('id'),
+        total=Sum('amount')
+    )
+    
+    return Response({
+        'total_amount': total_amount,
+        'total_count': total_count,
+        'payment_modes': payment_modes
+    })

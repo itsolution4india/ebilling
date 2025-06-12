@@ -127,3 +127,31 @@ class InvoiceItem(models.Model):
     
     def __str__(self):
         return f"{self.product_name} - {self.invoice.invoice_no}"
+    
+class Payment(models.Model):
+    PAYMENT_MODE_CHOICES = [
+        ('UPI', 'UPI'),
+        ('Cash', 'Cash'),
+        ('Card', 'Card'),
+        ('NetBanking', 'NetBanking'),
+        ('Bank Transfer', 'Bank Transfer'),
+        ('Cheque', 'Cheque'),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments')
+    date = models.DateField()
+    party_name = models.CharField(max_length=255)
+    party_phone = models.CharField(max_length=20, blank=True, null=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    payment_mode = models.CharField(max_length=20, choices=PAYMENT_MODE_CHOICES)
+    status = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Payment'
+        verbose_name_plural = 'Payments'
+    
+    def __str__(self):
+        return f"{self.party_name} - ₹{self.amount} ({self.payment_mode})"
