@@ -11,6 +11,9 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 import logging
 from rest_framework.permissions import AllowAny
+from django.utils import timezone
+from django.db.models import Sum, Q
+from datetime import timedelta
 
 logger = logging.getLogger('django')
 
@@ -474,3 +477,93 @@ def payment_statistics(request):
         'total_count': total_count,
         'payment_modes': payment_modes
     })
+    
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def dashboard_stats(request):
+    """Get dashboard statistics including total to collect, to pay, and weekly sales"""
+    
+    # Calculate total amount from unpaid invoices (To Collect)
+    total_to_collect = Invoice.objects.filter(
+        is_active=True,
+        status='unpaid'
+    ).aggregate(total=Sum('amount'))['total'] or 0
+    
+    # Calculate total amount from paid invoices (To Pay - assuming this represents what you owe to suppliers)
+    # If this should be something else, adjust accordingly
+    total_to_pay = Invoice.objects.filter(
+        is_active=True,
+        status='paid'
+    ).aggregate(total=Sum('amount'))['total'] or 0
+    
+    # Calculate this week's payment total
+    today = timezone.now().date()
+    week_start = today - timedelta(days=today.weekday())  # Monday of current week
+    week_end = week_start + timedelta(days=6)  # Sunday of current week
+    
+    weekly_payments = Payment.objects.filter(
+        status=True,
+        date__range=[week_start, week_end]
+    ).aggregate(total=Sum('amount'))['total'] or 0
+    
+    return Response({
+        'to_collect': float(total_to_collect),
+        'to_pay': float(total_to_pay),
+        'weekly_sales': float(weekly_payments),
+        'currency': '₹'
+    })
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def dashboard_transactions(request):
+    """Get combined transactions from both invoices and payments for dashboard"""
+    
+    transactions = []
+    
+    # Get recent invoices
+    recent_invoices = Invoice.objects.filter(is_active=True).order_by('-created_at')[:10]
+    for invoice in recent_invoices:
+        # Calculate days overdue if unpaid
+        days_overdue = 0
+        overdue_text = ""
+        
+        if invoice.status == 'unpaid' and invoice.due_date < timezone.now().date():
+            days_overdue = (timezone.now().date() - invoice.due_date).days
+            overdue_text = f" • {days_overdue} day(s) overdue"
+        
+        transactions.append({
+            'type': 'invoice',
+            'id': invoice.id,
+            'party_name': invoice.name,
+            'reference': f'Invoice #{invoice.invoice_no}',
+            'amount': float(invoice.amount),
+            'date': invoice.invoice_date.strftime('%d %b'),
+            'status': invoice.status,
+            'status_color': 'red' if invoice.status == 'unpaid' else 'green',
+            'status_text': 'Unpaid' if invoice.status == 'unpaid' else 'Paid',
+            'overdue_text': overdue_text,
+            'created_at': invoice.created_at
+        })
+    
+    # Get recent payments
+    recent_payments = Payment.objects.filter(status=True).order_by('-created_at')[:10]
+    for payment in recent_payments:
+        transactions.append({
+            'type': 'payment',
+            'id': payment.id,
+            'party_name': payment.party_name,
+            'reference': f'Payment - {payment.payment_mode}',
+            'amount': float(payment.amount),
+            'date': payment.date.strftime('%d %b'),
+            'status': 'received',
+            'status_color': 'green',
+            'status_text': 'Received',
+            'overdue_text': '',
+            'created_at': payment.created_at
+        })
+    
+    # Sort by created_at descending
+    transactions.sort(key=lambda x: x['created_at'], reverse=True)
+    
+    # Return top 20 transactions
+    return Response(transactions[:20])
