@@ -11,6 +11,8 @@ from django.views.decorators.csrf import csrf_exempt
 import json
 import logging
 from rest_framework.permissions import AllowAny
+import random
+import string
 
 logger = logging.getLogger('django')
 
@@ -227,20 +229,47 @@ def invoice_store(request):
     elif hasattr(request, 'user') and request.user.is_authenticated:
         data['user'] = request.user.id
     
-    # Generate invoice number if not provided
+    # Generate random invoice ID if not provided
     if not data.get('invoice_no'):
-        last_invoice = Invoice.objects.order_by('-id').first()
-        if last_invoice:
-            last_number = int(last_invoice.invoice_no) if last_invoice.invoice_no.isdigit() else 0
-            data['invoice_no'] = str(last_number + 1)
-        else:
-            data['invoice_no'] = '1'
+        data['invoice_no'] = generate_random_invoice_id()
     
     serializer = InvoiceSerializer(data=data)
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+def generate_random_invoice_id():
+    """Generate a random invoice ID in format like HDHDJ736378"""
+    # Generate 5 random uppercase letters
+    letters = ''.join(random.choices(string.ascii_uppercase, k=5))
+    # Generate 6 random digits
+    numbers = ''.join(random.choices(string.digits, k=6))
+    # Combine letters and numbers
+    invoice_id = letters + numbers
+    
+    # Check if this ID already exists in database
+    from .models import Invoice  # Import your Invoice model
+    while Invoice.objects.filter(invoice_no=invoice_id).exists():
+        # If it exists, generate a new one
+        letters = ''.join(random.choices(string.ascii_uppercase, k=5))
+        numbers = ''.join(random.choices(string.digits, k=6))
+        invoice_id = letters + numbers
+    
+    return invoice_id
+
+# Alternative function if you want different format patterns
+def generate_random_invoice_id_mixed():
+    """Generate a random invoice ID with mixed pattern like HD7DJ736H78"""
+    chars = string.ascii_uppercase + string.digits
+    invoice_id = ''.join(random.choices(chars, k=11))
+    
+    # Ensure uniqueness
+    from .models import Invoice
+    while Invoice.objects.filter(invoice_no=invoice_id).exists():
+        invoice_id = ''.join(random.choices(chars, k=11))
+    
+    return invoice_id
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
