@@ -41,8 +41,4 @@ urlpatterns = [
     path('payments/delete/<int:payment_id>/', views.payment_delete, name='payment-delete'),
     path('payments/party/<str:party_name>/', views.payment_by_party, name='payment-by-party'),
     path('payments/statistics/', views.payment_statistics, name='payment-statistics'),
-    
-    # Dashboard URLs
-    path('dashboard/stats/', views.dashboard_stats, name='dashboard-stats'),
-    path('dashboard/transactions/', views.dashboard_transactions, name='dashboard-transactions'),
 ]
