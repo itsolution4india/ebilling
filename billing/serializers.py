@@ -59,13 +59,16 @@ class InvoiceSerializer(serializers.ModelSerializer):
         return instance
 
 class InvoiceListSerializer(serializers.ModelSerializer):
-    """Simplified serializer for listing invoices"""
     items_count = serializers.SerializerMethodField()
-    
+    user_id = serializers.IntegerField(source='user.id', read_only=True)
+
     class Meta:
         model = Invoice
-        fields = ['id', 'name', 'number', 'invoice_no', 'invoice_date', 
-                 'due_date', 'amount', 'status', 'created_at', 'items_count']
+        fields = [
+            'id', 'name', 'number', 'invoice_no', 'invoice_date', 
+            'due_date', 'amount', 'status', 'created_at', 'items_count',
+            'user_id'
+        ]
     
     def get_items_count(self, obj):
         return obj.items.count()
