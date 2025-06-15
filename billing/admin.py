@@ -32,14 +32,14 @@ class InvoiceItemInline(admin.TabularInline):
 class InvoiceAdmin(admin.ModelAdmin):
     list_display = [
         'invoice_no', 'name', 'number', 'amount', 'status', 
-        'invoice_date', 'due_date', 'created_at', 'is_active'
+        'invoice_date', 'due_date', 'user', 'created_at', 'is_active'
     ]
     list_filter = ['status', 'is_active', 'created_at', 'invoice_date', 'due_date']
     search_fields = ['invoice_no', 'name', 'number']
     readonly_fields = ['created_at', 'updated_at']
     date_hierarchy = 'created_at'
     inlines = [InvoiceItemInline]
-    
+
     fieldsets = (
         ('Invoice Information', {
             'fields': ('invoice_no', 'name', 'number')
@@ -53,11 +53,16 @@ class InvoiceAdmin(admin.ModelAdmin):
         ('System', {
             'fields': ('user', 'is_active', 'created_at', 'updated_at'),
             'classes': ('collapse',)
-        })
+        }),
     )
-    
+
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('user').prefetch_related('items')
+
+    def save_model(self, request, obj, form, change):
+        if not obj.pk:
+            obj.user = request.user
+        super().save_model(request, obj, form, change)
 
 @admin.register(InvoiceItem)
 class InvoiceItemAdmin(admin.ModelAdmin):

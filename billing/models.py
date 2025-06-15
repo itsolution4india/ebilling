@@ -90,6 +90,7 @@ class Invoice(models.Model):
     ]
     
     # Basic invoice information
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments')
     name = models.CharField(max_length=255)  # Customer/Party name
     number = models.CharField(max_length=100)  # Phone number
     invoice_no = models.CharField(max_length=50, unique=True)  # Invoice number
