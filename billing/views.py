@@ -220,23 +220,24 @@ def invoice_list(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def invoice_store(request):
-    """Create a new invoice"""
+    """Create a new invoice with optional user assignment and auto invoice number"""
     data = request.data.copy()
-    
-    # Handle user field - expect user_id from frontend or user from authenticated request
-    if 'user_id' in data:
-        data['user'] = data.pop('user_id')
-    elif hasattr(request, 'user') and request.user.is_authenticated:
+
+    # Assign user if user_id is provided or if user is authenticated
+    user_id = data.get('user_id')
+    if user_id:
+        data['user'] = user_id
+    elif request.user and request.user.is_authenticated:
         data['user'] = request.user.id
-    
-    # Generate random invoice ID if not provided
+        
     if not data.get('invoice_no'):
         data['invoice_no'] = generate_random_invoice_id()
-    
+
     serializer = InvoiceSerializer(data=data)
     if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        invoice = serializer.save()
+        return Response(InvoiceSerializer(invoice).data, status=status.HTTP_201_CREATED)
+    
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 def generate_random_invoice_id():
