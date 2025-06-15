@@ -69,7 +69,7 @@ class InvoiceListSerializer(serializers.ModelSerializer):
             'due_date', 'amount', 'status', 'created_at', 'items_count',
             'user_id'
         ]
-    
+
     def get_items_count(self, obj):
         return obj.items.count()
     

@@ -89,25 +89,28 @@ class Invoice(models.Model):
         ('unpaid', 'Unpaid'),
     ]
     
-    # Basic invoice information
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='invoices')
-    name = models.CharField(max_length=255)  # Customer/Party name
-    number = models.CharField(max_length=100)  # Phone number
-    invoice_no = models.CharField(max_length=50, unique=True)  # Invoice number
+    user = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='invoices', 
+        null=True, 
+        blank=True
+    )
+    name = models.CharField(max_length=255)
+    number = models.CharField(max_length=100)
+    invoice_no = models.CharField(max_length=50, unique=True)
     invoice_date = models.DateField()
     due_date = models.DateField()
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='unpaid')
     
-    # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    is_active = models.BooleanField(default=True)  # For soft delete
-    
+    is_active = models.BooleanField(default=True)
+
     class Meta:
         ordering = ['-created_at']
-        
+
     def __str__(self):
         return f"Invoice #{self.invoice_no} - {self.name}"
 
