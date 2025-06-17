@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-iief5x7_0$a1x2$b1p!xpukmt9z(zposqthk&rw*-06kx6#1_8
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["ebilling.wtsmessage.xyz", 'localhost', '127.0.0.1',]
 
 
 # Application definition
