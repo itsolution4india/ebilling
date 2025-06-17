@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.db.models import Q
 from .models import Party, Product, Invoice, InvoiceItem, Payment
@@ -13,6 +13,10 @@ import logging
 from rest_framework.permissions import AllowAny
 import random
 import string
+
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 
 logger = logging.getLogger('django')
 
@@ -505,3 +509,33 @@ def payment_statistics(request):
         'payment_modes': payment_modes
     })
     
+def login_page(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        user = authenticate(request, username=username, password=password)
+        if user:
+            login(request, user)
+            return redirect('dashboard')
+        else:
+            messages.error(request, 'Invalid username or password')
+    
+    return render(request, 'login.html')
+
+@login_required
+def dashboard(request):
+    invoices = Invoice.objects.filter(user=request.user)
+    payments = Payment.objects.filter(user=request.user)
+    return render(request, 'dashboard.html', {
+        'invoices': invoices,
+        'payments': payments
+    })
+
+@login_required
+def logout_view(request):
+    logout(request)
+    return redirect('login-page')

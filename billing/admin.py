@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Party, Branch, Product, Invoice, InvoiceItem, Payment
+from .models import Party, Branch, Product, Invoice, InvoiceItem, Payment, TotalBalance
 
 @admin.register(Party)
 class PartyAdmin(admin.ModelAdmin):
@@ -99,3 +99,10 @@ class PaymentAdmin(admin.ModelAdmin):
         if obj:  # editing an existing object
             return self.readonly_fields + ['created_at', 'updated_at']
         return self.readonly_fields
+
+@admin.register(TotalBalance)
+class TotalBalanceAdmin(admin.ModelAdmin):
+    list_display = ('account_name', 'amount', 'payment_type', 'date', 'remarks', 'created_at')
+    list_filter = ('payment_type', 'date', 'created_at')
+    search_fields = ('account_name', 'remarks')
+    ordering = ('-created_at',)

@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+    <!-- <h1>Welcome, {{ request.user.username }}</h1>
+    <a href="{% url 'logout' %}">Logout</a> -->
+<div class="flex flex-wrap -mx-3">
+    <!-- card1 -->
+    <div class="w-full max-w-full px-3 mb-6 sm:w-1/2 sm:flex-none xl:mb-0 xl:w-1/4">
+    <div class="relative flex flex-col min-w-0 break-words bg-white shadow-xl dark:bg-slate-850 dark:shadow-dark-xl rounded-2xl bg-clip-border">
+        <div class="flex-auto p-4">
+        <div class="flex flex-row -mx-3">
+            <div class="flex-none w-2/3 max-w-full px-3">
+            <div>
+                <p class="mb-0 font-sans text-sm font-semibold leading-normal uppercase dark:text-white dark:opacity-60">Today's Money</p>
+                <h5 class="mb-2 font-bold dark:text-white">$53,000</h5>
+                <p class="mb-0 dark:text-white dark:opacity-60">
+                </p>
+            </div>
+            </div>
+            <div class="px-3 text-right basis-1/3">
+            <div class="inline-block w-12 h-12 text-center rounded-circle bg-gradient-to-tl from-blue-500 to-violet-500">
+                <i class="ni leading-none ni-money-coins text-lg relative top-3.5 text-white"></i>
+            </div>
+            </div>
+        </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- card2 -->
+    <div class="w-full max-w-full px-3 mb-6 sm:w-1/2 sm:flex-none xl:mb-0 xl:w-1/4">
+    <div class="relative flex flex-col min-w-0 break-words bg-white shadow-xl dark:bg-slate-850 dark:shadow-dark-xl rounded-2xl bg-clip-border">
+        <div class="flex-auto p-4">
+        <div class="flex flex-row -mx-3">
+            <div class="flex-none w-2/3 max-w-full px-3">
+            <div>
+                <p class="mb-0 font-sans text-sm font-semibold leading-normal uppercase dark:text-white dark:opacity-60">Today's Users</p>
+                <h5 class="mb-2 font-bold dark:text-white">2,300</h5>
+                <p class="mb-0 dark:text-white dark:opacity-60">
+                </p>
+            </div>
+            </div>
+            <div class="px-3 text-right basis-1/3">
+            <div class="inline-block w-12 h-12 text-center rounded-circle bg-gradient-to-tl from-red-600 to-orange-600">
+                <i class="ni leading-none ni-world text-lg relative top-3.5 text-white"></i>
+            </div>
+            </div>
+        </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- card3 -->
+    <div class="w-full max-w-full px-3 mb-6 sm:w-1/2 sm:flex-none xl:mb-0 xl:w-1/4">
+    <div class="relative flex flex-col min-w-0 break-words bg-white shadow-xl dark:bg-slate-850 dark:shadow-dark-xl rounded-2xl bg-clip-border">
+        <div class="flex-auto p-4">
+        <div class="flex flex-row -mx-3">
+            <div class="flex-none w-2/3 max-w-full px-3">
+            <div>
+                <p class="mb-0 font-sans text-sm font-semibold leading-normal uppercase dark:text-white dark:opacity-60">New Clients</p>
+                <h5 class="mb-2 font-bold dark:text-white">+3,462</h5>
+                <p class="mb-0 dark:text-white dark:opacity-60">
+                </p>
+            </div>
+            </div>
+            <div class="px-3 text-right basis-1/3">
+            <div class="inline-block w-12 h-12 text-center rounded-circle bg-gradient-to-tl from-emerald-500 to-teal-400">
+                <i class="ni leading-none ni-paper-diploma text-lg relative top-3.5 text-white"></i>
+            </div>
+            </div>
+        </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- card4 -->
+    <div class="w-full max-w-full px-3 sm:w-1/2 sm:flex-none xl:w-1/4">
+    <div class="relative flex flex-col min-w-0 break-words bg-white shadow-xl dark:bg-slate-850 dark:shadow-dark-xl rounded-2xl bg-clip-border">
+        <div class="flex-auto p-4">
+        <div class="flex flex-row -mx-3">
+            <div class="flex-none w-2/3 max-w-full px-3">
+            <div>
+                <p class="mb-0 font-sans text-sm font-semibold leading-normal uppercase dark:text-white dark:opacity-60">Sales</p>
+                <h5 class="mb-2 font-bold dark:text-white">$103,430</h5>
+                <p class="mb-0 dark:text-white dark:opacity-60">
+                </p>
+            </div>
+            </div>
+            <div class="px-3 text-right basis-1/3">
+            <div class="inline-block w-12 h-12 text-center rounded-circle bg-gradient-to-tl from-orange-500 to-yellow-500">
+                <i class="ni leading-none ni-cart text-lg relative top-3.5 text-white"></i>
+            </div>
+            </div>
+        </div>
+        </div>
+    </div>
+    </div>
+</div>
+<div class="col flex-wrap mt-6 -mx-3">
+  <!-- Payments Table -->
+  <div class="w-full max-w-full px-3 mt-0 mb-6 lg:flex-none">
+    <div class="relative flex flex-col min-w-0 break-words bg-white border-0 border-solid shadow-xl dark:bg-slate-850 dark:shadow-dark-xl dark:bg-gray-950 border-black-125 rounded-2xl bg-clip-border">
+      <div class="p-4 pb-0 mb-0 rounded-t-4">
+        <div class="flex justify-between">
+          <h6 class="mb-2 dark:text-white">Payments</h6>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="items-center w-full mb-4 align-top border-collapse border-gray-200 dark:border-white/40">
+          <thead>
+            <tr>
+              <th class="px-6 py-3 font-bold text-left uppercase align-middle bg-transparent border-b border-gray-200 shadow-none dark:border-white/40 dark:text-white text-xxs border-b-solid tracking-none whitespace-nowrap text-slate-400 opacity-70">Party</th>
+              <th class="px-6 py-3 font-bold text-left uppercase align-middle bg-transparent border-b border-gray-200 shadow-none dark:border-white/40 dark:text-white text-xxs border-b-solid tracking-none whitespace-nowrap text-slate-400 opacity-70">Phone</th>
+              <th class="px-6 py-3 font-bold text-center uppercase align-middle bg-transparent border-b border-gray-200 shadow-none dark:border-white/40 dark:text-white text-xxs border-b-solid tracking-none whitespace-nowrap text-slate-400 opacity-70">Amount</th>
+              <th class="px-6 py-3 font-bold text-center uppercase align-middle bg-transparent border-b border-gray-200 shadow-none dark:border-white/40 dark:text-white text-xxs border-b-solid tracking-none whitespace-nowrap text-slate-400 opacity-70">Mode</th>
+              <th class="px-6 py-3 font-bold text-center uppercase align-middle bg-transparent border-b border-gray-200 shadow-none dark:border-white/40 dark:text-white text-xxs border-b-solid tracking-none whitespace-nowrap text-slate-400 opacity-70">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for payment in payments %}
+            <tr>
+              <td class="p-2 align-middle bg-transparent border-b whitespace-nowrap dark:border-white/40">
+                <div class="px-2 py-1">
+                  <h6 class="mb-0 text-sm leading-normal dark:text-white">{{ payment.party_name }}</h6>
+                </div>
+              </td>
+              <td class="p-2 align-middle bg-transparent border-b whitespace-nowrap dark:border-white/40">
+                <div class="px-2 py-1">
+                  <h6 class="mb-0 text-sm leading-normal dark:text-white">{{ payment.party_phone }}</h6>
+                </div>
+              </td>
+              <td class="p-2 align-middle bg-transparent border-b whitespace-nowrap dark:border-white/40">
+                <div class="text-center">
+                  <h6 class="mb-0 text-sm font-semibold leading-normal dark:text-white">${{ payment.amount }}</h6>
+                </div>
+              </td>
+              <td class="p-2 align-middle bg-transparent border-b whitespace-nowrap dark:border-white/40">
+                <div class="text-center">
+                  <span class="bg-gradient-to-tl from-emerald-500 to-teal-400 px-2.5 text-xs rounded-1.8 py-1.4 inline-block whitespace-nowrap text-center align-baseline font-bold uppercase leading-none text-white">{{ payment.payment_mode }}</span>
+                </div>
+              </td>
+              <td class="p-2 align-middle bg-transparent border-b whitespace-nowrap dark:border-white/40">
+                <div class="text-center">
+                  <h6 class="mb-0 text-sm leading-normal dark:text-white">{{ payment.date }}</h6>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="p-2 text-center align-middle bg-transparent border-b whitespace-nowrap dark:border-white/40">
+                <h6 class="mb-0 text-sm leading-normal text-slate-400 dark:text-white/60">No payments available.</h6>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invoices Table -->
+  <div class="w-full max-w-full px-3 mt-0 lg:flex-none">
+    <div class="relative flex flex-col min-w-0 break-words bg-white border-0 border-solid shadow-xl dark:bg-slate-850 dark:shadow-dark-xl dark:bg-gray-950 border-black-125 rounded-2xl bg-clip-border">
+      <div class="p-4 pb-0 mb-0 rounded-t-4">
+        <div class="flex justify-between">
+          <h6 class="mb-2 dark:text-white">Invoices</h6>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="items-center w-full mb-4 align-top border-collapse border-gray-200 dark:border-white/40">
+          <thead>
+            <tr>
+              <th class="px-6 py-3 font-bold text-left uppercase align-middle bg-transparent border-b border-gray-200 shadow-none dark:border-white/40 dark:text-white text-xxs border-b-solid tracking-none whitespace-nowrap text-slate-400 opacity-70">Invoice ID</th>
+              <th class="px-6 py-3 font-bold text-left uppercase align-middle bg-transparent border-b border-gray-200 shadow-none dark:border-white/40 dark:text-white text-xxs border-b-solid tracking-none whitespace-nowrap text-slate-400 opacity-70">Name</th>
+              <th class="px-6 py-3 font-bold text-center uppercase align-middle bg-transparent border-b border-gray-200 shadow-none dark:border-white/40 dark:text-white text-xxs border-b-solid tracking-none whitespace-nowrap text-slate-400 opacity-70">Amount</th>
+              <th class="px-6 py-3 font-bold text-center uppercase align-middle bg-transparent border-b border-gray-200 shadow-none dark:border-white/40 dark:text-white text-xxs border-b-solid tracking-none whitespace-nowrap text-slate-400 opacity-70">Status</th>
+              <th class="px-6 py-3 font-bold text-center uppercase align-middle bg-transparent border-b border-gray-200 shadow-none dark:border-white/40 dark:text-white text-xxs border-b-solid tracking-none whitespace-nowrap text-slate-400 opacity-70">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for invoice in invoices %}
+            <tr>
+              <td class="p-2 align-middle bg-transparent border-b whitespace-nowrap dark:border-white/40">
+                <div class="px-2 py-1">
+                  <h6 class="mb-0 text-sm font-semibold leading-normal dark:text-white">#{{ invoice.invoice_no }}</h6>
+                </div>
+              </td>
+              <td class="p-2 align-middle bg-transparent border-b whitespace-nowrap dark:border-white/40">
+                <div class="px-2 py-1">
+                  <h6 class="mb-0 text-sm leading-normal dark:text-white">{{ invoice.name }}</h6>
+                </div>
+              </td>
+              <td class="p-2 align-middle bg-transparent border-b whitespace-nowrap dark:border-white/40">
+                <div class="text-center">
+                  <h6 class="mb-0 text-sm font-semibold leading-normal dark:text-white">${{ invoice.amount }}</h6>
+                </div>
+              </td>
+              <td class="p-2 align-middle bg-transparent border-b whitespace-nowrap dark:border-white/40">
+                <div class="text-center">
+                  {% if invoice.status == 'Paid' %}
+                  <span class="bg-gradient-to-tl from-emerald-500 to-teal-400 px-2.5 text-xs rounded-1.8 py-1.4 inline-block whitespace-nowrap text-center align-baseline font-bold uppercase leading-none text-white">{{ invoice.status }}</span>
+                  {% elif invoice.status == 'Pending' %}
+                  <span class="bg-gradient-to-tl from-orange-500 to-yellow-400 px-2.5 text-xs rounded-1.8 py-1.4 inline-block whitespace-nowrap text-center align-baseline font-bold uppercase leading-none text-white">{{ invoice.status }}</span>
+                  {% elif invoice.status == 'Overdue' %}
+                  <span class="bg-gradient-to-tl from-red-500 to-pink-400 px-2.5 text-xs rounded-1.8 py-1.4 inline-block whitespace-nowrap text-center align-baseline font-bold uppercase leading-none text-white">{{ invoice.status }}</span>
+                  {% else %}
+                  <span class="bg-gradient-to-tl from-slate-600 to-slate-300 px-2.5 text-xs rounded-1.8 py-1.4 inline-block whitespace-nowrap text-center align-baseline font-bold uppercase leading-none text-white">{{ invoice.status }}</span>
+                  {% endif %}
+                </div>
+              </td>
+              <td class="p-2 align-middle bg-transparent border-b whitespace-nowrap dark:border-white/40">
+                <div class="text-center">
+                  <h6 class="mb-0 text-sm leading-normal dark:text-white">{{ invoice.invoice_date }}</h6>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="5" class="p-2 text-center align-middle bg-transparent border-b whitespace-nowrap dark:border-white/40">
+                <h6 class="mb-0 text-sm leading-normal text-slate-400 dark:text-white/60">No invoices available.</h6>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 class Branch(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -159,3 +160,23 @@ class Payment(models.Model):
     
     def __str__(self):
         return f"{self.party_name} - ₹{self.amount} ({self.payment_mode})"
+    
+class TotalBalance(models.Model):
+    PAYMENT_TYPE_CHOICES = [
+        ('Cash', 'Cash'),
+        ('Bank', 'Bank'),
+    ]
+
+    account_name = models.CharField(max_length=255, blank=True, null=True)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    date = models.DateField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now_add=True)
+    remarks = models.CharField(max_length=255, default="Opening Balance")
+    payment_type = models.CharField(max_length=10, choices=PAYMENT_TYPE_CHOICES)
+
+    def __str__(self):
+        return f"{self.account_name or 'Unnamed'} - ₹{self.amount} ({self.payment_type})"
+
+    class Meta:
+        verbose_name = "Total Balance"
+        verbose_name_plural = "Total Balances"
