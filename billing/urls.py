@@ -46,4 +46,27 @@ urlpatterns = [
     path('', views.login_page, name='login-page'),
     path('logout/', views.logout_view, name='logout'),
     path('dashboard/', views.dashboard, name='dashboard'),
+    
+    # Product CRUD views
+    path('products/', views.product_list, name='product_list'),
+    path('products/add/', views.product_create, name='product_create'),
+    path('products/<int:pk>/edit/', views.product_update, name='product_update'),
+    path('products/<int:pk>/delete/', views.product_delete, name='product_delete'),
+    
+    # partie
+    path('parties/', views.party_list, name='party_list'),
+    path('parties/add/', views.party_create, name='party_create'),
+    path('parties/<int:pk>/edit/', views.party_update, name='party_update'),
+    path('parties/<int:pk>/delete/', views.party_delete, name='party_delete'),
+    
+    # Invoice URLs
+    path('invoices/', views.invoice_list, name='invoice_list'),
+    path('invoices/add/', views.invoice_create, name='invoice_create'),
+    path('invoices/<int:pk>/', views.invoice_detail, name='invoice_detail'),
+    path('invoices/<int:pk>/edit/', views.invoice_update, name='invoice_update'),
+    path('invoices/<int:pk>/delete/', views.invoice_delete, name='invoice_delete'),
+
+    # AJAX endpoints
+    path('ajax/products/', views.get_products_ajax, name='get_products_ajax'),
+    path('ajax/party/<int:party_id>/', views.get_party_details_ajax, name='get_party_details_ajax'),
 ]

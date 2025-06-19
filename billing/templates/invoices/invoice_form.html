@@ -1,0 +1,32 @@
+<form method="POST">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <div>
+    <label>Select Party (optional)</label>
+    {{ form.party }}
+  </div>
+  <div>
+    <label>OR Enter Name</label>
+    {{ form.custom_name }}
+    <label>Enter Number</label>
+    {{ form.custom_number }}
+  </div>
+
+  <label>Invoice Date</label>
+  {{ form.invoice_date }}
+  <label>Due Date</label>
+  {{ form.due_date }}
+  <label>Status</label>
+  {{ form.status }}
+
+  <h4>Add Items</h4>
+  {{ formset.management_form }}
+  {% for form in formset %}
+    <div class="item-block">
+      {{ form.product_name }} {{ form.product_description }} {{ form.quantity }} {{ form.rate }}
+      <button type="button" class="remove-item">Remove</button>
+    </div>
+  {% endfor %}
+
+  <button type="submit">Generate Invoice</button>
+</form>

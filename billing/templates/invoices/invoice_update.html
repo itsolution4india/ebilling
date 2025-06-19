@@ -1,0 +1,311 @@
+{% extends 'base.html' %}
+{% block extra_css %}
+<style>
+    input, textarea, select {
+        border: 1px solid gray;
+        border-radius: 0px 5px 5px;
+        width: 80%;
+        padding: 3px;
+    }
+    textarea {
+        height: 30px;
+    }
+    .item-row {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr auto;
+        gap: 10px;
+        align-items: center;
+        margin-bottom: 10px;
+        padding: 10px;
+        background-color: aliceblue;
+        border-radius: 8px;
+    }
+    .item-row input {
+        width: 100%;
+    }
+    .item-header {
+        font-weight: bold;
+        background: #f8f9fa;
+    }
+    .product-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+    }
+    .modal-content {
+        background: white;
+        margin: 5% auto;
+        padding: 20px;
+        width: 80%;
+        max-width: 600px;
+        border-radius: 8px;
+    }
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .close {
+        font-size: 24px;
+        cursor: pointer;
+    }
+    .product-list {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .product-item {
+        padding: 10px;
+        border: 1px solid #ddd;
+        margin: 5px 0;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+    .product-item:hover {
+        background: #f8f9fa;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="w-full max-w-full px-3 mt-6 lg:flex-none">
+  <div class="relative flex flex-col min-w-0 break-words bg-white border-0 shadow-xl dark:bg-slate-850 dark:shadow-dark-xl dark:bg-gray-950 border-black-125 rounded-2xl bg-clip-border">
+    <div class="p-4 border-b border-gray-200 dark:border-white/40">
+      <h6 class="text-lg font-semibold dark:text-white">Create New Invoice</h6>
+    </div>
+    <div class="p-4">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} mb-4 p-3 rounded-lg">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+
+      <form method="post" id="invoice-form">
+        {% csrf_token %}
+        
+        <!-- Invoice Header Section -->
+        <div class="flex flex-wrap -mx-2 mb-6">
+          <div class="w-full md:w-1/2 px-2 mb-4 mr-2" style="background-color: aliceblue; width: 49%;">
+            <div class="block text-sm font-medium text-slate-700 dark:text-white mb-1">
+              <label for="party">Select Party:</label>
+            </div>
+            <select name="party" id="party" required>
+              <option value="">Select Party</option>
+              {% for party in parties %}
+                <option value="{{ party.id }}">{{ party.party_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <div class="w-full md:w-1/2 px-2 mb-4 mr-2" style="background-color: aliceblue; width: 49%;">
+            <div class="block text-sm font-medium text-slate-700 dark:text-white mb-1">
+              <label for="invoice_no">Invoice Number:</label>
+            </div>
+            <input type="text" name="invoice_no" id="invoice_no" value="{{ next_invoice_no }}" readonly>
+          </div>
+          
+          <div class="w-full md:w-1/2 px-2 mb-4 mr-2" style="background-color: aliceblue; width: 49%;">
+            <div class="block text-sm font-medium text-slate-700 dark:text-white mb-1">
+              <label for="invoice_date">Invoice Date:</label>
+            </div>
+            <input type="date" name="invoice_date" id="invoice_date" required>
+          </div>
+          
+          <div class="w-full md:w-1/2 px-2 mb-4 mr-2" style="background-color: aliceblue; width: 49%;">
+            <div class="block text-sm font-medium text-slate-700 dark:text-white mb-1">
+              <label for="due_date">Due Date:</label>
+            </div>
+            <input type="date" name="due_date" id="due_date" required>
+          </div>
+        </div>
+
+        <!-- Items Section -->
+        <div class="mb-6">
+          <h6 class="text-md font-semibold dark:text-white mb-4">Invoice Items</h6>
+          <button type="button" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold mb-4" onclick="openProductModal()">Add Item</button>
+          
+          <div id="items-container">
+            <div class="item-row item-header">
+              <div>Product</div>
+              <div>Quantity</div>
+              <div>Rate</div>
+              <div>Amount</div>
+              <div>Action</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Total Section -->
+        <div class="text-right mb-6">
+          <div class="text-lg font-bold">Total Amount: ₹<span id="total-amount">0.00</span></div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex space-x-3 pt-4">
+          <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold mr-2">Generate Invoice</button>
+          <a href="{% url 'invoice_list' %}" class="from-red-600 text-black px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-tl">Cancel</a>
+        </div>
+
+        <input type="hidden" name="items_data" id="items_data">
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Product Selection Modal -->
+<div id="product-modal" class="product-modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Select Product</h3>
+      <span class="close" onclick="closeProductModal()">&times;</span>
+    </div>
+    <div class="product-list" id="product-list">
+      <!-- Products will be loaded here -->
+    </div>
+  </div>
+</div>
+
+<script>
+let invoiceItems = [];
+let products = [];
+
+// Load products on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadProducts();
+    
+    // Set today's date as default
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('invoice_date').value = today;
+    
+    // Set due date 30 days from today
+    const dueDate = new Date();
+    dueDate.setDate(dueDate.getDate() + 30);
+    document.getElementById('due_date').value = dueDate.toISOString().split('T')[0];
+});
+
+function loadProducts() {
+    fetch('/ajax/products/')
+        .then(response => response.json())
+        .then(data => {
+            products = data;
+        })
+        .catch(error => console.error('Error loading products:', error));
+}
+
+function openProductModal() {
+    const modal = document.getElementById('product-modal');
+    const productList = document.getElementById('product-list');
+    
+    productList.innerHTML = '';
+    
+    products.forEach(product => {
+        const productDiv = document.createElement('div');
+        productDiv.className = 'product-item';
+        productDiv.innerHTML = `
+            <strong>${product.product_name}</strong><br>
+            <small>${product.description}</small><br>
+            <strong>Price: ₹${product.unit_price}</strong> | Stock: ${product.stock_quantity}
+        `;
+        productDiv.onclick = () => selectProduct(product);
+        productList.appendChild(productDiv);
+    });
+    
+    modal.style.display = 'block';
+}
+
+function closeProductModal() {
+    document.getElementById('product-modal').style.display = 'none';
+}
+
+function selectProduct(product) {
+    const existingItem = invoiceItems.find(item => item.product_id === product.id);
+    
+    if (existingItem) {
+        existingItem.quantity += 1;
+        existingItem.amount = existingItem.quantity * existingItem.rate;
+    } else {
+        invoiceItems.push({
+            product_id: product.id,
+            product_name: product.product_name,
+            description: product.description,
+            quantity: 1,
+            rate: parseFloat(product.unit_price),
+            amount: parseFloat(product.unit_price)
+        });
+    }
+    
+    updateItemsDisplay();
+    closeProductModal();
+}
+
+function updateItemsDisplay() {
+    const container = document.getElementById('items-container');
+    
+    // Keep the header row
+    const headerRow = container.querySelector('.item-header');
+    container.innerHTML = '';
+    container.appendChild(headerRow);
+    
+    invoiceItems.forEach((item, index) => {
+        const itemRow = document.createElement('div');
+        itemRow.className = 'item-row';
+        itemRow.innerHTML = `
+            <div>${item.product_name}</div>
+            <div>
+                <input type="number" value="${item.quantity}" min="1" 
+                       onchange="updateQuantity(${index}, this.value)">
+            </div>
+            <div>₹${item.rate.toFixed(2)}</div>
+            <div>₹${item.amount.toFixed(2)}</div>
+            <div>
+                <button type="button" class="bg-red-500 text-white px-3 py-1 rounded text-sm" onclick="removeItem(${index})">Remove</button>
+            </div>
+        `;
+        container.appendChild(itemRow);
+    });
+    
+    updateTotal();
+}
+
+function updateQuantity(index, quantity) {
+    const qty = parseInt(quantity) || 1;
+    invoiceItems[index].quantity = qty;
+    invoiceItems[index].amount = qty * invoiceItems[index].rate;
+    updateItemsDisplay();
+}
+
+function removeItem(index) {
+    invoiceItems.splice(index, 1);
+    updateItemsDisplay();
+}
+
+function updateTotal() {
+    const total = invoiceItems.reduce((sum, item) => sum + item.amount, 0);
+    document.getElementById('total-amount').textContent = total.toFixed(2);
+}
+
+// Form submission
+document.getElementById('invoice-form').addEventListener('submit', function(e) {
+    if (invoiceItems.length === 0) {
+        e.preventDefault();
+        alert('Please add at least one item to the invoice.');
+        return;
+    }
+    
+    document.getElementById('items_data').value = JSON.stringify(invoiceItems);
+});
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('product-modal');
+    if (event.target === modal) {
+        closeProductModal();
+    }
+}
+</script>
+{% endblock %}

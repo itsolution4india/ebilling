@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice {{ invoice.invoice_no }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+        }
+        .invoice-title {
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .business-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .invoice-details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .invoice-info {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border: 1px solid #000;
+        }
+        .bill-from {
+            width: 48%;
+        }
+        .invoice-meta {
+            width: 48%;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .items-table th,
+        .items-table td {
+            border: 1px solid #000;
+            padding: 8px;
+            text-align: left;
+        }
+        .items-table th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            text-align: center;
+        }
+        .text-right {
+            text-align: right;
+        }
+        .text-center {
+            text-align: center;
+        }
+        .totals-section {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .terms {
+            width: 48%;
+            border: 1px solid #000;
+            padding: 10px;
+        }
+        .totals {
+            width: 48%;
+            border: 1px solid #000;
+            padding: 10px;
+        }
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 0;
+        }
+        .total-row.bold {
+            font-weight: bold;
+            border-top: 1px solid #000;
+            margin-top: 5px;
+            padding-top: 5px;
+        }
+        .amount-words {
+            margin-top: 10px;
+            font-size: 10px;
+        }
+        @media print {
+            body { margin: 0; padding: 10px; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Print Button -->
+    <div class="no-print" style="text-align: center; margin-bottom: 20px;">
+        <button onclick="window.print()" style="padding: 10px 20px; font-size: 16px; background-color: #007bff; color: white; border: none; cursor: pointer;">
+            Print Invoice
+        </button>
+    </div>
+
+    <!-- Invoice Header -->
+    <div class="header">
+        <div class="invoice-title">Purchase</div>
+    </div>
+
+    <!-- Business Information -->
+    <div class="business-info">
+        <h2>Business Name</h2>
+        <p>Mobile: {{ user.profile.phone_number|default:"6361161836" }}</p>
+    </div>
+
+    <!-- Invoice Details -->
+    <div class="invoice-details">
+        <div class="bill-from invoice-info">
+            <h4>BILL FROM</h4>
+            <p><strong>{{ invoice.name }}</strong></p>
+            <p>Mobile: {{ invoice.number }}</p>
+        </div>
+        <div class="invoice-meta invoice-info">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <span><strong>Purchase No.:</strong> {{ invoice.pk }}</span>
+                <span><strong>Purchase Date:</strong> {{ invoice.invoice_date|date:"d/m/Y" }}</span>
+                <span><strong>Due Date:</strong> {{ invoice.due_date|date:"d/m/Y" }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Items Table -->
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th>ITEMS</th>
+                <th>QTY.</th>
+                <th>RATE</th>
+                <th>TAX</th>
+                <th>AMOUNT</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in invoice.items.all %}
+            <tr>
+                <td>
+                    <strong>{{ item.product_name }}</strong>
+                    {% if item.product_description %}
+                    <br><small>{{ item.product_description }}</small>
+                    {% endif %}
+                </td>
+                <td class="text-center">{{ item.quantity }} BOX</td>
+                <td class="text-right">{{ item.rate }}</td>
+                <td class="text-center">
+                    {% with tax_amount=item.amount|multiply:0.18 %}
+                    {{ tax_amount|floatformat:2 }}<br>
+                    (18%)
+                    {% endwith %}
+                </td>
+                <td class="text-right">{{ item.amount|floatformat:2 }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">No items found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Totals Section -->
+    <div class="totals-section">
+        <!-- Terms and Conditions -->
+        <div class="terms">
+            <h4>TERMS AND CONDITIONS</h4>
+            <ol style="font-size: 11px; margin: 0; padding-left: 20px;">
+                <li>Goods once sold will not be taken back or exchanged</li>
+                <li>All disputes are subject to [ENTER_YOUR_CITY_NAME] jurisdiction only</li>
+            </ol>
+        </div>
+
+        <!-- Totals -->
+        <div class="totals">
+            {% with subtotal=invoice.amount %}
+            {% with tax_amount=subtotal|multiply:0.18 %}
+            {% with total_amount=subtotal|add:tax_amount %}
+            
+            <div class="total-row">
+                <span>SUBTOTAL</span>
+                <span>{{ invoice.items.all|length }}</span>
+                <span>₹ {{ subtotal|floatformat:2 }}</span>
+            </div>
+            
+            <div style="border-top: 1px solid #000; margin: 5px 0;"></div>
+            
+            <div class="total-row">
+                <span>TAXABLE AMOUNT</span>
+                <span>₹ {{ subtotal|floatformat:2 }}</span>
+            </div>
+            <div class="total-row">
+                <span>CGST @9%</span>
+                <span>₹ {{ tax_amount|multiply:0.5|floatformat:2 }}</span>
+            </div>
+            <div class="total-row">
+                <span>SGST @9%</span>
+                <span>₹ {{ tax_amount|multiply:0.5|floatformat:2 }}</span>
+            </div>
+            
+            <div class="total-row bold">
+                <span>TOTAL AMOUNT</span>
+                <span>₹ {{ total_amount|floatformat:2 }}</span>
+            </div>
+            
+            <div style="border-top: 1px solid #000; margin: 5px 0;"></div>
+            
+            <div class="total-row">
+                <span>Paid Amount</span>
+                <span>₹ 0</span>
+            </div>
+            
+            <div class="total-row bold" style="color: green;">
+                <span>Balance Amount</span>
+                <span>₹ {{ total_amount|floatformat:2 }}</span>
+            </div>
+            
+            <div class="amount-

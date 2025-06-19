@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.db.models import Q
-from .models import Party, Product, Invoice, InvoiceItem, Payment
+from .models import Party, Product, Invoice, InvoiceItem, Payment, TotalBalance
 from .serializers import PartySerializer, ProductSerializer, InvoiceSerializer, InvoiceListSerializer, InvoiceItemSerializer, PaymentSerializer
 from django.views.decorators.csrf import csrf_exempt
 import json
@@ -14,9 +14,15 @@ from rest_framework.permissions import AllowAny
 import random
 import string
 
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db.models import Sum, F
+from .forms import ProductForm, PartyForm
+import uuid
+from django.http import JsonResponse
+from decimal import Decimal
+from django.db import transaction
 
 logger = logging.getLogger('django')
 
@@ -528,9 +534,30 @@ def login_page(request):
 
 @login_required
 def dashboard(request):
-    invoices = Invoice.objects.filter(user=request.user)
-    payments = Payment.objects.filter(user=request.user)
+    user = request.user
+
+    # To Collect: Sum of all invoice amounts
+    to_collect = Invoice.objects.filter(user=user).aggregate(total=Sum('amount'))['total'] or 0
+
+    # To Pay: Sum of all payment amounts
+    to_pay = Payment.objects.filter(user=user).aggregate(total=Sum('amount'))['total'] or 0
+
+    # Stock Value: quantity * unit_price
+    stock_value = Product.objects.filter(user=user).aggregate(
+        total=Sum(F('stock_quantity') * F('unit_price'))
+    )['total'] or 0
+
+    # Total Balance: sum of TotalBalance
+    total_balance = TotalBalance.objects.aggregate(total=Sum('amount'))['total'] or 0
+
+    invoices = Invoice.objects.filter(user=user)
+    payments = Payment.objects.filter(user=user)
+
     return render(request, 'dashboard.html', {
+        'to_collect': to_collect,
+        'to_pay': to_pay,
+        'stock_value': stock_value,
+        'total_balance': total_balance,
         'invoices': invoices,
         'payments': payments
     })
@@ -539,3 +566,280 @@ def dashboard(request):
 def logout_view(request):
     logout(request)
     return redirect('login-page')
+
+# Auto-generate code
+def generate_product_code():
+    return f"PROD-{uuid.uuid4().hex[:8].upper()}"
+
+def generate_hsn_code():
+    return f"HSN-{uuid.uuid4().hex[:6].upper()}"
+
+@login_required
+def product_list(request):
+    products = Product.objects.filter(user=request.user)
+    return render(request, 'products/product_list.html', {'products': products})
+
+@login_required
+def product_create(request):
+    if request.method == 'POST':
+        form = ProductForm(request.POST)
+        if form.is_valid():
+            product = form.save(commit=False)
+            product.user = request.user
+            product.product_code = generate_product_code()
+            product.hsn_code = generate_hsn_code()
+            product.save()
+            return redirect('product_list')
+    else:
+        form = ProductForm()
+    return render(request, 'products/product_form.html', {'form': form, 'action': 'Add'})
+
+@login_required
+def product_update(request, pk):
+    product = get_object_or_404(Product, pk=pk, user=request.user)
+    if request.method == 'POST':
+        form = ProductForm(request.POST, instance=product)
+        if form.is_valid():
+            form.save()
+            return redirect('product_list')
+    else:
+        form = ProductForm(instance=product)
+    return render(request, 'products/product_form.html', {'form': form, 'action': 'Update'})
+
+@login_required
+def product_delete(request, pk):
+    product = get_object_or_404(Product, pk=pk, user=request.user)
+    if request.method == 'POST':
+        product.delete()
+        return redirect('product_list')
+    return render(request, 'products/product_confirm_delete.html', {'product': product})
+
+@login_required
+def party_list(request):
+    parties = Party.objects.filter(user=request.user)
+    return render(request, 'party/party_list.html', {'parties': parties})
+
+@login_required
+def party_create(request):
+    if request.method == 'POST':
+        form = PartyForm(request.POST)
+        if form.is_valid():
+            party = form.save(commit=False)
+            party.user = request.user
+            party.save()
+            messages.success(request, 'Party created successfully')
+            return redirect('party_list')
+    else:
+        form = PartyForm()
+    return render(request, 'party/party_form.html', {'form': form, 'action': 'Add', 'title': 'Add Party'})
+
+@login_required
+def party_update(request, pk):
+    party = get_object_or_404(Party, pk=pk, user=request.user)
+    if request.method == 'POST':
+        form = PartyForm(request.POST, instance=party)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Party updated successfully')
+            return redirect('party_list')
+    else:
+        form = PartyForm(instance=party)
+    return render(request, 'party/party_form.html', {'form': form, 'action': 'Edit', 'title': 'Edit Party'})
+
+@login_required
+def party_delete(request, pk):
+    party = get_object_or_404(Party, pk=pk, user=request.user)
+    if request.method == 'POST':
+        party.delete()
+        messages.success(request, 'Party deleted successfully')
+        return redirect('party_list')
+    return render(request, 'party/party_confirm_delete.html', {'party': party})
+
+@login_required
+def invoice_list(request):
+    """List all invoices for the current user"""
+    invoices = Invoice.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'invoices/invoice_list.html', {'invoices': invoices})
+
+@login_required
+def invoice_create(request):
+    """Create new invoice"""
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                # Get form data
+                party_id = request.POST.get('party')
+                invoice_no = request.POST.get('invoice_no')
+                invoice_date = request.POST.get('invoice_date')
+                due_date = request.POST.get('due_date')
+                items_data = request.POST.get('items_data')
+                
+                # Validate party
+                party = get_object_or_404(Party, id=party_id, user=request.user)
+                
+                # Parse items data
+                items = json.loads(items_data) if items_data else []
+                
+                if not items:
+                    messages.error(request, 'Please add at least one item to the invoice.')
+                    return redirect('invoice_create')
+                
+                # Calculate total amount
+                total_amount = sum(Decimal(str(item['amount'])) for item in items)
+                
+                # Create invoice
+                invoice = Invoice.objects.create(
+                    user=request.user,
+                    name=party.party_name,
+                    number=party_id,
+                    invoice_no=invoice_no,
+                    invoice_date=invoice_date,
+                    due_date=due_date,
+                    amount=total_amount,
+                    status='unpaid'
+                )
+                
+                # Create invoice items
+                for item in items:
+                    InvoiceItem.objects.create(
+                        invoice=invoice,
+                        product_id=item['product_id'],
+                        product_name=item['product_name'],
+                        product_description=item.get('description', ''),
+                        quantity=item['quantity'],
+                        rate=Decimal(str(item['rate'])),
+                        amount=Decimal(str(item['amount']))
+                    )
+                
+                messages.success(request, f'Invoice {invoice_no} created successfully!')
+                return redirect('invoice_detail', pk=invoice.pk)
+                
+        except Exception as e:
+            messages.error(request, f'Error creating invoice: {str(e)}')
+    
+    # Get parties and products for the form
+    parties = Party.objects.filter(user=request.user, status=True)
+    products = Product.objects.filter(user=request.user, status=True)
+    
+    # Generate next invoice number
+    last_invoice = Invoice.objects.filter(user=request.user).order_by('-id').first()
+    next_invoice_no = f"INV-{(last_invoice.id + 1) if last_invoice else 1:06d}"
+    
+    context = {
+        'parties': parties,
+        'products': products,
+        'next_invoice_no': next_invoice_no,
+    }
+    
+    return render(request, 'invoices/invoice_create.html', context)
+
+@login_required
+def invoice_detail(request, pk):
+    """View invoice details"""
+    invoice = get_object_or_404(Invoice, pk=pk, user=request.user)
+    invoice_amount = invoice.amount
+    sgst_amount = invoice_amount * Decimal('0.06')
+    cgst_amount = invoice_amount * Decimal('0.06')
+    total_amount = invoice_amount + sgst_amount + cgst_amount
+
+    context = {
+        'invoice': invoice,
+        'invoice_amount': invoice_amount,
+        'sgst_amount': sgst_amount,
+        'cgst_amount': cgst_amount,
+        'total_amount': total_amount,
+    }
+    return render(request, 'invoices/invoice_detail.html', context)
+
+@login_required
+def invoice_update(request, pk):
+    """Update invoice"""
+    invoice = get_object_or_404(Invoice, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                # Update invoice fields
+                invoice.invoice_date = request.POST.get('invoice_date')
+                invoice.due_date = request.POST.get('due_date')
+                invoice.status = request.POST.get('status')
+                
+                # Update items if provided
+                items_data = request.POST.get('items_data')
+                if items_data:
+                    items = json.loads(items_data)
+                    
+                    # Delete existing items
+                    invoice.items.all().delete()
+                    
+                    # Create new items
+                    total_amount = Decimal('0.00')
+                    for item in items:
+                        InvoiceItem.objects.create(
+                            invoice=invoice,
+                            product_id=item['product_id'],
+                            product_name=item['product_name'],
+                            product_description=item.get('description', ''),
+                            quantity=item['quantity'],
+                            rate=Decimal(str(item['rate'])),
+                            amount=Decimal(str(item['amount']))
+                        )
+                        total_amount += Decimal(str(item['amount']))
+                    
+                    invoice.amount = total_amount
+                
+                invoice.save()
+                messages.success(request, 'Invoice updated successfully!')
+                return redirect('invoice_detail', pk=invoice.pk)
+                
+        except Exception as e:
+            messages.error(request, f'Error updating invoice: {str(e)}')
+    
+    # Get data for the form
+    parties = Party.objects.filter(user=request.user, status=True)
+    products = Product.objects.filter(user=request.user, status=True)
+    
+    context = {
+        'invoice': invoice,
+        'parties': parties,
+        'products': products,
+    }
+    
+    return render(request, 'invoices/invoice_update.html', context)
+
+@login_required
+def invoice_delete(request, pk):
+    """Delete invoice"""
+    invoice = get_object_or_404(Invoice, pk=pk, user=request.user)
+    
+    if request.method == 'POST':
+        invoice.delete()
+        messages.success(request, 'Invoice deleted successfully!')
+        return redirect('invoice_list')
+    
+    return render(request, 'invoices/invoice_delete.html', {'invoice': invoice})
+
+@login_required
+def get_products_ajax(request):
+    """AJAX endpoint to get products with their details"""
+    products = Product.objects.filter(user=request.user, status=True).values(
+        'id', 'product_name', 'description', 'unit_price', 'stock_quantity'
+    )
+    return JsonResponse(list(products), safe=False)
+
+@login_required
+def get_party_details_ajax(request, party_id):
+    """AJAX endpoint to get party details"""
+    try:
+        party = Party.objects.get(id=party_id, user=request.user)
+        data = {
+            'id': party.id,
+            'name': party.party_name,
+            'email': party.party_email,
+            'address': party.party_address,
+            'contact': party.party_contact,
+            'gst': party.party_gst,
+        }
+        return JsonResponse(data)
+    except Party.DoesNotExist:
+        return JsonResponse({'error': 'Party not found'}, status=404)

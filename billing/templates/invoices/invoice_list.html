@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="w-full max-w-full px-3 mt-0 lg:flex-none">
+  <div class="relative flex flex-col min-w-0 break-words bg-white border-0 border-solid shadow-xl dark:bg-slate-850 dark:shadow-dark-xl dark:bg-gray-950 border-black-125 rounded-2xl bg-clip-border">
+    <div class="p-4 pb-0 mb-0 rounded-t-4">
+      <div class="flex justify-between items-center">
+        <h6 class="mb-2 dark:text-white">Invoice Management</h6>
+        <a href="{% url 'invoice_create' %}" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">Create New Invoice</a>
+      </div>
+    </div>
+
+    {% if messages %}
+      <div class="px-4 mt-2">
+        {% for message in messages %}
+          <div class="text-sm p-3 mb-2 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-gray-100 text-gray-800{% endif %}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="overflow-x-auto">
+      <table class="items-center w-full mb-4 align-top border-collapse border-gray-200 dark:border-white/40">
+        <thead>
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Invoice No</th>
+            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Party Name</th>
+            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Invoice Date</th>
+            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Due Date</th>
+            <th class="px-6 py-3 text-right text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Amount</th>
+            <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Status</th>
+            <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for invoice in invoices %}
+          <tr>
+            <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.invoice_no }}</td>
+            <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.name }}</td>
+            <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.invoice_date }}</td>
+            <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.due_date }}</td>
+            <td class="px-6 py-3 text-right text-sm text-slate-700 dark:text-white">₹{{ invoice.amount }}</td>
+            <td class="px-6 py-3 text-center text-sm font-semibold {% if invoice.status == 'paid' %}text-green-600{% else %}text-red-600{% endif %}">
+              {{ invoice.get_status_display }}
+            </td>
+            <td class="px-6 py-3 text-center">
+              <a href="{% url 'invoice_detail' invoice.pk %}" class="text-sm text-blue-600 hover:underline">View</a> |
+              <a href="{% url 'invoice_update' invoice.pk %}" class="text-sm text-yellow-600 hover:underline">Edit</a> |
+              <a href="{% url 'invoice_delete' invoice.pk %}" class="text-sm text-red-600 hover:underline">Delete</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="text-center text-slate-400 dark:text-white/60 py-3">No invoices found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

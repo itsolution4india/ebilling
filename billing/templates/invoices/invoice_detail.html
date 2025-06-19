@@ -1,0 +1,538 @@
+{% extends 'base.html' %}
+{% block extra_css %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .invoice-wrapper {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .action-buttons {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .action-buttons .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary { background: #007bff; color: white; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .invoice-content {
+            padding: 40px;
+        }
+        
+        .document-type {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .business-header {
+            margin-bottom: 30px;
+        }
+        
+        .business-name {
+            font-size: 32px;
+            font-weight: bold;
+            color: #000;
+            margin-bottom: 5px;
+        }
+        
+        .business-mobile {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .invoice-meta {
+            background: #e9ecef;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            border-radius: 3px;
+        }
+        
+        .meta-item {
+            font-size: 14px;
+        }
+        
+        .meta-label {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .meta-value {
+            color: #666;
+        }
+        
+        .bill-from-section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .party-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 3px;
+        }
+        
+        .party-details {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .items-section {
+            margin-bottom: 30px;
+        }
+        
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        .items-table th {
+            background: #f8f9fa;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            color: #333;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        .items-table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 14px;
+        }
+        
+        .item-name {
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 2px;
+        }
+        
+        .item-description {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .tax-breakdown {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .summary-section {
+            border-top: 2px solid #000;
+            padding-top: 20px;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .summary-label {
+            font-weight: 600;
+            color: #000;
+        }
+        
+        .summary-value {
+            color: #000;
+            font-weight: 600;
+        }
+        
+        .terms-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .terms-title {
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .terms-list {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        .tax-details {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .tax-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .tax-label {
+            color: #333;
+        }
+        
+        .tax-value {
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .total-amount-row {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+        
+        .paid-amount-row {
+            color: #007bff;
+            font-weight: 600;
+        }
+        
+        .amount-words {
+            text-align: center;
+            margin-top: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 3px;
+        }
+        
+        .amount-words-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 3px;
+        }
+        
+        .amount-words-text {
+            font-size: 14px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        @media print {
+            .action-buttons { display: none !important; }
+            body { background: white; }
+            .container { max-width: none; margin: 0; padding: 0; }
+            .invoice-wrapper { box-shadow: none; }
+        }
+        
+        @media (max-width: 768px) {
+            .invoice-meta {
+                grid-template-columns: 1fr;
+            }
+            
+            .items-table {
+                font-size: 12px;
+            }
+            
+            .items-table th,
+            .items-table td {
+                padding: 8px 4px;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="invoice-wrapper">
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <div class="btn-group">
+                    <a href="{% url 'invoice_list' %}" class="btn btn-primary">Back to List</a>
+                    <a href="{% url 'invoice_update' invoice.pk %}" class="btn btn-warning">Edit Invoice</a>
+                    <button onclick="printInvoice()" class="btn btn-success">Print Invoice</button>
+                    <button onclick="downloadPDF()" class="btn btn-info">Download PDF</button>
+                    <a href="{% url 'invoice_delete' invoice.pk %}" class="btn btn-danger">Delete Invoice</a>
+                </div>
+            </div>
+
+            <div class="invoice-content" id="invoice-content">
+                <!-- Document Type -->
+                <div class="document-type">
+                    {% if invoice.document_type %}
+                        {{ invoice.document_type|upper }}
+                    {% else %}
+                        PURCHASE
+                    {% endif %}
+                </div>
+
+                <!-- Business Header -->
+                <div class="business-header">
+                    <div class="business-name">
+                        {% if invoice.business_name %}
+                            {{ invoice.business_name }}
+                        {% else %}
+                            Business Name
+                        {% endif %}
+                    </div>
+                    <div class="business-mobile">
+                        Mobile: 
+                        {% if invoice.business_mobile %}
+                            {{ invoice.business_mobile }}
+                        {% else %}
+                            6361161836
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Invoice Meta Information -->
+                <div class="invoice-meta">
+                    <div class="meta-item">
+                        <span class="meta-label">Purchase No.:</span>
+                        <span class="meta-value">{{ invoice.invoice_no|default:"N/A" }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Purchase Date:</span>
+                        <span class="meta-value">{{ invoice.invoice_date|date:"d/m/Y" }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-label">Due Date:</span>
+                        <span class="meta-value">{{ invoice.due_date|date:"d/m/Y" }}</span>
+                    </div>
+                </div>
+
+                <!-- Bill From Section -->
+                <div class="bill-from-section">
+                    <div class="section-title">BILL FROM</div>
+                    <div class="party-name">{{ invoice.name|default:"Supplier Name" }}</div>
+                    <div class="party-details">
+                        {% if invoice.supplier_mobile %}
+                            Mobile: {{ invoice.supplier_mobile }}
+                        {% endif %}
+                        {% if invoice.supplier_address %}
+                            <br>{{ invoice.supplier_address }}
+                        {% endif %}
+                        {% if invoice.supplier_gst %}
+                            <br>GST: {{ invoice.supplier_gst }}
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Items Section -->
+                <div class="items-section">
+                    <table class="items-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 40%;">ITEMS</th>
+                                <th style="width: 15%;">QTY.</th>
+                                <th style="width: 15%;">RATE</th>
+                                <th style="width: 15%;">TAX</th>
+                                <th style="width: 15%;">AMOUNT</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in invoice.items.all %}
+                            <tr>
+                                <td>
+                                    <div class="item-name">{{ item.product_name }}</div>
+                                    {% if item.product_description %}
+                                        <div class="item-description">{{ item.product_description }}</div>
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.quantity }} {{ item.unit|default:"" }}</td>
+                                <td>{{ item.rate }}</td>
+                                <td>
+                                    {% if item.tax_amount %}
+                                        {{ item.tax_amount }}<br>
+                                        <span class="tax-breakdown">({{ item.tax_rate|default:"0" }}%)</span>
+                                    {% else %}
+                                        0.00<br>
+                                        <span class="tax-breakdown">(0%)</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.amount }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: #666; font-style: italic;">No items found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Summary Section -->
+                <div class="summary-section">
+                    <div class="summary-row">
+                        <span class="summary-label">SUBTOTAL</span>
+                        <span class="summary-value">{{ invoice.items.all|length|default:"0" }}</span>
+                        <span class="summary-value">₹ {{ invoice.subtotal|default:invoice.amount }}</span>
+                    </div>
+                </div>
+
+                <!-- Terms and Tax Details -->
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-top: 20px;">
+                    <div style="flex: 1; margin-right: 20px;">
+                        <div class="terms-section">
+                            <div class="terms-title">TERMS AND CONDITIONS</div>
+                            <div class="terms-list">
+                                {% if invoice.terms_conditions %}
+                                    {{ invoice.terms_conditions|linebreaks }}
+                                {% else %}
+                                    1. Goods once sold will not be taken back or exchanged<br>
+                                    2. All disputes are subject to [ENTER_YOUR_CITY_NAME] jurisdiction only
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="flex: 1;">
+                        <div class="tax-details">
+                            <div class="tax-row">
+                                <span class="tax-label">TAXABLE AMOUNT</span>
+                                <span class="tax-value">₹ {{ invoice.taxable_amount|default:invoice.amount }}</span>
+                            </div>
+                            
+                            <!-- Always show CGST @6% -->
+                            <div class="tax-row">
+                                <span class="tax-label">CGST @6%</span>
+                                <span class="tax-value">₹ {{ cgst_amount|default:"0.00" }}</span>
+                            </div>
+                            
+                            <!-- Always show SGST @6% -->
+                            <div class="tax-row">
+                                <span class="tax-label">SGST @6%</span>
+                                <span class="tax-value">₹ {{ sgst_amount|default:"0.00" }}</span>
+                            </div>
+                            
+                            {% if invoice.igst_amount %}
+                            <div class="tax-row">
+                                <span class="tax-label">IGST @{{ invoice.igst_rate|default:"12" }}%</span>
+                                <span class="tax-value">₹ {{ invoice.igst_amount }}</span>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="tax-row total-amount-row">
+                                <span class="tax-label">TOTAL AMOUNT</span>
+                                <span class="tax-value">₹ {{ total_amount }}</span>
+                            </div>
+                            
+                            {% if invoice.paid_amount %}
+                            <div class="tax-row paid-amount-row">
+                                <span class="tax-label">Paid Amount</span>
+                                <span class="tax-value">₹ {{ invoice.paid_amount }}</span>
+                            </div>
+                            {% else %}
+                            <div class="tax-row paid-amount-row">
+                                <span class="tax-label">Paid Amount</span>
+                                <span class="tax-value">₹ 0</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Amount in Words -->
+                <div class="amount-words">
+                    <div class="amount-words-label">Total Amount (in words)</div>
+                    <div class="amount-words-text">
+                        {% if invoice.amount_in_words %}
+                            {{ invoice.amount_in_words }}
+                        {% else %}
+                            Amount in words will appear here
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function printInvoice() {
+            window.print();
+        }
+
+        function downloadPDF() {
+            const element = document.getElementById('invoice-content');
+            const opt = {
+                margin: 0.5,
+                filename: 'purchase-{{ invoice.invoice_no }}-{{ invoice.invoice_date|date:"Y-m-d" }}.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: 2,
+                    useCORS: true,
+                    letterRendering: true
+                },
+                jsPDF: { 
+                    unit: 'in', 
+                    format: 'a4', 
+                    orientation: 'portrait' 
+                }
+            };
+
+            // Generate PDF
+            html2pdf().set(opt).from(element).save().then(() => {
+                console.log('PDF downloaded successfully');
+            }).catch(err => {
+                console.error('Error generating PDF:', err);
+                alert('Error generating PDF. Please try again.');
+            });
+        }
+    </script>
+{% endblock %}

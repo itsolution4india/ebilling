@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="w-full max-w-full px-3 mt-0 lg:flex-none">
+  <div class="relative flex flex-col min-w-0 break-words bg-white border-0 border-solid shadow-xl dark:bg-slate-850 dark:shadow-dark-xl dark:bg-gray-950 border-black-125 rounded-2xl bg-clip-border">
+    <div class="p-4 pb-0 mb-0 rounded-t-4">
+      <div class="flex justify-between items-center">
+        <h6 class="mb-2 dark:text-white">Products</h6>
+        <a href="{% url 'product_create' %}" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">Add Product</a>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="items-center w-full mb-4 align-top border-collapse border-gray-200 dark:border-white/40">
+        <thead>
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Name</th>
+            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Product Code</th>
+            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">HSN Code</th>
+            <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Price</th>
+            <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Stock</th>
+            <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Category</th>
+            <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for product in products %}
+          <tr>
+            <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ product.product_name }}</td>
+            <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ product.product_code }}</td>
+            <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ product.hsn_code }}</td>
+            <td class="px-6 py-3 text-center text-sm text-slate-700 dark:text-white">₹{{ product.unit_price }}</td>
+            <td class="px-6 py-3 text-center text-sm text-slate-700 dark:text-white">{{ product.stock_quantity }}</td>
+            <td class="px-6 py-3 text-center text-sm text-slate-700 dark:text-white">{{ product.category }}</td>
+            <td class="px-6 py-3 text-center">
+              <a href="{% url 'product_update' product.pk %}" class="text-sm text-yellow-600 hover:underline">Edit</a> |
+              <a href="{% url 'product_delete' product.pk %}" class="text-sm text-red-600 hover:underline">Delete</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="text-center text-slate-400 dark:text-white/60 py-3">No products found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
