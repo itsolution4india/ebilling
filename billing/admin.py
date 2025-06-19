@@ -78,7 +78,7 @@ class InvoiceItemAdmin(admin.ModelAdmin):
     
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ['id', 'party_name', 'amount', 'payment_mode', 'date', 'status', 'created_at']
+    list_display = ['id', 'party_name', 'amount', 'payment_mode', 'date', 'status', 'notes','created_at']
     list_filter = ['payment_mode', 'status', 'date', 'created_at']
     search_fields = ['party_name', 'party_phone', 'amount']
     ordering = ['-created_at']
