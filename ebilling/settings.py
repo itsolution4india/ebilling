@@ -31,6 +31,7 @@ ALLOWED_HOSTS = ["ebilling.wtsmessage.xyz", 'localhost', '127.0.0.1',]
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -180,4 +181,53 @@ LOGGING = {
             'propagate': False,
         },
     },
+}
+JAZZMIN_SETTINGS = {
+    # Branding
+    "site_title": "Exeesa",
+    "site_header": "Exeesa",
+    "site_brand": "Exeesa App",
+    "site_logo": "logo/Capture.PNG",
+    "login_logo": "logo/Capture4.png",
+    "site_logo_classes": "img-circle",
+    "welcome_sign": "Welcome to Exeesa Admin ",
+    "copyright": "Exeesa Team",
+    # User menu
+    
+
+    # Sidebar and navigation
+    "show_sidebar": True,
+    "navigation_expanded": True,
+    # "order_with_respect_to": ["auth", "books", "books.author", "books.book"],
+
+    # Custom links (for quick access actions)
+    "custom_links": {
+        "books": [{
+            "name": "Make Messages",
+            "url": "make_messages",
+            "icon": "fas fa-comments",
+            "permissions": ["books.view_book"]
+        }]
+    },
+
+    # Icons (Font Awesome 5)
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "billing.Branch": "fas fa-code-branch",          # Branch icon
+        "billing.Party": "fas fa-user-friends",          # Party (customer/supplier)
+        "billing.Product": "fas fa-box-open",            # Products
+        "billing.Invoice": "fas fa-file-invoice-dollar", # Invoices
+        "billing.InvoiceItem": "fas fa-list-ul",         # Invoice Items
+        "billing.Payment": "fas fa-credit-card",  
+    },
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-circle",
+
+    # Change view format
+    "changeform_format": "horizontal_tabs",
+   
+   
+ 
 }
