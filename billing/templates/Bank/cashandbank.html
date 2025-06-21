@@ -1,0 +1,960 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Payment In Dashboard{% endblock %}
+
+{% block content %}
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+.hidden {
+  display: none;
+}
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .left-panel {
+            width: 420px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            padding: 0;
+            height: fit-content;
+        }
+
+        .panel-header {
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            color: #666;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: #f8f9fa;
+            border-color: #ccc;
+        }
+
+        .btn-primary {
+            background: #6366f1;
+            color: white;
+            border-color: #6366f1;
+        }
+
+        .btn-primary:hover {
+            background: #5856eb;
+        }
+
+        .balance-section {
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .balance-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .balance-amount {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .section {
+            padding: 20px 0;
+        }
+
+        .section-header {
+            padding: 0 20px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .add-link {
+            color: #3b82f6;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .add-link:hover {
+            text-decoration: underline;
+        }
+
+        .cash-item {
+            padding: 15px 20px;
+            background: #f8f9ff;
+            margin: 0 20px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .cash-label {
+            font-size: 14px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .cash-amount {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .bank-item {
+           padding: 15px 20px;
+            background: #f8f9ff;
+            margin: 0 20px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .bank-icon {
+            width: 20px;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bank-name {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .bank-amount {
+           font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .right-panel {
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .transactions-header {
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .transactions-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .date-filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .date-dropdown {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            color: #666;
+            font-size: 14px;
+            cursor: pointer;
+            min-width: 120px;
+        }
+
+        .download-btn {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            color: #666;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .transactions-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+         
+         
+            text-align: center;
+        }
+
+        .empty-state-icon {
+            width: 80px;
+            height: 80px;
+            background: #f1f5f9;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .empty-state-icon::before {
+            content: '📄';
+            font-size: 32px;
+            opacity: 0.6;
+        }
+
+        .empty-state-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .empty-state-text {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .currency {
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                flex-direction: column;
+                padding: 10px;
+            }
+            
+            .left-panel {
+                width: 100%;
+            }
+            
+            .action-buttons {
+                flex-wrap: wrap;
+            }
+        }
+         .add-link {
+            display: inline-block;
+            margin: 10px 15px 10px 0;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .add-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            /* height: 100%; */
+            /* overflow-y: auto;    */
+            /* background-color: rgba(0,0,0,0.5); */
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 25px;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .close {
+            color: white;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            background: none;
+            padding: 0;
+            line-height: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .close:hover {
+            opacity: 0.7;
+        }
+
+        .modal-body {
+            padding: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-control:hover {
+            border-color: #b8c2f0;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+            justify-content: flex-end;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 100px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .required {
+            color: #e74c3c;
+        }
+
+        @media (max-width: 600px) {
+            .modal-content {
+                width: 95%;
+                margin: 10% auto;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- This would be your base.html content -->
+    <div class="dashboard-container">
+        <!-- Left Panel -->
+        <div class="left-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Cash and Bank</h2>
+                <a href="#" class="add-link"  id="addEntryBtn">+ Add Money</a>
+           
+               
+            </div>
+
+            <div class="balance-section ">
+                <div class="balance-label">Total Balance:</div>
+                <div class="balance-amount"><span class="currency">₹</span>{{total_balance}}</div>
+                   
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">Cash</div>
+                   
+                </div>
+                <div class="cash-item">
+                    <div class="cash-label">Cash in hand</div>
+                    <div class="cash-amount"><span class="currency">₹</span>{{cash_in_hand}}</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <div class="section-title">Bank Accounts</div>
+            
+                </div>
+                <div class="bank-item">
+                    
+                    <div class="bank-name">Bank Amount</div>
+                    <div class="bank-amount"><span class="currency">₹</span>{{cash_in_bank}}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+  <div class="right-panel p-4 bg-white rounded-xl shadow-md w-full">
+    <!-- Header -->
+    <div class="transactions-header flex items-center justify-between mb-4">
+        <h3 class="transactions-title text-xl font-semibold text-gray-800">Transactions</h3>
+        <div class="date-filter flex gap-2 items-center">
+            <select class="date-dropdown px-3 py-1 border border-gray-300 rounded-md text-sm">
+                <option>📅 Yesterday</option>
+                <option>📅 Today</option>
+                <option>📅 This Week</option>
+                <option>📅 This Month</option>
+            </select>
+            <button class="download-btn px-4 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition">
+                Download Statement ⬇️
+            </button>
+        </div>
+    </div>
+
+    <!-- Table or Empty State -->
+    <div class="transactions-content w-full">
+        {% if transactions %}
+            <table class="transactions-table w-full text-sm text-left border border-gray-200 rounded-lg">
+                <thead class="bg-gray-100 text-gray-700">
+                    <tr>
+                        <th class="px-4 py-2">Date</th>
+                        <th class="px-4 py-2">Account Name</th>
+                        <th class="px-4 py-2">Amount</th>
+                        <th class="px-4 py-2">Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in transactions %}
+                    <tr class="odd:bg-white even:bg-gray-50 border-t">
+                        <td class="px-4 py-2">{{ t.date|date:"d M Y" }}</td>
+                        <td class="px-4 py-2">{{ t.account_name|default:"—" }}</td>
+                        <td class="px-4 py-2">₹{{ t.amount }}</td>
+                        <td class="px-4 py-2">{{ t.payment_type }}</td>
+                        <td>
+     <a href="#" class="edit-entry-btn"
+   data-url="{% url 'cashedit' t.id %}"
+   data-payment="{{ t.payment_type }}"
+   data-account="{{ t.account_name }}"
+   data-amount="{{ t.amount }}"
+   data-date="{{ t.date|date:'Y-m-d' }}"
+   data-remarks="{{ t.remarks }}"
+>
+   Edit
+</a>
+ |
+          <a href="{% url 'cashdelete' t.id %}" class="text-red-600 hover:underline">Delete</a>
+        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="text-center py-12 text-gray-500">
+                <div class="text-4xl mb-2">📄</div>
+                <div class="text-lg font-medium">No Transactions</div>
+                <div class="text-sm">Vouchers created with payment mode as Cash will be displayed here</div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+
+    </div>
+  <div id="bankMoneyModal" class="modal">
+
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Add New Entry</h2>
+                <button class="close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="bankMoneyForm" action="{% url 'cashbank' %}" method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="paymentType" class="form-label">Payment Type <span class="required">*</span></label>
+                        <select id="paymentType" name="payment_type" class="form-control" required>
+                            <option value="">Select Payment Type</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Bank">Bank</option>
+                        </select>
+                    </div>
+
+ <div class="form-group hidden" id="accountGroup">
+    <label class="form-label" id="accountLabel">Account Name</label>
+
+    <!-- Dropdown for existing bank accounts -->
+    <select id="accountSelect" name="account_name" class="form-control">
+        <option value="">-- Select Account --</option>
+        {% for acc in accounts %}
+            <option value="{{ acc }}">{{ acc }}</option>
+        {% endfor %}
+        <option value="__new__">➕ Add New Account</option>
+    </select>
+
+    <!-- Input for adding new account name -->
+    <input type="text" id="accountInput" name="account_name" class="form-control mt-2 hidden"
+           placeholder="Enter new account name">
+</div>
+                    <div class="form-group">
+                        <label for="amount" class="form-label">Amount <span class="required">*</span></label>
+                        <input type="number" id="amount" name="amount" class="form-control" 
+                               step="0.01" min="0" placeholder="0.00" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="date" class="form-label">Date <span class="required">*</span></label>
+                        <input type="date" id="date" name="date" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="remarks" class="form-label">Remarks</label>
+                        <input type="text" id="remarks" name="remarks" class="form-control" 
+                               value="Opening Balance" placeholder="Enter remarks">
+                    </div>
+
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Entry</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="editBankMoneyModal" class="modal hidden">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 class="modal-title">Edit Entry</h2>
+            <button class="close" id="editCloseModal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <form id="editBankMoneyForm" action="" method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="editPaymentType" class="form-label">Payment Type</label>
+                    <select id="editPaymentType" name="payment_type" class="form-control" required>
+                        <option value="">Select Payment Type</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Bank">Bank</option>
+                    </select>
+                </div>
+
+            <div class="form-group hidden" id="editAccountGroup">
+    <label class="form-label" id="editAccountLabel">Account Name</label>
+
+    <!-- Dropdown for existing bank accounts -->
+    <select id="editAccountSelect" name="account_name" class="form-control">
+        <option value="">-- Select Account --</option>
+        {% for acc in accounts %}
+            <option value="{{ acc }}">{{ acc }}</option>
+        {% endfor %}
+        <option value="__new__">➕ Add New Account</option>
+    </select>
+
+    <!-- Input for new account name -->
+    <input type="text" id="editAccountInput" name="account_name" class="form-control mt-2 hidden"
+           placeholder="Enter new account name">
+</div>
+                <div class="form-group">
+                    <label for="editAmount" class="form-label">Amount</label>
+                    <input type="number" id="editAmount" name="amount" class="form-control" step="0.01" min="0">
+                </div>
+
+                <div class="form-group">
+                    <label for="editDate" class="form-label">Date</label>
+                    <input type="date" id="editDate" name="date" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label for="editRemarks" class="form-label">Remarks</label>
+                    <input type="text" id="editRemarks" name="remarks" class="form-control">
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary" id="editCancelBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Entry</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    const editPaymentType = document.getElementById('editPaymentType');
+    const editAccountGroup = document.getElementById('editAccountGroup');
+    const editAccountSelect = document.getElementById('editAccountSelect');
+    const editAccountInput = document.getElementById('editAccountInput');
+
+    // Handle Payment Type change in Edit Modal
+    editPaymentType.addEventListener('change', function () {
+        if (this.value === 'Bank') {
+            editAccountGroup.classList.remove('hidden');
+            editAccountSelect.classList.remove('hidden');
+            editAccountInput.classList.add('hidden');
+            editAccountInput.value = '';
+        } else {
+            editAccountGroup.classList.add('hidden');
+            editAccountSelect.value = '';
+            editAccountInput.value = '';
+            editAccountInput.classList.add('hidden');
+        }
+    });
+
+    // Handle "Add New Account" in Edit Modal
+    editAccountSelect.addEventListener('change', function () {
+        if (this.value === '__new__') {
+            editAccountInput.classList.remove('hidden');
+            editAccountInput.required = true;
+        } else {
+            editAccountInput.classList.add('hidden');
+            editAccountInput.required = false;
+            editAccountInput.value = this.value;
+        }
+    });
+
+    // Optional: preload logic for opening Edit modal (based on data attributes)
+    document.querySelectorAll('.edit-entry-btn').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const modal = document.getElementById('editBankMoneyModal');
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+
+            document.getElementById('editPaymentType').value = this.dataset.payment;
+            document.getElementById('editAmount').value = this.dataset.amount;
+            document.getElementById('editDate').value = this.dataset.date;
+            document.getElementById('editRemarks').value = this.dataset.remarks;
+
+            if (this.dataset.payment === 'Bank') {
+                editAccountGroup.classList.remove('hidden');
+                // Set existing account or show new input
+                const matchOption = Array.from(editAccountSelect.options).find(
+                    o => o.value === this.dataset.account
+                );
+                if (matchOption) {
+                    editAccountSelect.value = this.dataset.account;
+                    editAccountInput.classList.add('hidden');
+                    editAccountInput.value = '';
+                } else {
+                    editAccountSelect.value = '__new__';
+                    editAccountInput.classList.remove('hidden');
+                    editAccountInput.value = this.dataset.account;
+                }
+            } else {
+                editAccountGroup.classList.add('hidden');
+                editAccountSelect.value = '';
+                editAccountInput.value = '';
+            }
+
+            // Set form action (if using edit/<id>)
+            document.getElementById('editBankMoneyForm').action = this.getAttribute('href');
+        });
+    });
+
+    // Cancel & close button logic
+    document.getElementById('editCancelBtn').addEventListener('click', () => {
+        document.getElementById('editBankMoneyModal').classList.add('hidden');
+        document.getElementById('editBankMoneyModal').style.display = 'none';
+    });
+    document.getElementById('editCloseModal').addEventListener('click', () => {
+        document.getElementById('editBankMoneyModal').classList.add('hidden');
+        document.getElementById('editBankMoneyModal').style.display = 'none';
+    });
+</script>
+
+<script>
+    const paymentType = document.getElementById('paymentType');
+    const accountGroup = document.getElementById('accountGroup');
+    const accountSelect = document.getElementById('accountSelect');
+    const accountInput = document.getElementById('accountInput');
+
+    // Toggle based on payment type
+    paymentType.addEventListener('change', function () {
+        if (this.value === 'Bank') {
+            accountGroup.classList.remove('hidden');
+            accountSelect.classList.remove('hidden');
+            accountInput.classList.add('hidden');
+            accountInput.value = '';
+        } else {
+            accountGroup.classList.add('hidden');
+            accountSelect.value = '';
+            accountInput.value = '';
+            accountInput.classList.add('hidden');
+        }
+    });
+
+    // Handle "➕ Add New Account"
+    accountSelect.addEventListener('change', function () {
+        if (this.value === '__new__') {
+            accountInput.classList.remove('hidden');
+            accountInput.required = true;
+        } else {
+            accountInput.classList.add('hidden');
+            accountInput.required = false;
+            accountInput.value = this.value;
+        }
+    });
+</script>
+
+<script>
+    // Elements
+    const modal = document.getElementById('bankMoneyModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const addEntryBtn = document.getElementById('addEntryBtn');
+    const closeModal = document.getElementById('closeModal');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const form = document.getElementById('bankMoneyForm');
+    const paymentTypeSelect = document.getElementById('paymentType');
+    const dateInput = document.getElementById('date');
+
+    // Set today's date by default
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.value = today;
+
+    // Open Modal Function
+    function openModal(title) {
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+        modalTitle.textContent = title;
+        document.body.style.overflow = 'hidden';
+    }
+
+    // Close Modal Function
+    function closeModalFunc() {
+        modal.classList.add('hidden');
+        modal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        form.reset();
+        dateInput.value = today;
+        document.getElementById('remarks').value = 'Opening Balance';
+    }
+
+    // Open modal on button click
+    addEntryBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        openModal('Add Entry');
+    });
+
+    // Close modal on close or cancel
+    closeModal.addEventListener('click', closeModalFunc);
+    cancelBtn.addEventListener('click', closeModalFunc);
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeModalFunc();
+        }
+    });
+
+    // Close modal on Escape key
+ 
+    // Format amount to 2 decimal places
+    document.getElementById('amount').addEventListener('blur', function() {
+        const value = parseFloat(this.value);
+        if (!isNaN(value)) {
+            this.value = value.toFixed(2);
+        }
+    });
+
+    // Form submit handler
+
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const editModal = document.getElementById('editBankMoneyModal');
+    const editForm = document.getElementById('editBankMoneyForm');
+    const editDateInput = document.getElementById('editDate');
+    const today = new Date().toISOString().split('T')[0];
+    editDateInput.value = today;
+
+    // Open edit modal
+    document.querySelectorAll('.edit-entry-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            editModal.classList.remove('hidden');
+            editModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+
+            // Fill form fields
+            editForm.action = this.dataset.url;
+            document.getElementById('editPaymentType').value = this.dataset.payment;
+            document.getElementById('editAccountName').value = this.dataset.account;
+            document.getElementById('editAmount').value = this.dataset.amount;
+            document.getElementById('editDate').value = this.dataset.date;
+            document.getElementById('editRemarks').value = this.dataset.remarks;
+        });
+    });
+
+    // Close edit modal
+    document.getElementById('editCloseModal').addEventListener('click', () => {
+        editModal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        editForm.reset();
+        editDateInput.value = today;
+    });
+
+    document.getElementById('editCancelBtn').addEventListener('click', () => {
+        editModal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        editForm.reset();
+        editDateInput.value = today;
+    });
+
+    window.addEventListener('click', function(e) {
+        if (e.target === editModal) {
+            editModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            editForm.reset();
+            editDateInput.value = today;
+        }
+    });
+});
+</script>
+
+
+
+    <script>
+        // Add some basic interactivity
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle button clicks
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    console.log('Button clicked:', this.textContent.trim());
+                });
+            });
+
+            // Handle dropdown change
+            const dropdown = document.querySelector('.date-dropdown');
+            dropdown.addEventListener('change', function() {
+                console.log('Date filter changed:', this.value);
+            });
+
+            // Handle add bank link
+            const addBankLink = document.querySelector('.add-link');
+            addBankLink.addEventListener('click', function(e) {
+                e.preventDefault();
+                console.log('Add new bank clicked');
+            });
+        });
+    </script>
+</body>
+</html>
+{% endblock %}

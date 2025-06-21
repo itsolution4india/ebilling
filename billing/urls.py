@@ -65,7 +65,13 @@ urlpatterns = [
     path('invoices/<int:pk>/', views.invoice_detail, name='invoice_detail'),
     path('invoices/<int:pk>/edit/', views.invoice_update, name='invoice_update'),
     path('invoices/<int:pk>/delete/', views.invoice_delete, name='invoice_delete'),
-
+    path('payments/',views.payments,name='payments'),
+    path("payments/load-payment2/",views.payment2_partial, name="load_payment2"),
+    path("payments/<int:pk>/edit",views.payedit, name="payedit"),
+    path("payments/<int:pk>/delete",views.paydelete, name="paydelete"),
+    path("cashbank/",views.cashbank, name="cashbank"),
+    path("cashbank/<int:pk>/edit",views.cashedit, name="cashedit"),
+    path("cashbank/<int:pk>/delete",views.cashdelete, name="cashdelete"),
     # AJAX endpoints
     path('ajax/products/', views.get_products_ajax, name='get_products_ajax'),
     path('ajax/party/<int:party_id>/', views.get_party_details_ajax, name='get_party_details_ajax'),

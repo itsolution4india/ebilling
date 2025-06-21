@@ -86,7 +86,7 @@ class PaymentAdmin(admin.ModelAdmin):
     
     fieldsets = (
         ('Payment Information', {
-            'fields': ('user', 'date', 'party_name', 'party_phone', 'amount', 'payment_mode')
+            'fields': ('user', 'date', 'party_name', 'party_phone', 'amount', 'payment_mode','notes')
         }),
         ('Status', {
             'fields': ('status',)

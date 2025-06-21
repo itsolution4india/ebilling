@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="w-full max-w-full px-3 mt-6 lg:flex-none">
+  <div class="relative flex flex-col min-w-0 break-words bg-white border-0 shadow-xl dark:bg-slate-850 dark:shadow-dark-xl dark:bg-gray-950 border-black-125 rounded-2xl bg-clip-border">
+    <div class="p-4 border-b border-gray-200 dark:border-white/40">
+      <h6 class="text-lg font-semibold text-red-500 dark:text-white">Delete Party</h6>
+    </div>
+    <div class="p-4">
+      <p class="text-slate-700 dark:text-white">Are you sure you want to delete <strong>{{ transaction.user }} - {{transaction.amount}} - {{transaction.payment_type}}</strong>?</p>
+      <form method="post" class="pt-4">
+        {% csrf_token %}
+        <div class="flex space-x-3">
+          <button type="submit" class="from-red-600 text-black px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-tl mr-2">Delete</button>
+          <a href="{% url 'cashbank' %}" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -13,6 +13,7 @@ import logging
 from rest_framework.permissions import AllowAny
 import random
 import string
+from django.template.loader import render_to_string
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -32,10 +33,8 @@ logger = logging.getLogger('django')
 def login_view(request):
     """Login endpoint"""
     try:
-        print("Raw body:", request.body)  # Add this for debugging
         data = json.loads(request.body.decode('utf-8'))
     except Exception as e:
-        print("JSON decode error:", e)
         return Response({'error': 'Invalid JSON'}, status=400)
 
     username = data.get('username')
@@ -843,3 +842,147 @@ def get_party_details_ajax(request, party_id):
         return JsonResponse(data)
     except Party.DoesNotExist:
         return JsonResponse({'error': 'Party not found'}, status=404)
+    
+@login_required
+def payments(request):
+    payment=Payment.objects.filter(user=request.user).order_by('-created_at')
+    context={'payment':payment}
+    return render(request,'Payments/payment.html',context)
+@login_required
+def payment2_partial(request):
+    party=Party.objects.filter(user=request.user)
+
+    if request.method == "POST":
+        party_name = request.POST.get("party")
+        phone = request.POST.get("phone")
+        amount = request.POST.get("amount")
+        payment_date = request.POST.get("date")
+        payment_mode = request.POST.get("mode")
+        notes = request.POST.get("notes")
+
+        # Save to DB (example model)
+        Payment.objects.create(
+            user=request.user,
+            party_name=party_name,
+            party_phone=phone,
+            amount=amount,
+            date=payment_date,
+            payment_mode=payment_mode,
+            notes=notes,
+        )
+
+        messages.success(request, "Payment successfully recorded.")
+        return redirect("payments")
+    context={'party':party,
+             }
+
+    return render(request, "Payments/payment2.html",context)
+@login_required
+def payedit(request, pk):
+    payment = get_object_or_404(Payment, pk=pk, user=request.user)
+    party = Party.objects.filter(user=request.user)
+
+    if request.method == "POST":
+        payment.party_name = request.POST.get("party")
+        payment.party_phone = request.POST.get("phone")
+        payment.amount = request.POST.get("amount")
+        payment.date = request.POST.get("date")
+        payment.payment_mode = request.POST.get("mode")
+        payment.notes = request.POST.get("notes")
+        payment.save()
+
+        messages.success(request, "Payment successfully updated.")
+        return redirect("payments")
+
+    context = {
+        'payment': payment,
+        'party': party,
+        'action': 'Edit',
+        'title': 'Edit Payment'
+    }
+    return render(request, "Payments/payment2.html", context)
+@login_required
+def paydelete(request, pk):
+    payment = get_object_or_404(Payment, pk=pk, user=request.user)
+    
+    if request.method == "POST":
+        payment.delete()
+        messages.success(request, "Payment deleted successfully.")
+        return redirect("payments")  # Replace with your payment list view name
+
+    # Optional: If accessed via GET, confirm first (safer)
+    return render(request, "Payments/payment_confirm_delete.html", {"payment": payment})
+
+
+@login_required
+def cashbank(request):
+    transactions = TotalBalance.objects.filter(user=request.user).order_by('-date')
+    total_balance = TotalBalance.objects.aggregate(total=Sum('amount'))['total'] or 0
+    cash_in_hand = TotalBalance.objects.filter(user=request.user,payment_type='Cash').aggregate(total=Sum('amount'))['total'] or 0
+    cash_in_bank = TotalBalance.objects.filter(user=request.user,payment_type='Bank').aggregate(total=Sum('amount'))['total'] or 0
+    accounts = TotalBalance.objects.filter(
+        user=request.user
+    ).filter(
+        ~Q(account_name__isnull=True),     # exclude None
+        ~Q(account_name=''),               # exclude empty string
+        ~Q(account_name='0') ,              # optionally exclude '0'
+        ~Q(account_name=None) ,              # optionally exclude '0'
+    ).values_list('account_name', flat=True).distinct()
+
+    user=request.user
+    if request.method=='POST':
+        payment_type = request.POST.get('payment_type')
+        account_name = request.POST.get('account_name', '')
+        amount = request.POST.get('amount')
+        date = request.POST.get('date')
+        remarks = request.POST.get('remarks', 'Opening Balance')
+
+        obj=TotalBalance.objects.create(user=user,payment_type=payment_type,account_name=account_name,amount=amount,date=date,remarks=remarks)
+        return redirect('/cashbank')
+
+    context={'transactions':transactions,
+             'total_balance':total_balance,
+             'cash_in_hand':cash_in_hand,
+             'cash_in_bank':cash_in_bank,
+             'accounts':accounts
+             }
+
+
+
+    return render(request,'Bank/cashandbank.html',context)
+@login_required
+def cashedit(request,pk):
+    transactions = TotalBalance.objects.filter(user=request.user).order_by('-date')
+    total_balance = TotalBalance.objects.aggregate(total=Sum('amount'))['total'] or 0
+    cash_in_hand = TotalBalance.objects.filter(user=request.user,payment_type='Cash').aggregate(total=Sum('amount'))['total'] or 0
+    cash_in_bank = TotalBalance.objects.filter(user=request.user,payment_type='Bank').aggregate(total=Sum('amount'))['total'] or 0
+    transactionedit = get_object_or_404(TotalBalance, pk=pk, user=request.user)
+    trans = TotalBalance.objects.filter(user=request.user)
+    user=request.user
+    if request.method=='POST':
+        transactionedit.account_name=request.POST['account_name']
+        transactionedit.payment_type=request.POST['payment_type']
+        transactionedit.amount=request.POST['amount']
+        transactionedit.date=request.POST['date']
+        transactionedit.remarks=request.POST['remarks']
+        transactionedit.save()
+        return redirect('/cashbank')
+
+    context={'transactions':transactions,
+             'total_balance':total_balance,
+             'cash_in_hand':cash_in_hand,
+             'cash_in_bank':cash_in_bank
+             }
+    return render(request,'Bank/cashandbank.html',context)
+@login_required
+def cashdelete(request,pk):
+
+    transaction = get_object_or_404(TotalBalance, pk=pk, user=request.user)
+    
+    if request.method == "POST":
+        transaction.delete()
+        messages.success(request, "transaction deleted successfully.")
+        return redirect("/cashbank")  # Replace with your payment list view name
+
+    # Optional: If accessed via GET, confirm first (safer)
+    return render(request, "Bank/cashbank_confirm_delete.html",{'transaction':transaction})
