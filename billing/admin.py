@@ -102,7 +102,7 @@ class PaymentAdmin(admin.ModelAdmin):
 
 @admin.register(TotalBalance)
 class TotalBalanceAdmin(admin.ModelAdmin):
-    list_display = ('account_name', 'amount', 'payment_type', 'date', 'remarks', 'created_at')
+    list_display = ('user','account_name', 'amount', 'payment_type', 'date', 'remarks', 'created_at')
     list_filter = ('payment_type', 'date', 'created_at')
-    search_fields = ('account_name', 'remarks')
+    search_fields = ('user','account_name', 'remarks')
     ordering = ('-created_at',)

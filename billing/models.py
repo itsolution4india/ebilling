@@ -167,7 +167,7 @@ class TotalBalance(models.Model):
         ('Cash', 'Cash'),
         ('Bank', 'Bank'),
     ]
-
+    user=models.ForeignKey(User,on_delete=models.CASCADE)
     account_name = models.CharField(max_length=255, blank=True, null=True)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     date = models.DateField(default=timezone.now)
