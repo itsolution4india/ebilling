@@ -2,23 +2,124 @@
 <html>
 <head>
     <title>Login</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css?family=Raleway:400,700');
+
+        body {
+            background: linear-gradient(to right, #e0eafc, #cfdef3);
+            font-family: 'Raleway', sans-serif;
+            color: #444;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .login {
+            padding: 40px 50px;
+            width: 100%;
+            max-width: 350px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .login h2 {
+            margin: 0;
+            color: #0653f9;
+            font-size: 28px;
+            text-align: center;
+        }
+
+        .login p {
+            margin: 10px 0 30px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .login input {
+            width: 100%;
+            padding: 14px 12px;
+            margin: 10px 0;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        .login input[type="text"]:focus,
+        .login input[type="password"]:focus {
+            border-color: #0653f9;
+            outline: none;
+        }
+
+        .login input[type="submit"] {
+            background: #0653f9;
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .login input[type="submit"]:hover {
+            background: #417df1;
+        }
+
+        .links {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .links a {
+            font-size: 13px;
+            color: #0653f9;
+            text-decoration: none;
+        }
+
+        .links a:hover {
+            text-decoration: underline;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0 0;
+            color: red;
+            text-align: center;
+        }
+
+        ul li {
+            font-size: 13px;
+        }
+    </style>
 </head>
 <body>
-    <h2>Login</h2>
+
+<form class="login" method="post">
+    {% csrf_token %}
+    <h2>Welcome, User!</h2>
+    <p>Please log in to continue</p>
+
+    <input type="text" name="username" placeholder="Username" required>
+    <input type="password" name="password" placeholder="Password" required>
+
     {% if messages %}
-        <ul>
-            {% for message in messages %}
-                <li>{{ message }}</li>
-            {% endfor %}
-        </ul>
+    <ul>
+        {% for message in messages %}
+            <li>{{ message }}</li>
+        {% endfor %}
+    </ul>
     {% endif %}
-    <form method="post">
-        {% csrf_token %}
-        <label>Username:</label>
-        <input type="text" name="username" required><br>
-        <label>Password:</label>
-        <input type="password" name="password" required><br>
-        <button type="submit">Login</button>
-    </form>
+
+    <input type="submit" value="Log In">
+
+    <div class="links">
+        <a href="#">Forgot password?</a>
+    </div>
+</form>
+
 </body>
 </html>
