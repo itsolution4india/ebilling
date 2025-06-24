@@ -185,3 +185,25 @@ class TotalBalance(models.Model):
     class Meta:
         verbose_name = "Total Balance"
         verbose_name_plural = "Total Balances"
+
+
+class Sales_invoice_settings(models.Model):
+    user=models.ForeignKey(User,on_delete=models.CASCADE)
+    business_name=models.CharField(max_length=200)
+    address=models.TextField(null=True)
+    gstin=models.CharField(max_length=300)
+    mobile=models.CharField(max_length=20)
+    email=models.CharField(max_length=50)
+    terms1=models.TextField(null=True,blank=True)
+    terms2=models.TextField(null=True,blank=True)
+    terms3=models.TextField(null=True,blank=True)
+    acc_branch_name=models.CharField(max_length=50)
+    ifsc_code=models.CharField(max_length=40)
+    account_no=models.CharField(max_length=50)
+    qrcode=models.ImageField(upload_to="gallery")
+    upi_id=models.CharField(max_length=60)
+    upload_sign=models.ImageField(upload_to="gallery")
+
+    def __str__(self):
+        return f"{self.user} - {self.business_name}"
+    
