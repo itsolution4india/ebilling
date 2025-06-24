@@ -578,32 +578,149 @@ def product_list(request):
     products = Product.objects.filter(user=request.user)
     return render(request, 'products/product_list.html', {'products': products})
 
+def generate_unique_product_code(length=8, prefix='PRD'):
+    while True:
+        random_code = prefix + ''.join(random.choices(string.digits + string.ascii_uppercase, k=length))
+        if not Product.objects.filter(product_code=random_code).exists():
+            return random_code
 @login_required
 def product_create(request):
+    categories = Product.objects.filter(user=request.user) \
+    .exclude(category__isnull=True) \
+    .exclude(category__exact='') \
+    .values_list('category', flat=True).distinct()
+    tax_rates = Product.objects.filter(user=request.user) \
+    .exclude(tax_rate__isnull=True).values_list('tax_rate', flat=True).distinct()
+    unit_of_measure = Product.objects.filter(
+    user=request.user
+    ).exclude(
+        unit_of_measure__isnull=True
+    ).exclude(
+        unit_of_measure__exact=''
+    ).values_list(
+        'unit_of_measure', flat=True
+    ).distinct()
+
+    
+   
     if request.method == 'POST':
-        form = ProductForm(request.POST)
-        if form.is_valid():
-            product = form.save(commit=False)
-            product.user = request.user
-            product.product_code = generate_product_code()
-            product.hsn_code = generate_hsn_code()
-            product.save()
+       
+            # User
+            user = request.user
+
+            # Product Details
+            product_name = request.POST.get('itemName', '').strip()
+            
+            product_code =  generate_unique_product_code()
+            description = request.POST.get('description', '').strip()
+            hsn_code = request.POST.get('hsn_code', '').strip()
+
+            # Category (new or existing)
+            category = request.POST.get('category')
+            if category == '__new__':
+                category = request.POST.get('categoryInput', '').strip()
+
+            # Tax Rate (new or existing)
+            tax_rate = request.POST.get('tax_rate')
+            if tax_rate == '__new__':
+                tax_rate = request.POST.get('taxRateInput', '0').strip()
+            tax_rate = Decimal(tax_rate) if tax_rate else Decimal('0.00')
+
+            # Unit of Measure (new or existing)
+            unit_of_measure = request.POST.get('unit_of_measure')
+            if unit_of_measure == '__new__':
+                unit_of_measure = request.POST.get('unitInput', '').strip()
+
+            # Pricing
+            sale_price = Decimal(request.POST.get('sale_price', '0').strip() or '0')
+            purchase_price = Decimal(request.POST.get('purchase_price', '0').strip() or '0')
+
+            # Stock
+            opening_stock = int(request.POST.get('opening_stock', '0').strip() or '0')
+            stock_quantity = opening_stock  # initially same
+
+            # Barcode
+            barcode_id = request.POST.get('itemCode', '').strip()
+           
+
+            # Save Product
+            Product.objects.create(
+                product_name=product_name,
+                unit_price=sale_price,
+                product_code=product_code,
+                description=description,
+                hsn_code=hsn_code,
+                category=category,
+                tax_rate=tax_rate,
+                unit_of_measure=unit_of_measure,
+                sale_price=sale_price,
+                purchase_price=purchase_price,
+                opening_stock=opening_stock,
+                stock_quantity=stock_quantity,
+                barcode_id=barcode_id,
+                user=user,
+            )
+
+            messages.success(request, "✅ Product created successfully!")
             return redirect('product_list')
-    else:
-        form = ProductForm()
-    return render(request, 'products/product_form.html', {'form': form, 'action': 'Add'})
+      
+    return render(request, 'products/productform.html', {'action': 'Add','categories':categories,'tax_rates':tax_rates,'unit_of_measure':unit_of_measure})
 
 @login_required
 def product_update(request, pk):
     product = get_object_or_404(Product, pk=pk, user=request.user)
+    unit_of_measure = Product.objects.filter(
+    user=request.user
+    ).exclude(
+        unit_of_measure__isnull=True
+    ).exclude(
+        unit_of_measure__exact=''
+    ).values_list(
+        'unit_of_measure', flat=True
+    ).distinct()
+
     if request.method == 'POST':
-        form = ProductForm(request.POST, instance=product)
-        if form.is_valid():
-            form.save()
+        try:
+            product.product_name = request.POST.get('itemName', '').strip()
+            product.description = request.POST.get('description', '').strip()
+            product.hsn_code = request.POST.get('hsn_code', '').strip()
+
+            # Category
+            category = request.POST.get('category')
+            if category == '__new__':
+                category = request.POST.get('categoryInput', '').strip()
+            product.category = category
+
+            # Tax Rate
+            tax_rate = request.POST.get('tax_rate')
+            if tax_rate == '__new__':
+                tax_rate = request.POST.get('taxRateInput', '0').strip()
+            product.tax_rate = Decimal(tax_rate or '0.00')
+
+            # Unit of Measure
+            unit = request.POST.get('unit_of_measure')
+            if unit == '__new__':
+                unit = request.POST.get('unitInput', '').strip()
+            product.unit_of_measure = unit
+
+            product.sale_price = Decimal(request.POST.get('sale_price', '0') or '0')
+            product.unit_price =Decimal(request.POST.get('sale_price', '0') or '0')
+            product.purchase_price = Decimal(request.POST.get('purchase_price', '0') or '0')
+            product.opening_stock = int(request.POST.get('opening_stock', '0') or '0')
+            product.stock_quantity = product.opening_stock
+            product.barcode_id = request.POST.get('barcode_id', '').strip()
+
+            product.save()
+            messages.success(request, "✅ Product updated successfully!")
+          
             return redirect('product_list')
-    else:
-        form = ProductForm(instance=product)
-    return render(request, 'products/product_form.html', {'form': form, 'action': 'Update'})
+
+        except Exception as e:
+            messages.error(request, f"❌ Error updating product: {e}")
+            return redirect('product_list')
+    return render(request, 'products/product_form.html', { 'action': 'Update','product':product,'categories': Product.objects.values_list('category', flat=True).distinct(),
+        'tax_rates': Product.objects.values_list('tax_rate', flat=True).distinct(),
+        'unit_of_measure': unit_of_measure})
 
 @login_required
 def product_delete(request, pk):
