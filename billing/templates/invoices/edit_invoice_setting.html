@@ -384,11 +384,19 @@
 </head>
 <body>
  <div class="container">
-    <div class="header">
-        <h1>Sales Invoice Settings</h1>
-        <p>Configure your business details and invoice preferences</p>
-    </div>
+     <div class="flex items-start justify-between">
+  <!-- Cross Icon on the Right -->
+  <div></div> <!-- Spacer for layout (optional) -->
 
+  <div class="header">
+    <h1 class="text-2xl font-bold">Sales Invoice Settings</h1>
+    <p class="text-sm text-gray-500">Configure your business details and invoice preferences</p>
+  </div>
+  <a href="/invoices">  <span class=" text-red-600 font-bold cursor-pointer " style="font-size: xx-large;">&times;</span>
+    </a>
+
+
+</div>
     <div class="form-container">
         <form id="invoiceSettingsForm" action="" method="post" enctype="multipart/form-data">
             {% csrf_token %}

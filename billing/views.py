@@ -1189,3 +1189,7 @@ def cashdelete(request,pk):
 
     # Optional: If accessed via GET, confirm first (safer)
     return render(request, "Bank/cashbank_confirm_delete.html",{'transaction':transaction})
+
+def logout_view(request):
+    logout(request)
+    return redirect('/')

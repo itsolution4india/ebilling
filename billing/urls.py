@@ -75,6 +75,7 @@ urlpatterns = [
     path("cashbank/",views.cashbank, name="cashbank"),
     path("cashbank/<int:pk>/edit",views.cashedit, name="cashedit"),
     path("cashbank/<int:pk>/delete",views.cashdelete, name="cashdelete"),
+    path('logout/', views.logout_view, name='logout_view'),
     # AJAX endpoints
     path('ajax/products/', views.get_products_ajax, name='get_products_ajax'),
     path('ajax/party/<int:party_id>/', views.get_party_details_ajax, name='get_party_details_ajax'),
