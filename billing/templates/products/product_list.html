@@ -3,11 +3,60 @@
 <div class="w-full max-w-full px-3 mt-0 lg:flex-none">
   <div class="relative flex flex-col min-w-0 break-words bg-white border-0 border-solid shadow-xl dark:bg-slate-850 dark:shadow-dark-xl dark:bg-gray-950 border-black-125 rounded-2xl bg-clip-border">
     <div class="p-4 pb-0 mb-0 rounded-t-4">
-      <div class="flex justify-between items-center">
+      <div class="flex justify-between items-center mb-4">
         <h6 class="mb-2 dark:text-white">Products</h6>
-        <a href="{% url 'product_create' %}" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">Add Product</a>
+        <a href="{% url 'product_create' %}" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors">Add Product</a>
       </div>
+      
+      <!-- Search and Filter Form -->
+      <form method="GET" class="mb-4">
+        <div class="flex flex-wrap gap-4 items-end">
+          <!-- Search Input -->
+          <div class="flex-1 min-w-64">
+            <label for="search" class="block text-sm font-medium text-slate-700 dark:text-white mb-1">Search Products</label>
+            <input type="text" 
+                   id="search" 
+                   name="search" 
+                   placeholder="Search by name or product code..."
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder-gray-400">
+          </div>
+          
+          <!-- Category Filter -->
+          <div class="min-w-48 ml-2">
+            <label for="category" class="block text-sm font-medium text-slate-700 dark:text-white mb-1">Category</label>
+            <select id="category" 
+                    name="category" 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white">
+              <option value="">All Categories</option>
+              {% for category in categories %}
+                <option value="{{ category }}" {% if category == category_filter %}selected{% endif %}>{{ category }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          
+          <!-- Filter Buttons -->
+          <div class="flex gap-2">
+            <a href="{% url 'product_list' %}" 
+               class="ml-2 bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-600 transition-colors">
+              Clear
+            </a>
+          </div>
+        </div>
+      </form>
+      
+      <!-- Active Filters Display -->
+      {% if category_filter %}
+      <div class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+        <div class="flex flex-wrap gap-2 items-center">
+          <span class="text-sm font-medium text-blue-700 dark:text-blue-300">Active filters:</span>
+          <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+            Category: {{ category_filter }}
+          </span>
+        </div>
+      </div>
+      {% endif %}
     </div>
+    
     <div class="overflow-x-auto">
       <table class="items-center w-full mb-4 align-top border-collapse border-gray-200 dark:border-white/40">
         <thead>
@@ -23,7 +72,7 @@
         </thead>
         <tbody>
           {% for product in products %}
-          <tr>
+          <tr class="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
             <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ product.product_name }}</td>
             <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ product.product_code }}</td>
             <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ product.hsn_code }}</td>
@@ -31,13 +80,27 @@
             <td class="px-6 py-3 text-center text-sm text-slate-700 dark:text-white">{{ product.stock_quantity }}</td>
             <td class="px-6 py-3 text-center text-sm text-slate-700 dark:text-white">{{ product.category }}</td>
             <td class="px-6 py-3 text-center">
-              <a href="{% url 'product_update' product.pk %}" class="text-sm text-yellow-600 hover:underline">Edit</a> |
-              <a href="{% url 'product_delete' product.pk %}" class="text-sm text-red-600 hover:underline">Delete</a>
+              <div class="flex justify-center gap-2">
+                <a href="{% url 'product_update' product.pk %}" 
+                   class="text-sm text-yellow-600 hover:text-yellow-700 hover:underline transition-colors">Edit</a>
+                <span class="text-gray-400">|</span>
+                <a href="{% url 'product_delete' product.pk %}" 
+                   class="text-sm text-red-600 hover:text-red-700 hover:underline transition-colors"
+                   onclick="return confirm('Are you sure you want to delete this product?')">Delete</a>
+              </div>
             </td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="7" class="text-center text-slate-400 dark:text-white/60 py-3">No products found.</td>
+            <td colspan="7" class="text-center text-slate-400 dark:text-white/60 py-8">
+              <span id="no-results-message">
+                {% if category_filter %}
+                  No products found matching your criteria.
+                {% else %}
+                  No products found.
+                {% endif %}
+              </span>
+            </td>
           </tr>
           {% endfor %}
         </tbody>
@@ -45,4 +108,73 @@
     </div>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search');
+    const categorySelect = document.getElementById('category');
+    const tableRows = document.querySelectorAll('tbody tr:not(:last-child)'); // Exclude the "no results" row
+    const noResultsRow = document.querySelector('tbody tr:last-child');
+    const noResultsMessage = document.getElementById('no-results-message');
+    
+    // Dynamic search function
+    function filterProducts() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        const selectedCategory = categorySelect.value;
+        let visibleCount = 0;
+        
+        tableRows.forEach(row => {
+            const productName = row.cells[0].textContent.toLowerCase();
+            const productCode = row.cells[1].textContent.toLowerCase();
+            const productCategory = row.cells[5].textContent.trim();
+            
+            // Check search match
+            const searchMatch = searchTerm === '' || 
+                              productName.includes(searchTerm) || 
+                              productCode.includes(searchTerm);
+            
+            // Check category match
+            const categoryMatch = selectedCategory === '' || 
+                                productCategory === selectedCategory;
+            
+            // Show/hide row based on both conditions
+            if (searchMatch && categoryMatch) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Show/hide no results message
+        if (visibleCount === 0) {
+            noResultsRow.style.display = '';
+            if (searchTerm || selectedCategory) {
+                noResultsMessage.textContent = 'No products found matching your criteria.';
+            } else {
+                noResultsMessage.textContent = 'No products found.';
+            }
+        } else {
+            noResultsRow.style.display = 'none';
+        }
+    }
+    
+    // Add event listeners
+    searchInput.addEventListener('input', filterProducts);
+    categorySelect.addEventListener('change', function() {
+        filterProducts();
+        // Update URL for category filter (optional - keeps filter on page refresh)
+        const url = new URL(window.location);
+        if (this.value) {
+            url.searchParams.set('category', this.value);
+        } else {
+            url.searchParams.delete('category');
+        }
+        window.history.replaceState({}, '', url);
+    });
+    
+    // Initial filter on page load
+    filterProducts();
+});
+</script>
 {% endblock %}

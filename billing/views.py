@@ -577,7 +577,18 @@ def generate_hsn_code():
 @login_required
 def product_list(request):
     products = Product.objects.filter(user=request.user)
-    return render(request, 'products/product_list.html', {'products': products})
+    category_filter = request.GET.get('category', '')
+    if category_filter:
+        products = products.filter(category=category_filter)
+    categories = Product.objects.filter(user=request.user).values_list('category', flat=True).distinct()
+    
+    context = {
+        'products': products,
+        'category_filter': category_filter,
+        'categories': categories,
+    }
+    
+    return render(request, 'products/product_list.html', context)
 
 def generate_unique_product_code(length=8, prefix='PRD'):
     while True:
@@ -734,7 +745,15 @@ def product_delete(request, pk):
 @login_required
 def party_list(request):
     parties = Party.objects.filter(user=request.user)
-    return render(request, 'party/party_list.html', {'parties': parties})
+    types = Party.objects.filter(user=request.user).values_list('party_type', flat=True).distinct()
+    categories = Party.objects.filter(user=request.user).values_list('party_category', flat=True).distinct()
+    
+    context = {
+        'parties': parties,
+        'types': types,
+        'categories': categories,
+    }
+    return render(request, 'party/party_list.html', context)
 
 @login_required
 def party_create(request):
@@ -1025,7 +1044,7 @@ def invoice_delete(request, pk):
 def get_products_ajax(request):
     """AJAX endpoint to get products with their details"""
     products = Product.objects.filter(user=request.user, status=True).values(
-        'id', 'product_name', 'description', 'unit_price', 'stock_quantity'
+        'id', 'product_name', 'category', 'unit_price', 'stock_quantity'
     )
     return JsonResponse(list(products), safe=False)
 

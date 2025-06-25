@@ -3,11 +3,80 @@
 <div class="w-full max-w-full px-3 mt-0 lg:flex-none">
   <div class="relative flex flex-col min-w-0 break-words bg-white border-0 border-solid shadow-xl dark:bg-slate-850 dark:shadow-dark-xl dark:bg-gray-950 border-black-125 rounded-2xl bg-clip-border">
     <div class="p-4 pb-0 mb-0 rounded-t-4">
-      <div class="flex justify-between items-center">
+      <div class="flex justify-between items-center mb-4">
         <h6 class="mb-2 dark:text-white">Parties</h6>
         <a href="{% url 'party_create' %}" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">Add Party</a>
       </div>
+      
+      <!-- Search and Filter Section -->
+      <form method="GET" class="mb-4">
+        <div class="flex flex-wrap gap-4 items-end">
+          
+          <!-- Search Input -->
+          <div class="flex-1 min-w-64">
+            <label for="searchInput" class="block text-sm font-medium text-slate-700 dark:text-white mb-1">Search Parties</label>
+            <div class="relative">
+              <input 
+                type="text" 
+                id="searchInput" 
+                name="search"
+                placeholder="Search parties..."
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+              >
+              <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- Type Filter -->
+          <div class="min-w-48 ml-2">
+            <label for="typeFilter" class="block text-sm font-medium text-slate-700 dark:text-white mb-1">Type</label>
+            <select 
+              id="typeFilter" 
+              name="type"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+            >
+              <option value="">All Types</option>
+              {% for type in types %}
+                <option value="{{ type }}" {% if type == type_filter %}selected{% endif %}>{{ type }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Category Filter -->
+          <div class="min-w-48 ml-2">
+            <label for="categoryFilter" class="block text-sm font-medium text-slate-700 dark:text-white mb-1">Category</label>
+            <select 
+              id="categoryFilter" 
+              name="category"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
+            >
+              <option value="">All Categories</option>
+              {% for category in categories %}
+                <option value="{{ category }}" {% if category == category_filter %}selected{% endif %}>{{ category }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex gap-2 ml-2">
+            <a href="{% url 'product_list' %}" class="bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-700 transition-colors">
+              Clear
+            </a>
+          </div>
+        </div>
+      </form>
+
+      
+      <!-- Results Count -->
+      <div class="mb-2">
+        <span id="resultsCount" class="text-sm text-gray-600 dark:text-gray-400"></span>
+      </div>
     </div>
+    
     <div class="overflow-x-auto">
       <table class="items-center w-full mb-4 align-top border-collapse border-gray-200 dark:border-white/40">
         <thead>
@@ -20,9 +89,14 @@
             <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Actions</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody id="partyTableBody">
           {% for party in parties %}
-          <tr>
+          <tr class="party-row" 
+              data-name="{{ party.party_name|lower }}" 
+              data-email="{{ party.party_email|lower }}" 
+              data-contact="{{ party.party_contact }}"
+              data-type="{{ party.party_type }}"
+              data-category="{{ party.party_category }}">
             <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ party.party_name }}</td>
             <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ party.party_email }}</td>
             <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ party.party_contact }}</td>
@@ -34,13 +108,100 @@
             </td>
           </tr>
           {% empty %}
-          <tr>
+          <tr id="noParties">
             <td colspan="6" class="text-center text-slate-400 dark:text-white/60 py-3">No parties found.</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
+      
+      <!-- No Results Message -->
+      <div id="noResults" class="hidden text-center text-slate-400 dark:text-white/60 py-8">
+        <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.462-.943-6.01-2.474L5 9.5l1.5-1.5L8 10.5M16 12.5V12m0 0V8.5m0 3.5h3.5M16 12H12.5"/>
+        </svg>
+        <p class="text-lg font-medium">No parties match your search criteria</p>
+        <p class="text-sm">Try adjusting your search or filters</p>
+      </div>
     </div>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const typeFilter = document.getElementById('typeFilter');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const partyRows = document.querySelectorAll('.party-row');
+    const noResults = document.getElementById('noResults');
+    const resultsCount = document.getElementById('resultsCount');
+    const noParties = document.getElementById('noParties');
+    
+    function filterParties() {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        const selectedType = typeFilter.value;
+        const selectedCategory = categoryFilter.value;
+        
+        let visibleCount = 0;
+        
+        partyRows.forEach(row => {
+            const name = row.dataset.name;
+            const email = row.dataset.email;
+            const contact = row.dataset.contact;
+            const type = row.dataset.type;
+            const category = row.dataset.category;
+            
+            // Check if row matches search term (searches in name, email, contact)
+            const matchesSearch = !searchTerm || 
+                name.includes(searchTerm) || 
+                email.includes(searchTerm) || 
+                contact.includes(searchTerm);
+            
+            // Check if row matches type filter
+            const matchesType = !selectedType || type === selectedType;
+            
+            // Check if row matches category filter
+            const matchesCategory = !selectedCategory || category === selectedCategory;
+            
+            // Show/hide row based on all criteria
+            if (matchesSearch && matchesType && matchesCategory) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Update results count
+        const totalCount = partyRows.length;
+        if (totalCount === 0) {
+            resultsCount.textContent = '';
+        } else if (visibleCount === totalCount) {
+            resultsCount.textContent = `Showing all ${totalCount} parties`;
+        } else {
+            resultsCount.textContent = `Showing ${visibleCount} of ${totalCount} parties`;
+        }
+        
+        // Show/hide no results message
+        if (visibleCount === 0 && totalCount > 0) {
+            noResults.classList.remove('hidden');
+        } else {
+            noResults.classList.add('hidden');
+        }
+        
+        // Hide the original "No parties found" message if there are parties
+        if (noParties && totalCount > 0) {
+            noParties.style.display = 'none';
+        }
+    }
+    
+    // Add event listeners for real-time filtering
+    searchInput.addEventListener('input', filterParties);
+    typeFilter.addEventListener('change', filterParties);
+    categoryFilter.addEventListener('change', filterParties);
+    
+    // Initial count display
+    filterParties();
+});
+</script>
 {% endblock %}
