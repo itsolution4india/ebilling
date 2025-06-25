@@ -21,9 +21,8 @@
 }
         .dashboard-container {
             display: flex;
-            min-height: 100vh;
             gap: 20px;
-            padding: 20px;
+            padding: 10px;
         }
 
         .left-panel {
@@ -193,7 +192,7 @@
         }
 
         .transactions-header {
-            padding: 20px;
+            padding: 5px;
             border-bottom: 1px solid #e9ecef;
             display: flex;
             justify-content: space-between;
@@ -237,6 +236,7 @@
         }
 
         .transactions-content {
+            overflow: auto;
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -516,17 +516,6 @@
     <!-- Header -->
     <div class="transactions-header flex items-center justify-between mb-4">
         <h3 class="transactions-title text-xl font-semibold text-gray-800">Transactions</h3>
-        <div class="date-filter flex gap-2 items-center">
-            <select class="date-dropdown px-3 py-1 border border-gray-300 rounded-md text-sm">
-                <option>📅 Yesterday</option>
-                <option>📅 Today</option>
-                <option>📅 This Week</option>
-                <option>📅 This Month</option>
-            </select>
-            <button class="download-btn px-4 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 transition">
-                Download Statement ⬇️
-            </button>
-        </div>
     </div>
 
     <!-- Table or Empty State -->

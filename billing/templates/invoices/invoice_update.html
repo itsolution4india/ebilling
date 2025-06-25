@@ -4,8 +4,8 @@
     input, textarea, select {
         border: 1px solid gray;
         border-radius: 0px 5px 5px;
-        width: 80%;
-        padding: 3px;
+        width: 100%;
+        padding: 6px;
     }
     textarea {
         height: 30px;
@@ -69,6 +69,9 @@
     .product-item:hover {
         background: #f8f9fa;
     }
+    label {
+      font-weight: 700;
+    }
 </style>
 {% endblock %}
 
@@ -90,7 +93,7 @@
         
         <!-- Invoice Header Section -->
         <div class="flex flex-wrap -mx-2 mb-6">
-          <div class="w-full md:w-1/2 px-2 mb-4 mr-2" style="background-color: aliceblue; width: 49%;">
+          <div class="w-full md:w-1/2 px-2 mb-4 mr-2" style="width: 49%;">
             <div class="block text-sm font-medium text-slate-700 dark:text-white mb-1">
               <label for="party">Select Party:</label>
             </div>
@@ -102,21 +105,21 @@
             </select>
           </div>
           
-          <div class="w-full md:w-1/2 px-2 mb-4 mr-2" style="background-color: aliceblue; width: 49%;">
+          <div class="w-full md:w-1/2 px-2 mb-4 mr-2" style="width: 49%;">
             <div class="block text-sm font-medium text-slate-700 dark:text-white mb-1">
               <label for="invoice_no">Invoice Number:</label>
             </div>
             <input type="text" name="invoice_no" id="invoice_no" value="{{ next_invoice_no }}" readonly>
           </div>
           
-          <div class="w-full md:w-1/2 px-2 mb-4 mr-2" style="background-color: aliceblue; width: 49%;">
+          <div class="w-full md:w-1/2 px-2 mb-4 mr-2" style="width: 49%;">
             <div class="block text-sm font-medium text-slate-700 dark:text-white mb-1">
               <label for="invoice_date">Invoice Date:</label>
             </div>
             <input type="date" name="invoice_date" id="invoice_date" required>
           </div>
           
-          <div class="w-full md:w-1/2 px-2 mb-4 mr-2" style="background-color: aliceblue; width: 49%;">
+          <div class="w-full md:w-1/2 px-2 mb-4 mr-2" style="width: 49%;">
             <div class="block text-sm font-medium text-slate-700 dark:text-white mb-1">
               <label for="due_date">Due Date:</label>
             </div>
