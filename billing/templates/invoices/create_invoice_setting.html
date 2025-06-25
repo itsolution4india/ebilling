@@ -1,0 +1,677 @@
+{% extends 'base.html' %}
+{% block content %}
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          
+            height: 100vh;
+            padding: 10px;
+            overflow-x: hidden;
+           
+        }
+
+        .container {
+            max-width: 900px;
+            height: calc(100vh - 20px);
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+  
+        
+            /* padding: 20px 30px; */
+            padding-top: 10 px;
+            text-align: center;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 300;
+            margin-bottom: 5px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: 1rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .form-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 30px;
+            scrollbar-width: thin;
+            scrollbar-color: #4facfe #e1e5e9;
+        }
+
+        .form-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .form-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .form-container::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border-radius: 10px;
+        }
+
+        .form-container::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .form-section {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #4facfe;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: linear-gradient(45deg, #4facfe, #00f2fe);
+            border-radius: 50%;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+            font-size: 0.95rem;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .file-input-container {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            font-size: 1rem;
+        }
+
+        .file-input-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .file-preview {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(79, 172, 254, 0.1);
+            border-radius: 8px;
+            display: none;
+        }
+
+        .terms-section {
+            grid-column: 1 / -1;
+        }
+
+        .terms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+        }
+
+        .submit-section {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-top: 15px;
+            padding: 20px 0;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(79, 172, 254, 0.3);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(79, 172, 254, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .preview-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            display: none;
+        }
+
+        .preview-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .preview-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .preview-item {
+            padding: 10px;
+            background: rgba(79, 172, 254, 0.1);
+            border-radius: 8px;
+        }
+
+        .preview-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .preview-value {
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+            
+            .container {
+                height: calc(100vh - 10px);
+                border-radius: 15px;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .terms-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header {
+                padding: 15px 20px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .header p {
+                font-size: 0.9rem;
+            }
+            
+            .form-container {
+                padding: 15px 20px;
+            }
+            
+            .form-section {
+                padding: 15px;
+            }
+            
+            .submit-btn {
+                padding: 12px 30px;
+                font-size: 1rem;
+                margin: 5px;
+                display: inline-block;
+                min-width: 180px;
+            }
+            
+            .preview-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                border-radius: 10px;
+            }
+            
+            .header h1 {
+                font-size: 1.3rem;
+            }
+            
+            .form-container {
+                padding: 10px 15px;
+            }
+            
+            .form-section {
+                padding: 12px;
+            }
+            
+            .section-title {
+                font-size: 1.1rem;
+            }
+            
+            .submit-btn {
+                display: block;
+                width: 90%;
+                margin: 10px auto;
+                min-width: auto;
+            }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4facfe;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Sales Invoice Settings</h1>
+            <p>Configure your business details and invoice preferences</p>
+        </div>
+
+        <div class="form-container">
+            <form id="invoiceSettingsForm" action="" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="form-grid">
+                    <!-- Business Information -->
+                    <div class="form-section">
+                        <h3 class="section-title">Business Information</h3>
+                        
+                        <div class="form-group">
+                            <label for="businessName">Business Name *</label>
+                            <input type="text" id="businessName" name="business_name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="address">Address</label>
+                            <textarea id="address" name="address" placeholder="Enter your business address"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="gstin">GSTIN *</label>
+                            <input type="text" id="gstin" name="gstin" required placeholder="22AAAAA0000A1Z5">
+                        </div>
+                    </div>
+
+                    <!-- Contact Information -->
+                    <div class="form-section">
+                        <h3 class="section-title">Contact Information</h3>
+                        
+                        <div class="form-group">
+                            <label for="mobile">Mobile Number *</label>
+                            <input type="tel" id="mobile" name="mobile" required placeholder="+91 9876543210">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email Address *</label>
+                            <input type="email" id="email" name="email" required placeholder="business@example.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="upiId">UPI ID</label>
+                            <input type="text" id="upiId" name="upi_id" placeholder="business@paytm">
+                        </div>
+                    </div>
+
+                    <!-- Banking Information -->
+                    <div class="form-section">
+                        <h3 class="section-title">Banking Information</h3>
+                        
+                        <div class="form-group">
+                            <label for="accBranchName">Account Branch Name *</label>
+                            <input type="text" id="accBranchName" name="acc_branch_name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="ifscCode">IFSC Code *</label>
+                            <input type="text" id="ifscCode" name="ifsc_code" required placeholder="SBIN0000123">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="accountNo">Account Number *</label>
+                            <input type="text" id="accountNo" name="account_no" required>
+                        </div>
+                    </div>
+
+                    <!-- File Uploads -->
+                    <div class="form-section">
+                        <h3 class="section-title">Documents</h3>
+                        
+                        <div class="form-group">
+                            <label for="qrcode">QR Code</label>
+                            <div class="file-input-container">
+                                <input type="file" id="qrcode" name="qrcode" class="file-input" accept="image/*">
+                                <label for="qrcode" class="file-input-label">
+                                    📷 Choose QR Code Image
+                                </label>
+                            </div>
+                            <div id="qrcodePreview" class="file-preview"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="uploadSign">Digital Signature</label>
+                            <div class="file-input-container">
+                                <input type="file" id="uploadSign" name="upload_sign" class="file-input" accept="image/*">
+                                <label for="uploadSign" class="file-input-label">
+                                    ✏️ Choose Signature Image
+                                </label>
+                            </div>
+                            <div id="signPreview" class="file-preview"></div>
+                        </div>
+                    </div>
+
+                    <!-- Terms & Conditions -->
+                    <div class="form-section terms-section">
+                        <h3 class="section-title">Terms & Conditions</h3>
+                        
+                        <div class="terms-grid">
+                            <div class="form-group">
+                                <label for="terms1">Terms & Conditions 1</label>
+                                <textarea id="terms1" name="terms1" placeholder="Enter first set of terms..."></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="terms2">Terms & Conditions 2</label>
+                                <textarea id="terms2" name="terms2" placeholder="Enter second set of terms..."></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="terms3">Terms & Conditions 3</label>
+                                <textarea id="terms3" name="terms3" placeholder="Enter third set of terms..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Section -->
+                    <div class="submit-section">
+                        <button type="submit" class="submit-btn">💾 Save Invoice Settings</button>
+                        <button type="button" id="previewBtn" class="submit-btn" style="margin-left: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">👁️ Preview</button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Preview Section -->
+            <div id="previewSection" class="preview-section">
+                <h3 class="preview-title">Settings Preview</h3>
+                <div id="previewContent" class="preview-content">
+                    <!-- Preview content will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div id="notification" class="notification">
+        Settings saved successfully! 🎉
+    </div>
+
+    <script>
+        // Form elements
+        const form = document.getElementById('invoiceSettingsForm');
+        const previewBtn = document.getElementById('previewBtn');
+        const previewSection = document.getElementById('previewSection');
+        const previewContent = document.getElementById('previewContent');
+        const notification = document.getElementById('notification');
+
+        // File input handlers
+        const fileInputs = document.querySelectorAll('.file-input');
+        fileInputs.forEach(input => {
+            input.addEventListener('change', handleFileSelect);
+        });
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            const previewId = event.target.id + 'Preview';
+            const preview = document.getElementById(previewId);
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview" style="max-width: 100%; max-height: 150px; border-radius: 8px;">
+                        <p style="margin-top: 8px; font-size: 0.9rem; color: #666;">${file.name}</p>
+                    `;
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+
+        // Form submission
+      
+        // Preview functionality
+        previewBtn.addEventListener('click', function() {
+            const formData = new FormData(form);
+            let previewHTML = '';
+            
+            const fieldLabels = {
+                'business_name': 'Business Name',
+                'address': 'Address',
+                'gstin': 'GSTIN',
+                'mobile': 'Mobile Number',
+                'email': 'Email Address',
+                'upi_id': 'UPI ID',
+                'acc_branch_name': 'Account Branch Name',
+                'ifsc_code': 'IFSC Code',
+                'account_no': 'Account Number',
+                'terms1': 'Terms & Conditions 1',
+                'terms2': 'Terms & Conditions 2',
+                'terms3': 'Terms & Conditions 3'
+            };
+
+            for (let [key, value] of formData.entries()) {
+    if (key !== 'csrfmiddlewaretoken' && key !== 'qrcode' && key !== 'upload_sign' && value.trim()) {
+        previewHTML += `
+            <div class="preview-item">
+                <div class="preview-label">${fieldLabels[key] || key}</div>
+                <div class="preview-value">${value}</div>
+            </div>
+        `;
+    }
+}
+            // Add file information
+            const qrcodeFile = document.getElementById('qrcode').files[0];
+            const signFile = document.getElementById('uploadSign').files[0];
+            
+            if (qrcodeFile) {
+                previewHTML += `
+                    <div class="preview-item">
+                        <div class="preview-label">QR Code</div>
+                        <div class="preview-value">${qrcodeFile.name}</div>
+                    </div>
+                `;
+            }
+            
+            if (signFile) {
+                previewHTML += `
+                    <div class="preview-item">
+                        <div class="preview-label">Digital Signature</div>
+                        <div class="preview-value">${signFile.name}</div>
+                    </div>
+                `;
+            }
+
+            previewContent.innerHTML = previewHTML;
+            previewSection.style.display = 'block';
+            
+            // Smoothly scroll within the form container to preview
+            const formContainer = document.querySelector('.form-container');
+            const previewTop = previewSection.offsetTop - formContainer.offsetTop;
+            formContainer.scrollTo({ 
+                top: previewTop - 20, 
+                behavior: 'smooth' 
+            });
+        });
+
+        // Show notification
+        function showNotification(message) {
+            notification.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        // Input animations and validations
+        const inputs = document.querySelectorAll('input, textarea');
+        inputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.style.transform = 'scale(1.02)';
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentElement.style.transform = 'scale(1)';
+            });
+        });
+
+        // GSTIN validation
+        document.getElementById('gstin').addEventListener('input', function() {
+            const gstin = this.value.toUpperCase();
+            this.value = gstin;
+            
+            if (gstin.length === 15) {
+                const gstinPattern = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+                if (gstinPattern.test(gstin)) {
+                    this.style.borderColor = '#4facfe';
+                } else {
+                    this.style.borderColor = '#ff6b6b';
+                }
+            }
+        });
+
+        // Mobile number validation
+        document.getElementById('mobile').addEventListener('input', function() {
+            const mobile = this.value.replace(/\D/g, '');
+            if (mobile.length <= 10) {
+                if (mobile.length === 10) {
+                    this.style.borderColor = '#4facfe';
+                } else {
+                    this.style.borderColor = '#e1e5e9';
+                }
+            }
+        });
+    </script>
+{% endblock %}

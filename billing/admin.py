@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Party, Branch, Product, Invoice, InvoiceItem, Payment, TotalBalance
+from .models import Party, Branch, Product, Invoice, InvoiceItem, Payment, TotalBalance,Sales_invoice_settings
 
 @admin.register(Party)
 class PartyAdmin(admin.ModelAdmin):
@@ -106,3 +106,7 @@ class TotalBalanceAdmin(admin.ModelAdmin):
     list_filter = ('payment_type', 'date', 'created_at')
     search_fields = ('user','account_name', 'remarks')
     ordering = ('-created_at',)
+
+@admin.register(Sales_invoice_settings)
+class Sales_invoice_settingsAdmin(admin.ModelAdmin):
+    list_display=('user','business_name','mobile')
