@@ -5,11 +5,12 @@ from rest_framework.response import Response
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.db.models import Q
-from .models import Party, Product, Invoice, InvoiceItem, Payment, TotalBalance
+from .models import Party, Product, Invoice, InvoiceItem, Payment, TotalBalance,Sales_invoice_settings
 from .serializers import PartySerializer, ProductSerializer, InvoiceSerializer, InvoiceListSerializer, InvoiceItemSerializer, PaymentSerializer
 from django.views.decorators.csrf import csrf_exempt
 import json
 import logging
+from decimal import Decimal, ROUND_HALF_UP
 from rest_framework.permissions import AllowAny
 import random
 import string
@@ -775,7 +776,8 @@ def party_delete(request, pk):
 def invoice_list(request):
     """List all invoices for the current user"""
     invoices = Invoice.objects.filter(user=request.user).order_by('-created_at')
-    return render(request, 'invoices/invoice_list.html', {'invoices': invoices})
+    setitings_invoice=Sales_invoice_settings.objects.filter(user=request.user).exists()
+    return render(request, 'invoices/invoice_list.html', {'invoices': invoices,'setitings_invoice':setitings_invoice})
 
 @login_required
 def invoice_create(request):
@@ -853,20 +855,79 @@ def invoice_create(request):
 def invoice_detail(request, pk):
     """View invoice details"""
     invoice = get_object_or_404(Invoice, pk=pk, user=request.user)
-    invoice_amount = invoice.amount
-    sgst_amount = invoice_amount * Decimal('0.06')
-    cgst_amount = invoice_amount * Decimal('0.06')
-    total_amount = invoice_amount + sgst_amount + cgst_amount
+    invoice_setting = get_object_or_404(Sales_invoice_settings, user=request.user)
+
+    items = invoice.items.all()
+
+    # Prepare enriched items with tax values
+    enriched_items = []
+    subtotal = Decimal('0.00')
+    total_tax = Decimal('0.00')
+
+    for item in items:
+        tax_rate = getattr(item, 'tax_rate', Decimal('0.00'))
+        try:
+            product = Product.objects.get(id=item.product_id)
+            tax_rate = product.tax_rate
+            unit = product.unit_of_measure
+        except Product.DoesNotExist:
+            tax_rate = Decimal('0.00')
+            unit = ''
+
+        tax_amount = item.amount * (tax_rate / Decimal('100.00'))
+        subtotal += item.amount
+        total_tax += tax_amount
+
+        enriched_items.append({
+            'item': item,
+            'tax_amount': tax_amount,
+            'tax_rate': tax_rate,
+            'unit': unit,
+        })
+
+    total_amount = subtotal + total_tax
 
     context = {
         'invoice': invoice,
-        'invoice_amount': invoice_amount,
-        'sgst_amount': sgst_amount,
-        'cgst_amount': cgst_amount,
+        'invoice_setting': invoice_setting,
+        'items': enriched_items,
+        'subtotal': subtotal,
+        'total_tax': total_tax,
         'total_amount': total_amount,
     }
     return render(request, 'invoices/invoice_detail.html', context)
+@login_required
+def invoicesetting(request):
+    # Check if user already has a settings record
+    setitings_invoice=Sales_invoice_settings.objects.filter(user=request.user).exists()
+    if Sales_invoice_settings.objects.filter(user=request.user).exists():
 
+        messages.warning(request, "You have already submitted your invoice settings.")
+        return redirect('dashboard')  # Change to your dashboard or appropriate page
+
+    if request.method == 'POST':
+        instance = Sales_invoice_settings(
+            user=request.user,
+            business_name=request.POST.get('business_name'),
+            address=request.POST.get('address'),
+            gstin=request.POST.get('gstin'),
+            mobile=request.POST.get('mobile'),
+            email=request.POST.get('email'),
+            upi_id=request.POST.get('upi_id'),
+            terms1=request.POST.get('terms1'),
+            terms2=request.POST.get('terms2'),
+            terms3=request.POST.get('terms3'),
+            acc_branch_name=request.POST.get('acc_branch_name'),
+            ifsc_code=request.POST.get('ifsc_code'),
+            account_no=request.POST.get('account_no'),
+            qrcode=request.FILES['qrcode'],
+            upload_sign=request.FILES.get('upload_sign')
+        )
+        instance.save()
+        messages.success(request, "Invoice settings saved successfully.")
+        return redirect('/invoice_list')  # Change accordingly
+
+    return render(request, 'invoices/create_invoice_setting.html')
 @login_required
 def invoice_update(request, pk):
     """Update invoice"""
@@ -923,6 +984,31 @@ def invoice_update(request, pk):
     
     return render(request, 'invoices/invoice_update.html', context)
 
+@login_required
+def invoicesettingedit(request):
+    invoice_setting = get_object_or_404(Sales_invoice_settings,user=request.user)
+    if request.method == 'POST':
+        invoice_setting.business_name = request.POST.get('business_name')
+        invoice_setting.address = request.POST.get('address')
+        invoice_setting.gstin = request.POST.get('gstin')
+        invoice_setting.mobile = request.POST.get('mobile')
+        invoice_setting.email = request.POST.get('email')
+        invoice_setting.upi_id = request.POST.get('upi_id')
+        invoice_setting.terms1 = request.POST.get('terms1')
+        invoice_setting.terms2 = request.POST.get('terms2')
+        invoice_setting.terms3 = request.POST.get('terms3')
+        invoice_setting.acc_branch_name = request.POST.get('acc_branch_name')
+        invoice_setting.ifsc_code = request.POST.get('ifsc_code')
+        invoice_setting.account_no = request.POST.get('account_no')
+
+        if 'qrcode' in request.FILES:
+            invoice_setting.qrcode = request.FILES['qrcode']
+        if 'upload_sign' in request.FILES:
+            invoice_setting.upload_sign = request.FILES['upload_sign']
+
+        invoice_setting.save()
+        return redirect('/invoices')  # Redirect to same or another page
+    return render(request,'invoices/edit_invoice_setting.html',{'invoice_setting':invoice_setting})
 @login_required
 def invoice_delete(request, pk):
     """Delete invoice"""

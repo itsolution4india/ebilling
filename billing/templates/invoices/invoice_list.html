@@ -3,10 +3,23 @@
 <div class="w-full max-w-full px-3 mt-0 lg:flex-none">
   <div class="relative flex flex-col min-w-0 break-words bg-white border-0 border-solid shadow-xl dark:bg-slate-850 dark:shadow-dark-xl dark:bg-gray-950 border-black-125 rounded-2xl bg-clip-border">
     <div class="p-4 pb-0 mb-0 rounded-t-4">
-      <div class="flex justify-between items-center">
-        <h6 class="mb-2 dark:text-white">Invoice Management</h6>
-        <a href="{% url 'invoice_create' %}" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">Create New Invoice</a>
-      </div>
+   <div class="flex justify-between items-center flex-wrap">
+  <h6 class="text-lg font-semibold dark:text-white">Invoice Management</h6>
+  <div class="flex space-x-6">
+    <a href="{% url 'invoice_create' %}" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold mx-2">
+      Create Invoice 
+    </a>
+    {% if not setitings_invoice %}
+    <a href="{% url 'invoicesetting' %}" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">
+      Create Invoice Setting
+    </a>
+    {% else %}
+     <a href="{% url 'invoicesettingedit' %}" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">
+      Edit Invoice Setting
+    </a>
+    {% endif %}
+  </div>
+</div>
     </div>
 
     {% if messages %}
