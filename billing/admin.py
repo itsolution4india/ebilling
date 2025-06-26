@@ -8,12 +8,12 @@ class PartyAdmin(admin.ModelAdmin):
     search_fields = ['party_name', 'party_email', 'party_gst', 'party_pan']
     ordering = ['-created_at']
 
-@admin.register(Branch)
-class BranchAdmin(admin.ModelAdmin):
-    list_display = ['name', 'contact', 'status', 'created_at']
-    list_filter = ['status']
-    search_fields = ['name', 'contact']
-    ordering = ['-created_at']
+# @admin.register(Branch)
+# class BranchAdmin(admin.ModelAdmin):
+#     list_display = ['name', 'contact', 'status', 'created_at']
+#     list_filter = ['status']
+#     search_fields = ['name', 'contact']
+#     ordering = ['-created_at']
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
