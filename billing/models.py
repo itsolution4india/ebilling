@@ -200,7 +200,6 @@ class Sales_invoice_settings(models.Model):
     acc_bank_name=models.CharField(max_length=50)
     ifsc_code=models.CharField(max_length=40)
     account_no=models.CharField(max_length=50)
-    qrcode=models.ImageField(upload_to="gallery")
     upi_id=models.CharField(max_length=60)
     upload_sign=models.ImageField(upload_to="gallery")
 
