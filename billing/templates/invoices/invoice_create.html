@@ -67,6 +67,37 @@
         color: #333;
     }
     
+    /* Party Selection Styles */
+    .party-selection {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        background-color: #f9f9f9;
+    }
+    .party-options {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 15px;
+    }
+    .party-option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .party-option input[type="radio"] {
+        width: auto;
+    }
+    .custom-party-fields {
+        display: none;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-top: 15px;
+    }
+    .custom-party-fields.active {
+        display: grid;
+    }
+    
     /* Search and Filter Controls */
     .search-filter-container {
         display: flex;
@@ -254,16 +285,44 @@
         
         <!-- Invoice Header Section -->
         <div class="flex flex-wrap -mx-2 mb-6">
-          <div class="w-full md:w-1/2 px-2 mb-4 mr-2" style="width: 49%;">
-            <div class="block text-sm font-medium text-slate-700 dark:text-white mb-1">
-              <label for="party">Select Party:</label>
+          <!-- Party Selection Section -->
+          <div class="w-full px-2 mb-4">
+            <div class="party-selection">
+              <label class="block text-sm font-medium text-slate-700 dark:text-white mb-3">
+                Select or Enter Party Details:
+              </label>
+              
+              <div class="party-options">
+                <div class="party-option">
+                  <input type="radio" id="existing-party" name="party_type" value="existing" checked onchange="togglePartyFields()">
+                  <label for="existing-party">Select Existing Party</label>
+                </div>
+                <div class="party-option">
+                  <input type="radio" id="custom-party" name="party_type" value="custom" onchange="togglePartyFields()">
+                  <label for="custom-party">Enter New Party</label>
+                </div>
+              </div>
+              
+              <div id="existing-party-field">
+                <select name="party" id="party">
+                  <option value="">Select Party</option>
+                  {% for party in parties %}
+                    <option value="{{ party.id }}">{{ party.party_name }}{% if party.phone %} - {{ party.phone }}{% endif %}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              
+              <div id="custom-party-fields" class="custom-party-fields">
+                <div>
+                  <label for="party_name">Party Name:</label>
+                  <input type="text" name="party_name" id="party_name" placeholder="Enter party name">
+                </div>
+                <div>
+                  <label for="party_phone">Phone Number:</label>
+                  <input type="text" name="party_phone" id="party_phone" placeholder="Enter phone number">
+                </div>
+              </div>
             </div>
-            <select name="party" id="party" required>
-              <option value="">Select Party</option>
-              {% for party in parties %}
-                <option value="{{ party.id }}">{{ party.party_name }}</option>
-              {% endfor %}
-            </select>
           </div>
           
           <div class="w-full md:w-1/2 px-2 mb-4 mr-2" style="width: 49%;">
@@ -393,6 +452,34 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('product-search').addEventListener('input', filterProducts);
     document.getElementById('category-filter').addEventListener('change', filterProducts);
 });
+
+function togglePartyFields() {
+    const existingPartyRadio = document.getElementById('existing-party');
+    const customPartyRadio = document.getElementById('custom-party');
+    const existingPartyField = document.getElementById('existing-party-field');
+    const customPartyFields = document.getElementById('custom-party-fields');
+    
+    if (existingPartyRadio.checked) {
+        existingPartyField.style.display = 'block';
+        customPartyFields.classList.remove('active');
+        // Clear custom party fields
+        document.getElementById('party_name').value = '';
+        document.getElementById('party_phone').value = '';
+        // Make party selection required
+        document.getElementById('party').required = true;
+        document.getElementById('party_name').required = false;
+        document.getElementById('party_phone').required = false;
+    } else if (customPartyRadio.checked) {
+        existingPartyField.style.display = 'none';
+        customPartyFields.classList.add('active');
+        // Clear existing party selection
+        document.getElementById('party').value = '';
+        // Make custom party fields required (at least one)
+        document.getElementById('party').required = false;
+        document.getElementById('party_name').required = false;
+        document.getElementById('party_phone').required = false;
+    }
+}
 
 function loadProducts() {
     fetch('/ajax/products/')
@@ -616,6 +703,25 @@ function updateTotal() {
 
 // Form submission
 document.getElementById('invoice-form').addEventListener('submit', function(e) {
+    const existingPartyRadio = document.getElementById('existing-party');
+    const customPartyRadio = document.getElementById('custom-party');
+    const partySelect = document.getElementById('party');
+    const partyName = document.getElementById('party_name');
+    const partyPhone = document.getElementById('party_phone');
+    
+    // Validate party information
+    if (existingPartyRadio.checked && !partySelect.value) {
+        e.preventDefault();
+        alert('Please select a party from the dropdown.');
+        return;
+    }
+    
+    if (customPartyRadio.checked && !partyName.value.trim() && !partyPhone.value.trim()) {
+        e.preventDefault();
+        alert('Please provide either party name or phone number.');
+        return;
+    }
+    
     if (invoiceItems.length === 0) {
         e.preventDefault();
         alert('Please add at least one item to the invoice.');

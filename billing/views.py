@@ -171,26 +171,6 @@ def product_edit(request, product_id):
     except Product.DoesNotExist:
         return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
 
-@api_view(['PUT'])
-@permission_classes([AllowAny])
-def product_update(request, product_id):
-    """Update product details"""
-    try:
-        product = Product.objects.get(id=product_id)
-        data = request.data.copy()
-        
-        # Handle user field
-        if 'user_id' in data:
-            data['user'] = data.pop('user_id')
-            
-        serializer = ProductSerializer(product, data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    except Product.DoesNotExist:
-        return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
-
 @api_view(['DELETE'])
 @permission_classes([AllowAny])
 def product_delete(request, product_id):
@@ -811,8 +791,21 @@ def invoice_create(request):
                 due_date = request.POST.get('due_date')
                 items_data = request.POST.get('items_data')
                 
+                party_name = request.POST.get('party_name')
+                party_phone = request.POST.get('party_phone')
+                
+                party_phone = "0987654321" if not party_phone else party_phone
+                
                 # Validate party
-                party = get_object_or_404(Party, id=party_id, user=request.user)
+                if party_id:
+                    party = get_object_or_404(Party, id=party_id, user=request.user)
+                    selected_party_name = party.party_name
+                    selected_party_num = party_id
+                else:
+                    selected_party_name = selected_party_num = None
+                
+                selected_party_name = party_name if party_name else selected_party_name
+                selected_party_num = party_phone if party_phone else selected_party_num
                 
                 # Parse items data
                 items = json.loads(items_data) if items_data else []
@@ -827,8 +820,8 @@ def invoice_create(request):
                 # Create invoice
                 invoice = Invoice.objects.create(
                     user=request.user,
-                    name=party.party_name,
-                    number=party_id,
+                    name=selected_party_name,
+                    number=selected_party_num,
                     invoice_no=invoice_no,
                     invoice_date=invoice_date,
                     due_date=due_date,
@@ -838,6 +831,15 @@ def invoice_create(request):
                 
                 # Create invoice items
                 for item in items:
+                    product = get_object_or_404(Product, id=item['product_id'], user=request.user)
+    
+                    # Reduce stock
+                    if product.stock_quantity < item['quantity']:
+                        messages.error(request, f'Not enough stock for product: {product.product_name}')
+                        raise Exception(f'Insufficient stock for {product.product_name}')
+                    
+                    product.stock_quantity -= item['quantity']
+                    product.save()
                     InvoiceItem.objects.create(
                         invoice=invoice,
                         product_id=item['product_id'],
@@ -971,6 +973,15 @@ def invoice_update(request, pk):
                     # Create new items
                     total_amount = Decimal('0.00')
                     for item in items:
+                        product = get_object_or_404(Product, id=item['product_id'], user=request.user)
+    
+                        # Reduce stock
+                        if product.stock_quantity < item['quantity']:
+                            messages.error(request, f'Not enough stock for product: {product.product_name}')
+                            raise Exception(f'Insufficient stock for {product.product_name}')
+                        
+                        product.stock_quantity -= item['quantity']
+                        product.save()
                         InvoiceItem.objects.create(
                             invoice=invoice,
                             product_id=item['product_id'],
@@ -1034,8 +1045,17 @@ def invoice_delete(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk, user=request.user)
     
     if request.method == 'POST':
-        invoice.delete()
-        messages.success(request, 'Invoice deleted successfully!')
+        try:
+            with transaction.atomic():
+                for item in invoice.items.all():
+                    product = Product.objects.get(id=item.product_id, user=request.user)
+                    product.stock_quantity += item.quantity
+                    product.save()
+                invoice.delete()
+                messages.success(request, 'Invoice deleted and stock restored successfully!')
+        except Exception as e:
+            messages.error(request, f'Error deleting invoice: {e}')
+        
         return redirect('invoice_list')
     
     return render(request, 'invoices/invoice_delete.html', {'invoice': invoice})
