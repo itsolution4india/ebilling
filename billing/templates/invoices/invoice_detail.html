@@ -2,6 +2,7 @@
 {% block extra_css %}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -273,6 +274,21 @@
             color: #333;
             font-weight: 600;
         }
+
+        .qr-code-container {
+            text-align: center;
+        }
+
+        .qr-code-container canvas {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .qr-code-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
         
         @media print {
             .action-buttons { display: none !important; }
@@ -464,12 +480,9 @@
 
     <!-- QR & Signature -->
     <div style="flex: 1; text-align: right; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end;">
-        {% if invoice_setting.qrcode %}
-        <div style="margin-bottom: 20px;">
-            <img src="{{ invoice_setting.qrcode.url }}" alt="QR Code" style="width: 90px; height: 90px; object-fit: contain; border: 1px solid #ccc;">
-            <div style="font-size: 11px; color: gray; text-align: center;">Scan to Pay</div>
+        <div class="qr-code-container" id="qrcode">
+            <div class="qr-code-label">Scan to Pay</div>
         </div>
-        {% endif %}
 
         <div>
             <div>Authorized Signatory</div>
@@ -495,38 +508,97 @@
     </div>
 </div>
 
-
-
-    <script>
-        function printInvoice() {
-            window.print();
+<script>
+    // UPI QR Code Generation
+    function generateUPIQRCode() {
+        const upiId = "{{ invoice_setting.upi_id|default:'' }}";
+        const businessName = "{{ invoice_setting.business_name|default:'' }}";
+        const amount = "{{ total_amount|floatformat:2 }}";
+        const invoiceNo = "{{ invoice.invoice_no|default:'' }}";
+        
+        const qrContainer = document.getElementById('qrcode');
+        
+        if (!upiId) {
+            qrContainer.innerHTML = '<div style="color: #999; font-style: italic; text-align: center;">UPI ID not configured</div>';
+            return;
         }
 
-        function downloadPDF() {
-            const element = document.getElementById('invoice-content');
-            const opt = {
-                margin: 0.5,
-                filename: 'purchase-{{ invoice.invoice_no }}-{{ invoice.invoice_date|date:"Y-m-d" }}.pdf',
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { 
-                    scale: 2,
-                    useCORS: true,
-                    letterRendering: true
-                },
-                jsPDF: { 
-                    unit: 'in', 
-                    format: 'a4', 
-                    orientation: 'portrait' 
-                }
-            };
-
-            // Generate PDF
-            html2pdf().set(opt).from(element).save().then(() => {
-                console.log('PDF downloaded successfully');
-            }).catch(err => {
-                console.error('Error generating PDF:', err);
-                alert('Error generating PDF. Please try again.');
-            });
+        // Check if QR library is loaded
+        if (typeof qrcode === 'undefined') {
+            qrContainer.innerHTML = '<div style="color: #999; font-style: italic; text-align: center;">QR Code library loading...</div>';
+            setTimeout(generateUPIQRCode, 1000); // Retry after 1 second
+            return;
         }
-    </script>
+
+        try {
+            // UPI Payment URL format
+            const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(businessName)}&am=${amount}&cu=INR&tn=${encodeURIComponent('Invoice ' + invoiceNo)}`;
+            
+            // Create QR code
+            const qr = qrcode(0, 'M');
+            qr.addData(upiUrl);
+            qr.make();
+            
+            // Generate QR code HTML
+            const qrHtml = qr.createImgTag(4, 8);
+            
+            // Update container
+            qrContainer.innerHTML = `
+                <div class="qr-code-label">Scan to Pay</div>
+                ${qrHtml}
+                <div class="qr-code-label">₹${amount}</div>
+            `;
+            
+            // Style the generated image
+            const qrImg = qrContainer.querySelector('img');
+            if (qrImg) {
+                qrImg.style.border = '1px solid #ddd';
+                qrImg.style.borderRadius = '5px';
+                qrImg.style.maxWidth = '120px';
+                qrImg.style.height = 'auto';
+            }
+            
+        } catch (error) {
+            console.error('QR Code generation error:', error);
+            qrContainer.innerHTML = '<div style="color: #999; font-style: italic; text-align: center;">QR Code generation failed</div>';
+        }
+    }
+
+    // Generate QR code when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add a small delay to ensure library is loaded
+        setTimeout(generateUPIQRCode, 500);
+    });
+
+    function printInvoice() {
+        window.print();
+    }
+
+    function downloadPDF() {
+        const element = document.getElementById('invoice-content');
+        const opt = {
+            margin: 0.5,
+            filename: 'purchase-{{ invoice.invoice_no }}-{{ invoice.invoice_date|date:"Y-m-d" }}.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { 
+                scale: 2,
+                useCORS: true,
+                letterRendering: true
+            },
+            jsPDF: { 
+                unit: 'in', 
+                format: 'a4', 
+                orientation: 'portrait' 
+            }
+        };
+
+        // Generate PDF
+        html2pdf().set(opt).from(element).save().then(() => {
+            console.log('PDF downloaded successfully');
+        }).catch(err => {
+            console.error('Error generating PDF:', err);
+            alert('Error generating PDF. Please try again.');
+        });
+    }
+</script>
 {% endblock %}
