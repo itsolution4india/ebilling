@@ -62,7 +62,7 @@ class Party(models.Model):
 class Product(models.Model):
     # Note: The original SQL schema seems to have party fields in products table
     # This appears to be a mistake. I'll create a proper product model
-    product_name = models.CharField(max_length=255, unique=True)
+    product_name = models.CharField(max_length=255)
     product_code = models.CharField(max_length=50, unique=True)
     description = models.TextField(blank=True)
     unit_price = models.DecimalField(max_digits=12, decimal_places=2)
