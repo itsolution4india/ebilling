@@ -976,6 +976,8 @@ def invoice_create(request):
                 party_name = request.POST.get('party_name')
                 party_phone = request.POST.get('party_phone')
                 invoice_status = request.POST.get('is_full_paid')
+                payment_mode=request.POST.get('payment_mode')
+                bank=request.POST.get('bank_name')
 
                 if invoice_status == 'on':  # checkbox is checked
                     status = "paid"
@@ -1015,11 +1017,18 @@ def invoice_create(request):
                     invoice_date=invoice_date,
                     due_date=due_date,
                     status=status,
+                    payment_mode=payment_mode,
+                    bank=bank,
+
                     
                     amount=total_amount,
                 
                 )
-                
+                if bank:
+                    money = get_object_or_404(TotalBalance, user=request.user, payment_type='Bank', account_name=bank)
+                    money_acc = money.amount + Decimal(total_amount)
+                    money.amount = money_acc
+                    money.save()
                 # Create invoice items
                 for item in items:
                     product = get_object_or_404(Product, id=item['product_id'], user=request.user)
@@ -1048,6 +1057,8 @@ def invoice_create(request):
             messages.error(request, f'Error creating invoice: {str(e)}')
     
     # Get parties and products for the form
+    banks=TotalBalance.objects.filter(user=request.user,payment_type='Bank')
+    print(banks)
     parties = Party.objects.filter(user=request.user, status=True)
     products = Product.objects.filter(user=request.user, status=True)
     
@@ -1059,6 +1070,7 @@ def invoice_create(request):
         'parties': parties,
         'products': products,
         'next_invoice_no': next_invoice_no,
+        'banks':banks
    
     }
     
@@ -1250,13 +1262,7 @@ def invoicesettingedit(request):
 @login_required
 def invoice_delete(request, pk):
     """Delete invoice"""
-    today = timezone.now().date()
-    upcoming_expiry_date = today + timedelta(days=3)
 
-    expiring_soon_products = Product.objects.filter(
-        user=request.user,
-        expiry_date__range=(today, upcoming_expiry_date)
-    )
     invoice = get_object_or_404(Invoice, pk=pk, user=request.user)
     
     if request.method == 'POST':
@@ -1266,6 +1272,25 @@ def invoice_delete(request, pk):
                     product = Product.objects.get(id=item.product_id, user=request.user)
                     product.stock_quantity += item.quantity
                     product.save()
+                if invoice.payment_mode in ['UPI', 'Card', 'NetBanking', 'Bank Transfer', 'Cheque']:
+                    try:
+                        balance = get_object_or_404(
+                            TotalBalance,
+                            user=request.user,
+                            payment_type='Bank',
+                            account_name=invoice.bank if invoice.payment_mode in ['UPI', 'Card', 'NetBanking', 'Bank Transfer', 'Cheque'] else None
+                        )
+                        print(balance,"balance")
+
+                        balance.amount -= Decimal(str(invoice.amount))
+
+                        # Prevent negative balance (optional)
+                        if balance.amount < 0:
+                            balance.amount = Decimal('0.00')
+
+                        balance.save()
+                    except Exception as e:
+                         messages.error(request, f'Failed to update balance: {e}')
                 invoice.delete()
                 messages.success(request, 'Invoice deleted and stock restored successfully!')
         except Exception as e:

@@ -434,6 +434,20 @@
       <option value="Cheque">Cheque</option>
     </select>
 </div>
+<div class="summary-row mb-4" id="bankSelectRow" style="display: none;">
+  <label class="summary-label font-semibold mx-2" for="bank_name">Choose Bank</label>
+  <select
+      name="bank_name"
+      id="bank_name"
+      class="border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 w-48 bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+    >
+      <option value="">-- Select Bank --</option>
+      {% for i in banks %}
+      <option value="{{i.account_name}}">{{i.account_name}}</option>
+      {% endfor %}
+     
+    </select>
+</div>
         <!-- Action Buttons -->
         <div class="flex space-x-3 pt-4">
           <button type="submit" class="bg-blue-500 text-black px-4 py-2 rounded-lg text-sm font-semibold mr-2">Generate Invoice</button>
@@ -496,6 +510,21 @@
   
 </div>
 
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const paymentMode = document.getElementById('payment_mode');
+  const bankSelectRow = document.getElementById('bankSelectRow');
+
+  paymentMode.addEventListener('change', function () {
+    if (this.value === 'Cash') {
+      bankSelectRow.style.display = 'none';
+      document.getElementById('bank_name').value = '';
+    } else {
+      bankSelectRow.style.display = 'block';
+    }
+  });
+});
+</script>
 
 
 <script>
