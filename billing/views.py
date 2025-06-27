@@ -1307,35 +1307,63 @@ def payments(request):
     context={'payment':payment
         }
     return render(request,'Payments/payment.html',context)
-@login_required
-def payment2_partial(request):
-    party=Party.objects.filter(user=request.user)
 
-    if request.method == "POST":
-        party_name = request.POST.get("party")
-        phone = request.POST.get("phone")
-        amount = request.POST.get("amount")
-        payment_date = request.POST.get("date")
-        payment_mode = request.POST.get("mode")
+@login_required 
+def payment2_partial(request): 
+    party = Party.objects.filter(user=request.user)
+    banks = TotalBalance.objects.filter(user=request.user, payment_type='Bank')
+    
+    if request.method == "POST": 
+        party_name = request.POST.get("party") 
+        phone = request.POST.get("phone") 
+        amount = request.POST.get("amount") 
+        payment_date = request.POST.get("date") 
+        payment_mode = request.POST.get("mode") 
         notes = request.POST.get("notes")
+        bank_id = request.POST.get("bank")
+        
+        try:
+            with transaction.atomic():
+                # Get the selected bank if payment mode is not Cash
+                selected_bank = None
+                if payment_mode != 'Cash' and bank_id:
+                    selected_bank = get_object_or_404(TotalBalance, id=bank_id, user=request.user)
+                    
+                    # Check if bank has sufficient balance
+                    if selected_bank.amount < Decimal(amount):
+                        messages.error(request, f"Insufficient balance in {selected_bank.account_name}. Available: ₹{selected_bank.amount}")
+                        context = {'party': party, 'banks': banks}
+                        return render(request, "Payments/payment2.html", context)
+                    
+                    # Add amount from bank
+                    selected_bank.amount += Decimal(amount)
+                    selected_bank.save()
+                
+                # Create payment record
+                Payment.objects.create( 
+                    user=request.user, 
+                    party_name=party_name, 
+                    party_phone=phone, 
+                    amount=amount, 
+                    date=payment_date, 
+                    payment_mode=payment_mode, 
+                    selected_bank=selected_bank,
+                    notes=notes, 
+                )
+                
+                messages.success(request, "Payment successfully recorded.") 
+                return redirect("payments")
+                
+        except Exception as e:
+            messages.error(request, f"Error recording payment: {str(e)}")
+    
+    context = {
+        'party': party,
+        'banks': banks,
+    } 
+    
+    return render(request, "Payments/payment2.html", context)
 
-        # Save to DB (example model)
-        Payment.objects.create(
-            user=request.user,
-            party_name=party_name,
-            party_phone=phone,
-            amount=amount,
-            date=payment_date,
-            payment_mode=payment_mode,
-            notes=notes,
-        )
-
-        messages.success(request, "Payment successfully recorded.")
-        return redirect("payments")
-    context={'party':party,
-             }
-
-    return render(request, "Payments/payment2.html",context)
 @login_required
 def payedit(request, pk):
     payment = get_object_or_404(Payment, pk=pk, user=request.user)
@@ -1360,18 +1388,28 @@ def payedit(request, pk):
         'title': 'Edit Payment'
     }
     return render(request, "Payments/payment2.html", context)
-@login_required
+
 def paydelete(request, pk):
     payment = get_object_or_404(Payment, pk=pk, user=request.user)
     
     if request.method == "POST":
-        payment.delete()
-        messages.success(request, "Payment deleted successfully.")
-        return redirect("payments")  # Replace with your payment list view name
+        try:
+            with transaction.atomic():
+                # If payment was made from a bank account, add the amount back
+                if payment.selected_bank and payment.payment_mode != 'Cash':
+                    payment.selected_bank.amount -= payment.amount
+                    payment.selected_bank.save()
+                
+                payment.delete()
+                messages.success(request, "Payment deleted successfully and amount restored to bank account.")
+                return redirect("payments")
+                
+        except Exception as e:
+            messages.error(request, f"Error deleting payment: {str(e)}")
+            return redirect("payments")
 
     # Optional: If accessed via GET, confirm first (safer)
     return render(request, "Payments/payment_confirm_delete.html", {"payment": payment})
-
 
 @login_required
 def cashbank(request):

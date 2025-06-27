@@ -33,8 +33,6 @@
     border-radius: 4px;
   }
 
-
-
   .form-section {
     display: flex;
     flex-wrap: wrap;
@@ -103,105 +101,114 @@
     border-radius: 4px;
     cursor: pointer;
   }
-.save-btn {
-  padding: 10px 24px;
-  border: none;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 15px;
-  transition: background-color 0.3s ease, color 0.3s ease, cursor 0.3s;
-  outline: none;
-}
 
-/* Disabled state */
-.save-btn-disabled {
-  background-color: #f3e6ff; /* light violet */
-  color: #aaa;
-  cursor: not-allowed;
-  box-shadow: none;
-}
+  .save-btn {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 15px;
+    transition: background-color 0.3s ease, color 0.3s ease, cursor 0.3s;
+    outline: none;
+  }
 
-/* Optional: force hover state to look disabled */
-.save-btn-disabled:hover {
-  background-color: #f3e6ff;
-  color: #aaa;
-  cursor: not-allowed;
-}
+  /* Disabled state */
+  .save-btn-disabled {
+    background-color: #f3e6ff; /* light violet */
+    color: #aaa;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
 
-/* Enabled state */
+  /* Optional: force hover state to look disabled */
+  .save-btn-disabled:hover {
+    background-color: #f3e6ff;
+    color: #aaa;
+    cursor: not-allowed;
+  }
 
+  /* Enabled state */
+  .save-btn-enabled {
+    background-color: #db4bf4;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
 
-.save-btn-enabled {
-  background-color: #db4bf4;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-.btn-cancel {
-  display: inline-block;
-  padding: 10px 20px;
-  background-color: #e0e0e0;
-  color: #333;
-  font-weight: 600;
-  border: none;
-  border-radius: 5px;
-  text-align: center;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
+  .btn-cancel {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #e0e0e0;
+    color: #333;
+    font-weight: 600;
+    border: none;
+    border-radius: 5px;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
 
-.btn-cancel:hover {
-  background-color: #d6d6d6;
-}
-.alert-container {
-  margin: 15px 0;
-  padding: 0 10px;
-}
+  .btn-cancel:hover {
+    background-color: #d6d6d6;
+  }
 
-.alert {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  border-radius: 5px;
-  font-weight: 500;
-  color: #fff;
-  margin-bottom: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  animation: fadeIn 0.4s ease-in-out;
-}
+  .alert-container {
+    margin: 15px 0;
+    padding: 0 10px;
+  }
 
-.alert .alert-close {
-  background: none;
-  border: none;
-  font-size: 20px;
-  color: inherit;
-  cursor: pointer;
-  margin-left: 10px;
-}
+  .alert {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-radius: 5px;
+    font-weight: 500;
+    color: #fff;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    animation: fadeIn 0.4s ease-in-out;
+  }
 
-/* Message Types */
-.alert.success {
-  background-color: #4CAF50; /* green */
-}
+  .alert .alert-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: inherit;
+    cursor: pointer;
+    margin-left: 10px;
+  }
 
-.alert.error {
-  background-color: #f44336; /* red */
-}
+  /* Message Types */
+  .alert.success {
+    background-color: #4CAF50; /* green */
+  }
 
-.alert.info {
-  background-color: #2196F3; /* blue */
-}
+  .alert.error {
+    background-color: #f44336; /* red */
+  }
 
-.alert.warning {
-  background-color: #ff9800; /* orange */
-}
+  .alert.info {
+    background-color: #2196F3; /* blue */
+  }
 
-/* Optional animation */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+  .alert.warning {
+    background-color: #ff9800; /* orange */
+  }
 
+  /* Optional animation */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Bank field styling */
+  .bank-field {
+    display: none;
+  }
+
+  .bank-field.show {
+    display: block;
+  }
 </style>
 
 <form action="" method="post">
@@ -210,29 +217,26 @@
   <div class="header">
     <h2>Record Payment </h2>
     <div class="header-buttons">
-    
      <a href="{% url 'payments' %}" class="btn-cancel">Cancel</a>
- <button id="saveBtn" type="submit" disabled class="save-btn-disabled">Save</button>
+     <button id="saveBtn" type="submit" disabled class="save-btn save-btn-disabled">Save</button>
     </div>
   </div>
 
   <div class="form-section">
     <div class="form-card">
         <label for="party">Party Name</label>
- 
-       <select id="party" name="party" onchange="handlePartyChange()">
-    <option value="" disabled selected>Search party by name or number</option>
-    {% for i in party %}
-      <option value="{{ i.party_name }}" {% if payment.party_name == i.party_name %}selected{% endif %} data-phone="{{ i.party_contact }}">{{ i.party_name }}</option>
-    {% endfor %}
-  </select>
-   <label for="number">Party Phone Number</label>
-      <input type="tel" id="number" value="{{payment.party_phone}}" name="phone" />
-     
+        <select id="party" name="party" onchange="handlePartyChange()">
+          <option value="" disabled selected>Search party by name or number</option>
+          {% for i in party %}
+            <option value="{{ i.party_name }}" {% if payment.party_name == i.party_name %}selected{% endif %} data-phone="{{ i.party_contact }}">{{ i.party_name }}</option>
+          {% endfor %}
+        </select>
+        
+        <label for="number">Party Phone Number</label>
+        <input type="tel" id="number" value="{{payment.party_phone}}" name="phone" />
 
-      <label for="amount">Enter Payment Amount</label>
-<input type="number" id="amount" name="amount" value="{{ payment.amount|default_if_none:0 }}" {% if not payment.amount %}disabled{% endif %} />
- 
+        <label for="amount">Enter Payment Amount</label>
+        <input type="number" id="amount" name="amount" value="{{ payment.amount|default_if_none:0 }}" {% if not payment.amount %}disabled{% endif %} />
     </div>
 
     <div class="form-card">
@@ -240,24 +244,37 @@
       <input type="date" id="date" name="date" value="{{ payment.date|date:"Y-m-d" }}" />
 
       <label for="mode">Payment Mode</label>
-      <select name="mode" id="mode">
-    <option value="" disabled selected>Select payment mode</option>
-  <option value="Cash" {% if payment.payment_mode == "Cash" %}selected{% endif %}>Cash</option>
-  <option value="UPI" {% if payment.payment_mode == "UPI" %}selected{% endif %}>UPI</option>
-  <option value="Cheque" {% if payment.payment_mode == "Cheque" %}selected{% endif %}>Cheque</option>
-  <option value="Bank Transfer" {% if payment.payment_mode == "Bank Transfer" %}selected{% endif %}>Bank Transfer</option>
-  <option value="Other" {% if payment.payment_mode == "Other" %}selected{% endif %}>Other</option>
-</select>
-     
+      <select name="mode" id="mode" onchange="handlePaymentModeChange()">
+        <option value="" disabled selected>Select payment mode</option>
+        <option value="Cash" {% if payment.payment_mode == "Cash" %}selected{% endif %}>Cash</option>
+        <option value="UPI" {% if payment.payment_mode == "UPI" %}selected{% endif %}>UPI</option>
+        <option value="Cheque" {% if payment.payment_mode == "Cheque" %}selected{% endif %}>Cheque</option>
+        <option value="Bank Transfer" {% if payment.payment_mode == "Bank Transfer" %}selected{% endif %}>Bank Transfer</option>
+        <option value="Card" {% if payment.payment_mode == "Card" %}selected{% endif %}>Card</option>
+        <option value="NetBanking" {% if payment.payment_mode == "NetBanking" %}selected{% endif %}>NetBanking</option>
+        <option value="Other" {% if payment.payment_mode == "Other" %}selected{% endif %}>Other</option>
+      </select>
+
+      <!-- Bank Selection Field (Hidden by default) -->
+      <div id="bankField" class="bank-field">
+        <label for="bank">Select Bank Account</label>
+        <select name="bank" id="bank">
+          <option value="" disabled selected>Select bank account</option>
+          {% for bank in banks %}
+            <option value="{{ bank.id }}" {% if payment.selected_bank_id == bank.id %}selected{% endif %}>
+              {{ bank.account_name }}   ₹{{ bank.amount }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
 
       <label for="notes">Notes</label>
-      <textarea id="notes" rows="3" placeholder="Enter Notes"  name="notes">{{ payment.notes|default:'' }}</textarea>
+      <textarea id="notes" rows="3" placeholder="Enter Notes" name="notes">{{ payment.notes|default:'' }}</textarea>
     </div>
   </div>
-
-  
 </div>
 </form>
+
 <script>
 function handlePartyChange() {
   const partySelect = document.getElementById("party");
@@ -277,17 +294,25 @@ function handlePartyChange() {
   const phone = selectedOption.getAttribute("data-phone");
   phoneInput.value = phone || "";
 
-  // Recheck for form validity (if needed)
+  // Recheck for form validity
   checkFormCompletion();
 }
-</script>
-<script>
 
-function toggleSaveButton(enabled) {
-  document.getElementById("saveBtn").disabled = !enabled;
+function handlePaymentModeChange() {
+  const modeSelect = document.getElementById("mode");
+  const bankField = document.getElementById("bankField");
+  
+  // Show bank field for all modes except Cash
+  if (modeSelect.value && modeSelect.value !== "Cash") {
+    bankField.classList.add("show");
+  } else {
+    bankField.classList.remove("show");
+    document.getElementById("bank").value = ""; // Clear bank selection
+  }
+  
+  checkFormCompletion();
 }
-</script>
-<script>
+
 function checkFormCompletion() {
   const party = document.getElementById("party").value;
   const amount = document.getElementById("amount").value;
@@ -295,10 +320,15 @@ function checkFormCompletion() {
   const mode = document.getElementById("mode").value;
   const number = document.getElementById("number").value;
   const notes = document.getElementById("notes").value;
+  const bank = document.getElementById("bank").value;
 
   const saveBtn = document.getElementById("saveBtn");
 
-  const isValid = party && amount > 0 && date && mode && number && notes.trim() !== "";
+  // Check if bank is required (when mode is not Cash)
+  let bankRequired = mode && mode !== "Cash";
+  let bankValid = !bankRequired || bank;
+
+  const isValid = party && amount > 0 && date && mode && number !== "" && bankValid;
 
   if (isValid) {
     saveBtn.disabled = false;
@@ -311,25 +341,18 @@ function checkFormCompletion() {
   }
 }
 
-function toggleAmountField() {
-  const party = document.getElementById("party").value;
-  const amount = document.getElementById("amount");
-  amount.disabled = !party;
-  if (!party) amount.value = 0;
-  checkFormCompletion();
-}
-
 document.addEventListener("DOMContentLoaded", () => {
-  ["party", "amount", "date", "mode", "number", "notes"].forEach(id => {
+  ["party", "amount", "date", "mode", "number", "notes", "bank"].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
       el.addEventListener("input", checkFormCompletion);
       el.addEventListener("change", checkFormCompletion);
     }
   });
+  
+  // Initialize bank field visibility on page load
+  handlePaymentModeChange();
 });
 </script>
-
-
 
 {% endblock %}
