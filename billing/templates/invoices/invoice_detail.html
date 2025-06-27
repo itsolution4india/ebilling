@@ -431,37 +431,47 @@
 
             <!-- Summary -->
       <div class="summary-section">
+  <div class="summary-row">
+    <span class="summary-label">Subtotal</span>
+    <span class="summary-value">₹ {{ total_amount|floatformat:2 }}</span>
+  </div>
+
+  <div class="summary-row">
+    <span class="summary-label">Tax</span>
+    <span class="summary-value">₹ {{ total_tax|floatformat:2 }}</span>
+  </div>
+
+  <div class="summary-row">
+    <span class="summary-label">Extra Amount</span>
+    <span class="summary-value">₹ {{ extra_amount|floatformat:2 }}</span>
+  </div>
+
+  <div class="summary-row total-amount-row font-semibold">
+    <span class="summary-label">Total Amount</span>
+    <span class="summary-value">₹ {{ total_amount1|floatformat:2 }}</span>
+  </div>
+
+  {% if invoice.status == "paid" %}
     <div class="summary-row">
-        <span class="summary-label">Subtotal</span>
-        <span class="summary-value">₹ {{ subtotal|floatformat:2 }}</span>
+      <span class="summary-label">Received Amount</span>
+      <span class="summary-value">₹ {{ total_amount1|floatformat:2 }}</span>
     </div>
     <div class="summary-row">
-        <span class="summary-label">Tax</span>
-        <span class="summary-value">₹ {{ total_tax|floatformat:2 }}</span>
+      <span class="summary-label">Balance</span>
+      <span class="summary-value">₹ 0.00</span>
+    </div>
+  {% else %}
+    <div class="summary-row">
+      <span class="summary-label">Received Amount</span>
+      <span class="summary-value">₹ 0.00</span>
     </div>
     <div class="summary-row">
-        <span class="summary-label">Extra Amount</span>
-        <span class="summary-value">₹ {{ extra_amount|floatformat:2 }}</span>
+      <span class="summary-label">Balance</span>
+      <span class="summary-value">₹ {{ total_amount1|floatformat:2 }}</span>
     </div>
-    <div class="summary-row total-amount-row font-semibold">
-        <span class="summary-label">Total Amount</span>
-        <span class="summary-value">₹ {{ total_amount1|floatformat:2 }}</span>
-    </div>
-    {% if invoice.status == "paid" %}
-    <div class="summary-row">
-        <span class="summary-label">Received Amount</span>
-        <span class="summary-value">₹ {{ total_amount1|floatformat:2 }}</span>
-    </div>
-    <div class="summary-row">
-        <span class="summary-label">Balance</span>
-        <span class="summary-value">₹ 0</span>
-    </div>
-    {% else %}
-        <div class="summary-row">
-        <span class="summary-label">Received Amount</span>
-        <span class="summary-value">₹ {{ 0|floatformat:2 }}</span>
-    </div>
-{% endif %} 
+  {% endif %}
+</div>
+
 
 </div>
 

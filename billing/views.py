@@ -1099,11 +1099,10 @@ def invoice_detail(request, pk):
     enriched_items = []
     subtotal = Decimal('0.00')
     total_tax = Decimal('0.00')
-    
-    
 
     for item in items:
         tax_rate = getattr(item, 'tax_rate', Decimal('0.00'))
+
         try:
             product = Product.objects.get(id=item.product_id)
             tax_rate = product.tax_rate
@@ -1122,10 +1121,22 @@ def invoice_detail(request, pk):
             'tax_rate': tax_rate,
             'unit': unit,
         })
-    total_amount1=invoice.amount
-    total_amount = subtotal + total_tax
-    extra_amount=invoice.amount-total_amount
 
+    total_amount = subtotal + total_tax
+    
+
+  
+    total_amount1 = invoice.amount
+    if total_amount1>total_amount:
+         total_amount1 = invoice.amount
+    else:
+         total_amount1 = invoice.amount + total_tax
+
+
+    # compute extra
+    extra_amount = total_amount1 - total_amount
+    if extra_amount < 0:
+        extra_amount = Decimal('0.00')
     context = {
         'invoice': invoice,
         'invoice_setting': invoice_setting,
