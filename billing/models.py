@@ -94,6 +94,14 @@ class Invoice(models.Model):
         ('paid', 'Paid'),
         ('unpaid', 'Unpaid'),
     ]
+    PAYMENT_MODE_CHOICES = [
+        ('UPI', 'UPI'),
+        ('Cash', 'Cash'),
+        ('Card', 'Card'),
+        ('NetBanking', 'NetBanking'),
+        ('Bank Transfer', 'Bank Transfer'),
+        ('Cheque', 'Cheque'),
+    ]
     
     user = models.ForeignKey(
         User, 
@@ -109,6 +117,8 @@ class Invoice(models.Model):
     due_date = models.DateField()
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='unpaid')
+    payment_mode=models.CharField(max_length=20, choices=PAYMENT_MODE_CHOICES)
+    bank=models.CharField(max_length=200,null=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
