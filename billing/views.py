@@ -26,6 +26,13 @@ from django.http import JsonResponse
 from decimal import Decimal
 from django.db import transaction
 
+import csv
+from datetime import datetime, timedelta
+from django.utils import timezone
+from django.core.paginator import Paginator
+from django.http import HttpResponse
+from django.db.models.functions import TruncDate, TruncWeek, TruncMonth, TruncYear
+
 logger = logging.getLogger('django')
 
 @csrf_exempt
@@ -515,32 +522,106 @@ def login_page(request):
 @login_required
 def dashboard(request):
     user = request.user
-
-    # To Collect: Sum of all invoice amounts
+    
+    # Existing calculations
     to_collect = Invoice.objects.filter(user=user).aggregate(total=Sum('amount'))['total'] or 0
-
-    # To Pay: Sum of all payment amounts
     to_pay = Payment.objects.filter(user=user).aggregate(total=Sum('amount'))['total'] or 0
-
-    # Stock Value: quantity * unit_price
     stock_value = Product.objects.filter(user=user).aggregate(
         total=Sum(F('stock_quantity') * F('unit_price'))
     )['total'] or 0
-
-    # Total Balance: sum of TotalBalance
     total_balance = TotalBalance.objects.aggregate(total=Sum('amount'))['total'] or 0
 
-    invoices = Invoice.objects.filter(user=user)
-    payments = Payment.objects.filter(user=user)
+    invoices = Invoice.objects.filter(user=user).order_by('-invoice_date')[:10]  # Latest 10 invoices
+    payments = Payment.objects.filter(user=user).order_by('-date')[:10]  # Latest 10 payments
 
-    return render(request, 'dashboard.html', {
+    # Chart filtering logic
+    chart_filter = request.GET.get('chart_filter', 'daily')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    
+    # Default date range (last 6 months)
+    if not start_date:
+        start_date = (timezone.now() - timedelta(days=180)).date()
+    else:
+        start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+    
+    if not end_date:
+        end_date = timezone.now().date()
+    else:
+        end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+
+    # Filter invoices by date range and user
+    invoice_queryset = Invoice.objects.filter(
+        user=user,
+        invoice_date__range=[start_date, end_date]
+    )
+
+    # Group data based on filter type
+    if chart_filter == 'daily':
+        chart_data = invoice_queryset.extra(
+            select={'period': "DATE(invoice_date)"}
+        ).values('period').annotate(
+            total_amount=Sum('amount')
+        ).order_by('period')
+        
+    elif chart_filter == 'weekly':
+        chart_data = invoice_queryset.annotate(
+            period=TruncWeek('invoice_date')
+        ).values('period').annotate(
+            total_amount=Sum('amount')
+        ).order_by('period')
+        
+    elif chart_filter == 'monthly':
+        chart_data = invoice_queryset.annotate(
+            period=TruncMonth('invoice_date')
+        ).values('period').annotate(
+            total_amount=Sum('amount')
+        ).order_by('period')
+        
+    elif chart_filter == 'yearly':
+        chart_data = invoice_queryset.annotate(
+            period=TruncYear('invoice_date')
+        ).values('period').annotate(
+            total_amount=Sum('amount')
+        ).order_by('period')
+
+    # Prepare chart data for JavaScript
+    chart_labels = []
+    chart_values = []
+    
+    for item in chart_data:
+        if chart_filter == 'daily':
+            chart_labels.append(str(item['period']))
+        elif chart_filter == 'weekly':
+            chart_labels.append(item['period'].strftime('%Y-W%U'))
+        elif chart_filter == 'monthly':
+            chart_labels.append(item['period'].strftime('%Y-%m'))
+        elif chart_filter == 'yearly':
+            chart_labels.append(item['period'].strftime('%Y'))
+            
+        # Convert Decimal to float for JSON serialization
+        amount = float(item['total_amount']) if item['total_amount'] else 0
+        chart_values.append(amount)
+
+    # Calculate total sales for the period
+    total_sales = sum(chart_values)
+
+    context = {
         'to_collect': to_collect,
         'to_pay': to_pay,
         'stock_value': stock_value,
         'total_balance': total_balance,
         'invoices': invoices,
-        'payments': payments
-    })
+        'payments': payments,
+        'chart_labels': json.dumps(chart_labels),
+        'chart_values': json.dumps(chart_values),
+        'chart_filter': chart_filter,
+        'start_date': start_date.strftime('%Y-%m-%d'),
+        'end_date': end_date.strftime('%Y-%m-%d'),
+        'total_sales': total_sales,
+    }
+
+    return render(request, 'dashboard.html', context)
 
 @login_required
 def logout_view(request):
@@ -773,10 +854,100 @@ def party_delete(request, pk):
 
 @login_required
 def invoice_list(request):
-    """List all invoices for the current user"""
+    """List all invoices for the current user with filtering, search, and pagination"""
     invoices = Invoice.objects.filter(user=request.user).order_by('-created_at')
-    setitings_invoice=Sales_invoice_settings.objects.filter(user=request.user).exists()
-    return render(request, 'invoices/invoice_list.html', {'invoices': invoices,'setitings_invoice':setitings_invoice})
+    
+    # Get filter parameters
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    search_query = request.GET.get('search', '').strip()
+    
+    # Apply date filtering
+    if start_date:
+        try:
+            start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
+            invoices = invoices.filter(invoice_date__gte=start_date_obj)
+        except ValueError:
+            pass
+    
+    if end_date:
+        try:
+            end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+            invoices = invoices.filter(invoice_date__lte=end_date_obj)
+        except ValueError:
+            pass
+    
+    # Apply search filtering
+    if search_query:
+        invoices = invoices.filter(
+            Q(invoice_no__icontains=search_query) |
+            Q(name__icontains=search_query) |
+            Q(status__icontains=search_query)
+        )
+    
+    # Handle CSV download
+    if request.GET.get('download') == 'csv':
+        return download_invoices_csv(invoices, start_date, end_date)
+    
+    # Pagination
+    paginator = Paginator(invoices, 10)  # Show 10 invoices per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Check if invoice settings exist
+    setitings_invoice = Sales_invoice_settings.objects.filter(user=request.user).exists()
+    
+    context = {
+        'page_obj': page_obj,
+        'invoices': page_obj,  # For template compatibility
+        'setitings_invoice': setitings_invoice,
+        'start_date': start_date,
+        'end_date': end_date,
+        'search_query': search_query,
+        'total_invoices': invoices.count(),
+    }
+    
+    return render(request, 'invoices/invoice_list.html', context)
+
+def download_invoices_csv(invoices, start_date=None, end_date=None):
+    """Download invoices as CSV file"""
+    # Create filename based on date range
+    if start_date and end_date:
+        filename = f'invoices_{start_date}_to_{end_date}.csv'
+    elif start_date:
+        filename = f'invoices_from_{start_date}.csv'
+    elif end_date:
+        filename = f'invoices_until_{end_date}.csv'
+    else:
+        filename = f'all_invoices_{datetime.now().strftime("%Y%m%d")}.csv'
+    
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    writer = csv.writer(response)
+    
+    writer.writerow([
+        'Invoice No',
+        'Party Name',
+        'Invoice Date',
+        'Due Date',
+        'Amount',
+        'Status',
+        'Created At'
+    ])
+    
+    for invoice in invoices:
+        writer.writerow([
+            invoice.invoice_no,
+            invoice.name,
+            invoice.invoice_date.strftime('%Y-%m-%d') if invoice.invoice_date else '',
+            invoice.due_date.strftime('%Y-%m-%d') if invoice.due_date else '',
+            invoice.amount,
+            invoice.get_status_display(),
+            invoice.created_at.strftime('%Y-%m-%d %H:%M:%S') if invoice.created_at else ''
+        ])
+    
+    return response
 
 @login_required
 def invoice_create(request):
