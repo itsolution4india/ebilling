@@ -566,13 +566,13 @@
 
 
     </div>
-  <div id="bankMoneyModal" class="modal">
-
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title" id="modalTitle">Add New Entry</h2>
-                <button class="close" id="closeModal">&times;</button>
-            </div>
+<div id="bankMoneyModal" class="modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;">
+    <div class="modal-content" style="background: white; padding: 1.5rem; border-radius: 10px; width: 90%; max-width: 500px;">
+        <!-- Modal Header -->
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 class="modal-title" id="modalTitle">Add New Entry</h2>
+            <button class="close" id="closeModal" style="font-size: 1.5rem; background: none; border: none;">&times;</button>
+        </div>
             <div class="modal-body">
                 <form id="bankMoneyForm" action="{% url 'cashbank' %}" method="post">
                     {% csrf_token %}
@@ -768,102 +768,98 @@
 </script>
 
 <script>
-    const paymentType = document.getElementById('paymentType');
+document.addEventListener("DOMContentLoaded", function () {
+    const modal = document.getElementById('bankMoneyModal');
+    const openBtn = document.getElementById('addEntryBtn');
+    const closeBtn = document.getElementById('closeModal');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const form = document.getElementById('bankMoneyForm');
+    const modalTitle = document.getElementById('modalTitle');
+    const dateInput = document.getElementById('date');
+    const remarksInput = document.getElementById('remarks');
     const accountGroup = document.getElementById('accountGroup');
     const accountSelect = document.getElementById('accountSelect');
     const accountInput = document.getElementById('accountInput');
+    const paymentType = document.getElementById('paymentType');
 
-    // Toggle based on payment type
-    paymentType.addEventListener('change', function () {
-        if (this.value === 'Bank') {
-            accountGroup.classList.remove('hidden');
-            accountSelect.classList.remove('hidden');
-            accountInput.classList.add('hidden');
-            accountInput.value = '';
-        } else {
-            accountGroup.classList.add('hidden');
-            accountSelect.value = '';
-            accountInput.value = '';
-            accountInput.classList.add('hidden');
-        }
-    });
-
-    // Handle "➕ Add New Account"
-    accountSelect.addEventListener('change', function () {
-        if (this.value === '__new__') {
-            accountInput.classList.remove('hidden');
-            accountInput.required = true;
-        } else {
-            accountInput.classList.add('hidden');
-            accountInput.required = false;
-            accountInput.value = this.value;
-        }
-    });
-</script>
-
-<script>
-    // Elements
-    const modal = document.getElementById('bankMoneyModal');
-    const modalTitle = document.getElementById('modalTitle');
-    const addEntryBtn = document.getElementById('addEntryBtn');
-    const closeModal = document.getElementById('closeModal');
-    const cancelBtn = document.getElementById('cancelBtn');
-    const form = document.getElementById('bankMoneyForm');
-    const paymentTypeSelect = document.getElementById('paymentType');
-    const dateInput = document.getElementById('date');
-
-    // Set today's date by default
     const today = new Date().toISOString().split('T')[0];
     dateInput.value = today;
 
-    // Open Modal Function
-    function openModal(title) {
-        modal.classList.remove('hidden');
+    function openModal() {
         modal.style.display = 'flex';
-        modalTitle.textContent = title;
+        modalTitle.textContent = 'Add Entry';
         document.body.style.overflow = 'hidden';
     }
 
-    // Close Modal Function
-    function closeModalFunc() {
-        modal.classList.add('hidden');
+    function closeModal() {
         modal.style.display = 'none';
         document.body.style.overflow = 'auto';
         form.reset();
         dateInput.value = today;
-        document.getElementById('remarks').value = 'Opening Balance';
+        remarksInput.value = 'Opening Balance';
+        accountGroup.style.display = 'none';
+        accountInput.style.display = 'none';
+        accountInput.required = false;
     }
 
-    // Open modal on button click
-    addEntryBtn.addEventListener('click', function(e) {
+    // Open modal
+    openBtn.addEventListener('click', function(e) {
         e.preventDefault();
-        openModal('Add Entry');
+        openModal();
     });
 
-    // Close modal on close or cancel
-    closeModal.addEventListener('click', closeModalFunc);
-    cancelBtn.addEventListener('click', closeModalFunc);
+    // Close modal
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
 
-    // Close modal when clicking outside
+    // Close if clicked outside
     window.addEventListener('click', function(e) {
         if (e.target === modal) {
-            closeModalFunc();
+            closeModal();
         }
     });
 
-    // Close modal on Escape key
- 
-    // Format amount to 2 decimal places
-    document.getElementById('amount').addEventListener('blur', function() {
-        const value = parseFloat(this.value);
-        if (!isNaN(value)) {
-            this.value = value.toFixed(2);
+    // Escape key closes modal
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeModal();
         }
     });
 
-    // Form submit handler
+    // Format amount on blur
+    document.getElementById('amount').addEventListener('blur', function () {
+        const val = parseFloat(this.value);
+        if (!isNaN(val)) this.value = val.toFixed(2);
+    });
 
+    // Show/hide account based on payment type
+    paymentType.addEventListener('change', function () {
+        if (this.value === 'Bank') {
+            accountGroup.style.display = 'block';
+            accountSelect.style.display = 'block';
+            accountInput.style.display = 'none';
+            accountInput.value = '';
+        } else {
+            accountGroup.style.display = 'none';
+            accountSelect.value = '';
+            accountInput.value = '';
+            accountInput.style.display = 'none';
+        }
+    });
+
+    accountSelect.addEventListener('change', function () {
+        if (this.value === '__new__') {
+            accountInput.style.display = 'block';
+            accountInput.required = true;
+        } else {
+            accountInput.style.display = 'none';
+            accountInput.required = false;
+            accountInput.value = this.value;
+        }
+    });
+});
 </script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const editModal = document.getElementById('editBankMoneyModal');

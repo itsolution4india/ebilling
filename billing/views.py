@@ -637,13 +637,6 @@ def generate_hsn_code():
 
 @login_required
 def product_list(request):
-    today = timezone.now().date()
-    upcoming_expiry_date = today + timedelta(days=3)
-
-    expiring_soon_products = Product.objects.filter(
-        user=request.user,
-        expiry_date__range=(today, upcoming_expiry_date)
-    )
     products = Product.objects.filter(user=request.user)
     category_filter = request.GET.get('category', '')
     if category_filter:
@@ -654,8 +647,7 @@ def product_list(request):
         'products': products,
         'category_filter': category_filter,
         'categories': categories,
-        'expiring_soon_products': expiring_soon_products,
-        'expiring_soon_count': expiring_soon_products.count()
+       
     }
     
     return render(request, 'products/product_list.html', context)
@@ -823,13 +815,7 @@ def product_delete(request, pk):
 
 @login_required
 def party_list(request):
-    today = timezone.now().date()
-    upcoming_expiry_date = today + timedelta(days=3)
-
-    expiring_soon_products = Product.objects.filter(
-        user=request.user,
-        expiry_date__range=(today, upcoming_expiry_date)
-    )
+   
     parties = Party.objects.filter(user=request.user)
     types = Party.objects.filter(user=request.user).values_list('party_type', flat=True).distinct()
     categories = Party.objects.filter(user=request.user).values_list('party_category', flat=True).distinct()
@@ -837,9 +823,7 @@ def party_list(request):
     context = {
         'parties': parties,
         'types': types,
-        'categories': categories,
-        'expiring_soon_products': expiring_soon_products,
-        'expiring_soon_count': expiring_soon_products.count()
+        'categories': categories
     }
     return render(request, 'party/party_list.html', context)
 
@@ -1083,13 +1067,6 @@ def invoice_create(request):
 @login_required
 def invoice_detail(request, pk):
     """View invoice details"""
-    today = timezone.now().date()
-    upcoming_expiry_date = today + timedelta(days=3)
-
-    expiring_soon_products = Product.objects.filter(
-        user=request.user,
-        expiry_date__range=(today, upcoming_expiry_date)
-    )
     invoice = get_object_or_404(Invoice, pk=pk, user=request.user)
     invoice_setting = get_object_or_404(Sales_invoice_settings, user=request.user)
 
@@ -1145,9 +1122,8 @@ def invoice_detail(request, pk):
         'total_tax': total_tax,
         'total_amount': total_amount,
         'extra_amount':extra_amount,
-        'total_amount1':total_amount1,
-        'expiring_soon_products': expiring_soon_products,
-        'expiring_soon_count': expiring_soon_products.count()
+        'total_amount1':total_amount1
+   
     }
     return render(request, 'invoices/invoice_detail.html', context)
 @login_required
@@ -1326,17 +1302,10 @@ def get_party_details_ajax(request, party_id):
     
 @login_required
 def payments(request):
-    today = timezone.now().date()
-    upcoming_expiry_date = today + timedelta(days=3)
-
-    expiring_soon_products = Product.objects.filter(
-        user=request.user,
-        expiry_date__range=(today, upcoming_expiry_date)
-    )
+    
     payment=Payment.objects.filter(user=request.user).order_by('-created_at')
-    context={'payment':payment,
-             'expiring_soon_products': expiring_soon_products,
-        'expiring_soon_count': expiring_soon_products.count()}
+    context={'payment':payment
+        }
     return render(request,'Payments/payment.html',context)
 @login_required
 def payment2_partial(request):
@@ -1406,13 +1375,7 @@ def paydelete(request, pk):
 
 @login_required
 def cashbank(request):
-    today = timezone.now().date()
-    upcoming_expiry_date = today + timedelta(days=3)
-
-    expiring_soon_products = Product.objects.filter(
-        user=request.user,
-        expiry_date__range=(today, upcoming_expiry_date)
-    )
+ 
     transactions = TotalBalance.objects.filter(user=request.user).order_by('-date')
     total_balance = TotalBalance.objects.aggregate(total=Sum('amount'))['total'] or 0
     cash_in_hand = TotalBalance.objects.filter(user=request.user,payment_type='Cash').aggregate(total=Sum('amount'))['total'] or 0
@@ -1441,9 +1404,8 @@ def cashbank(request):
              'total_balance':total_balance,
              'cash_in_hand':cash_in_hand,
              'cash_in_bank':cash_in_bank,
-             'accounts':accounts,
-             'expiring_soon_products': expiring_soon_products,
-        'expiring_soon_count': expiring_soon_products.count()
+             'accounts':accounts
+            
              }
 
 
