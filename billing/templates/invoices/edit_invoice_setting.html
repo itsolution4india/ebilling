@@ -439,8 +439,8 @@
                 <div class="form-section">
                     <h3 class="section-title">Banking Information</h3>
                     <div class="form-group">
-                        <label for="accBranchName">Account Branch Name *</label>
-                        <input type="text" id="accBranchName" name="acc_branch_name" required value="{{ invoice_setting.acc_branch_name }}">
+                        <label for="accBranchName">Account Bank Name *</label>
+                        <input type="text" id="accBranchName" name="acc_branch_name" required value="{{ invoice_setting.acc_bank_name }}">
                     </div>
                     <div class="form-group">
                         <label for="ifscCode">IFSC Code *</label>
@@ -574,7 +574,7 @@
         let previewHTML = '';
 
         for (let [key, value] of formData.entries()) {
-            if (!['csrfmiddlewaretoken', 'qrcode', 'upload_sign'].includes(key) && value.trim()) {
+            if (!['csrfmiddlewaretoken', 'upload_sign'].includes(key) && value.trim()) {
                 previewHTML += `
                     <div class="preview-item">
                         <div class="preview-label">${fieldLabels[key] || key}</div>
@@ -587,15 +587,7 @@
         const qrcodePreviewEl = document.getElementById('qrcodePreview');
         const signPreviewEl = document.getElementById('uploadSignPreview');
 
-        if (qrcodePreviewEl && qrcodePreviewEl.querySelector('img')) {
-            previewHTML += `
-                <div class="preview-item">
-                    <div class="preview-label">QR Code</div>
-                    <div class="preview-value">${qrcodePreviewEl.querySelector('img').outerHTML}</div>
-                </div>
-            `;
-        }
-
+      
         if (signPreviewEl && signPreviewEl.querySelector('img')) {
             previewHTML += `
                 <div class="preview-item">

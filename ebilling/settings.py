@@ -224,6 +224,8 @@ JAZZMIN_SETTINGS = {
         "billing.Invoice": "fas fa-file-invoice-dollar", # Invoices
         "billing.InvoiceItem": "fas fa-list-ul",         # Invoice Items
         "billing.Payment": "fas fa-credit-card",  
+        "billing.TotalBalance": "fas fa-wallet",  # 🪙 For TotalBalance
+       "billing.Sales_invoice_settings": "fas fa-cogs"
     },
     "default_icon_parents": "fas fa-chevron-circle-right",
     "default_icon_children": "fas fa-circle",

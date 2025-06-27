@@ -7,6 +7,19 @@
         <h6 class="mb-2 dark:text-white">Products</h6>
         <a href="{% url 'product_create' %}" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors">Add Product</a>
       </div>
+      {% if messages %}
+  <div class="max-w-xl mx-auto mt-4">
+    {% for message in messages %}
+      <div class="p-4 rounded-xl  mb-3
+                  {% if message.tags == 'success' %}bg-green-500
+                  {% elif message.tags == 'error' %}bg-red-500
+                  {% elif message.tags == 'warning' %}bg-yellow-500
+                  {% else %}bg-blue-500{% endif %}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
       
       <!-- Search and Filter Form -->
       <form method="GET" class="mb-4">

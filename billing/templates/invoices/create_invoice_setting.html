@@ -438,7 +438,7 @@
                         <h3 class="section-title">Banking Information</h3>
                         
                         <div class="form-group">
-                            <label for="accBranchName">Account Branch Name *</label>
+                            <label for="accBranchName">Account Bank Name *</label>
                             <input type="text" id="accBranchName" name="acc_branch_name" required>
                         </div>
 
@@ -583,17 +583,10 @@
     }
 }
             // Add file information
-            const qrcodeFile = document.getElementById('qrcode').files[0];
+         
             const signFile = document.getElementById('uploadSign').files[0];
             
-            if (qrcodeFile) {
-                previewHTML += `
-                    <div class="preview-item">
-                        <div class="preview-label">QR Code</div>
-                        <div class="preview-value">${qrcodeFile.name}</div>
-                    </div>
-                `;
-            }
+        
             
             if (signFile) {
                 previewHTML += `

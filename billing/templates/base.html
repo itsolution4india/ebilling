@@ -195,7 +195,39 @@
     transform: translateY(0);
   }
 }
+/* Active navigation link styles */
+/* Active navigation styles */
+.nav-active {
+    background-color: rgba(59, 130, 246, 0.13) !important;
+    color: rgb(51, 65, 85) !important;
+    font-weight: 600 !important;
+}
 
+/* Dark mode active styles */
+.dark .nav-active {
+    color: white !important;
+    opacity: 1 !important;
+}
+
+/* Remove dark mode classes when active */
+.nav-active.dark\:text-white {
+    color: rgb(51, 65, 85) !important;
+}
+
+.dark .nav-active.dark\:text-white {
+    color: white !important;
+}
+
+/* Hover effects */
+a:not(.nav-active):hover {
+    background-color: rgba(59, 130, 246, 0.08);
+    transform: translateX(2px);
+}
+
+/* Smooth transitions */
+a[href^="/"] {
+    transition: all 0.3s ease;
+}
 </style>
 
   </head>
@@ -381,7 +413,43 @@
   </div>
 </div>
 
-
+<script>// Active navigation functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const links = document.querySelectorAll('ul li a[href^="/"]');
+    const currentPath = window.location.pathname;
+    
+    function clearAllActive() {
+        links.forEach(link => {
+            link.classList.remove('bg-blue-500/13', 'text-slate-700', 'font-semibold');
+        });
+    }
+    
+    function setActiveBasedOnURL() {
+        clearAllActive();
+        
+        links.forEach(link => {
+            const href = link.getAttribute('href');
+            
+            // Check for exact matches or partial matches
+            if (href === currentPath || 
+                (currentPath === '/' && href === '/dashboard') ||
+                (href !== '/dashboard' && href !== '/' && currentPath.startsWith(href))) {
+                link.classList.add('bg-blue-500/13', 'text-slate-700', 'font-semibold');
+            }
+        });
+    }
+    
+    // Set active state on page load based on current URL
+    setActiveBasedOnURL();
+    
+    // Optional: Add immediate visual feedback on click (will be overridden by page load)
+    links.forEach(link => {
+        link.addEventListener('click', function(e) {
+            clearAllActive();
+            this.classList.add('bg-blue-500/13', 'text-slate-700', 'font-semibold');
+        });
+    });
+});</script>
 
 
 <script>

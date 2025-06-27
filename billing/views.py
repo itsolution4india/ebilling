@@ -524,12 +524,12 @@ def dashboard(request):
     user = request.user
     
     # Existing calculations
-    to_collect = Invoice.objects.filter(user=user).aggregate(total=Sum('amount'))['total'] or 0
-    to_pay = Payment.objects.filter(user=user).aggregate(total=Sum('amount'))['total'] or 0
+    to_collect = Invoice.objects.filter(user=user,status='unpaid').aggregate(total=Sum('amount'))['total'] or 0
+    to_pay = Payment.objects.filter(user=user,).aggregate(total=Sum('amount'))['total'] or 0
     stock_value = Product.objects.filter(user=user).aggregate(
         total=Sum(F('stock_quantity') * F('unit_price'))
     )['total'] or 0
-    total_balance = TotalBalance.objects.aggregate(total=Sum('amount'))['total'] or 0
+    total_balance = TotalBalance.objects.filter(user=request.user).aggregate(total=Sum('amount'))['total'] or 0
 
     invoices = Invoice.objects.filter(user=user).order_by('-invoice_date')[:10]  # Latest 10 invoices
     payments = Payment.objects.filter(user=user).order_by('-date')[:10]  # Latest 10 payments
@@ -790,7 +790,7 @@ def product_update(request, pk):
             product.stock_quantity = product.opening_stock
             expirydate_raw = request.POST.get('date', '').strip()
             expiry_date = datetime.strptime(expirydate_raw, '%Y-%m-%d').date() if expirydate_raw else None
-            expiry_date=expiry_date
+            product.expiry_date=expiry_date
             product.barcode_id = request.POST.get('barcode_id', '').strip()
 
             product.save()
@@ -1166,42 +1166,72 @@ def invoicesetting(request):
         )
         instance.save()
         messages.success(request, "Invoice settings saved successfully.")
-        return redirect('/invoice_list')  # Change accordingly
+        return redirect('/invoices')  # Change accordingly
 
     return render(request, 'invoices/create_invoice_setting.html')
+
 @login_required
 def invoice_update(request, pk):
-    """Update invoice"""
     invoice = get_object_or_404(Invoice, pk=pk, user=request.user)
-    
+
+    # Store original items for restoring stock
+    original_items = list(invoice.items.all().values('product_id', 'quantity'))
+
+    # Store original payment details
+    original_payment_mode = invoice.payment_mode
+    original_bank = invoice.bank
+    original_amount = invoice.amount
+
     if request.method == 'POST':
         try:
             with transaction.atomic():
+                # Restore stock from original items
+                for item in original_items:
+                    product = get_object_or_404(Product, id=item['product_id'], user=request.user)
+                    product.stock_quantity += item['quantity']
+                    product.save()
+
                 # Update invoice fields
                 invoice.invoice_date = request.POST.get('invoice_date')
                 invoice.due_date = request.POST.get('due_date')
-                invoice.status = request.POST.get('status')
-                
-                # Update items if provided
+                invoice_status = request.POST.get('is_full_paid')
+                if invoice_status == 'on':  # checkbox is checked
+                    status = "paid"
+                else:
+                    status = "unpaid"
+                invoice.status = status
+                invoice.payment_mode = request.POST.get('payment_mode', '')
+
+                # Handle bank logic
+                new_bank = request.POST.get('bank_name') if invoice.payment_mode != 'Cash' else ''
+                invoice.bank = new_bank
+
+                # Handle manual total
+                manual_total = request.POST.get('manual_total_amount')
+                total_amount = Decimal('0.00')
+                if manual_total:
+                    try:
+                        total_amount = Decimal(str(manual_total))
+                    except:
+                        total_amount = Decimal('0.00')
+                invoice.amount = total_amount  # Will be overwritten if manual_total is blank
+
+                # Delete old items
+                invoice.items.all().delete()
+
+                # Process updated items
                 items_data = request.POST.get('items_data')
                 if items_data:
                     items = json.loads(items_data)
-                    
-                    # Delete existing items
-                    invoice.items.all().delete()
-                    
-                    # Create new items
                     total_amount = Decimal('0.00')
                     for item in items:
                         product = get_object_or_404(Product, id=item['product_id'], user=request.user)
-    
-                        # Reduce stock
                         if product.stock_quantity < item['quantity']:
-                            messages.error(request, f'Not enough stock for product: {product.product_name}')
-                            raise Exception(f'Insufficient stock for {product.product_name}')
-                        
+                            raise Exception(f"Not enough stock for {product.product_name}. Available: {product.stock_quantity}")
+
                         product.stock_quantity -= item['quantity']
                         product.save()
+
                         InvoiceItem.objects.create(
                             invoice=invoice,
                             product_id=item['product_id'],
@@ -1211,28 +1241,35 @@ def invoice_update(request, pk):
                             rate=Decimal(str(item['rate'])),
                             amount=Decimal(str(item['amount']))
                         )
+
                         total_amount += Decimal(str(item['amount']))
+
+                    if not manual_total:
+                        invoice.amount = total_amount
+
+                # Adjust bank balance:
                     
-                    invoice.amount = total_amount
-                
+
                 invoice.save()
-                messages.success(request, 'Invoice updated successfully!')
+                print(f"🧾 Invoice #{invoice.invoice_no} | Status: {invoice.status} → {invoice.status} | Mode: {original_payment_mode} → {invoice.payment_mode} | Bank: {original_bank} → {invoice.bank} | Amount: {original_amount} → {invoice.amount} | Manual Total: {manual_total} | Items Total: {total_amount}")
+                messages.success(request, f"Invoice #{invoice.invoice_no} updated successfully!")
                 return redirect('invoice_detail', pk=invoice.pk)
-                
+
         except Exception as e:
-            messages.error(request, f'Error updating invoice: {str(e)}')
+            messages.error(request, f"Error updating invoice: {str(e)}")
+
     
-    # Get data for the form
-    parties = Party.objects.filter(user=request.user, status=True)
-    products = Product.objects.filter(user=request.user, status=True)
-    
-    context = {
+    # Data for form
+    parties = Party.objects.filter(user=request.user, status=True).order_by('party_name')
+    products = Product.objects.filter(user=request.user, status=True).order_by('product_name')
+    banks = TotalBalance.objects.filter(user=request.user, payment_type='Bank').order_by('account_name')
+
+    return render(request, 'invoices/invoice_update.html', {
         'invoice': invoice,
         'parties': parties,
         'products': products,
-    }
-    
-    return render(request, 'invoices/invoice_update.html', context)
+        'banks': banks
+    })
 
 @login_required
 def invoicesettingedit(request):
@@ -1440,7 +1477,7 @@ def paydelete(request, pk):
 def cashbank(request):
  
     transactions = TotalBalance.objects.filter(user=request.user).order_by('-date')
-    total_balance = TotalBalance.objects.aggregate(total=Sum('amount'))['total'] or 0
+    total_balance = TotalBalance.objects.filter(user=request.user).aggregate(total=Sum('amount'))['total'] or 0
     cash_in_hand = TotalBalance.objects.filter(user=request.user,payment_type='Cash').aggregate(total=Sum('amount'))['total'] or 0
     cash_in_bank = TotalBalance.objects.filter(user=request.user,payment_type='Bank').aggregate(total=Sum('amount'))['total'] or 0
     accounts = TotalBalance.objects.filter(

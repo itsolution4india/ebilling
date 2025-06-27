@@ -470,8 +470,21 @@
     </style>
 </head>
 <body>
+    
     <!-- This would be your base.html content -->
     <div class="dashboard-container">
+              {% if messages %}
+  <div class="max-w-xl mx-auto mt-4">
+    {% for message in messages %}
+      <div class="p-4 rounded-xl  mb-3
+                  {% if message.tags == 'success' %}bg-green-500
+                  {% elif message.tags == 'error' %}bg-red-500
+                  {% elif message.tags == 'warning' %}bg-yellow-500
+                  {% else %}bg-blue-500{% endif %}">
+        {{ message }}
+      </div>
+    {% endfor %}
+    {% endif %}
         <!-- Left Panel -->
         <div class="left-panel">
             <div class="panel-header">
