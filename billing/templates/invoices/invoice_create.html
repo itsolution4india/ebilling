@@ -364,10 +364,76 @@
         </div>
 
         <!-- Total Section -->
-        <div class="text-right mb-6">
-          <div class="text-lg font-bold dark:text-white">Total Amount: ₹<span id="total-amount">0.00</span></div>
-        </div>
+ <div class="text-right mb-6">
+  <div class="flex justify-end items-center gap-2 mb-2">
+    <label class="text-lg font-bold ">Total Amount:</label>
+    <button
+      type="button"
+      id="edit-total-btn"
+      onclick="enableManualTotalEdit()"
+      class="bg-blue-600  px-3 py-1 rounded-lg text-sm hover:bg-blue-700 transition"
+    >
+      Edit
+    </button>
+  </div>
 
+  <!-- Static Total Display -->
+  <div id="total-display" class="text-lg font-semibold dark:text-white">
+    ₹<span id="total-amount">0.00</span>
+  </div>
+
+  <!-- Editable Total Input -->
+  <div id="total-input-wrapper" class="hidden mt-2">
+    <div class="inline-flex items-center space-x-2">
+      <span class="text-lg font-bold dark:text-white">₹</span>
+      <input
+        type="number"
+        step="0.01"
+        id="total_amount_input"
+        name="manual_total_amount"
+        class="border rounded-lg px-3 py-1 w-32 text-right font-semibold dark:bg-gray-800 dark:text-white"
+      />
+      <button
+        type="button"
+        onclick="saveManualTotalEdit()"
+        class="bg-blue-600 px-3 py-1 rounded-lg text-sm hover:bg-blue-700 transition"
+      >
+        Save
+      </button>
+    </div>
+  </div>
+
+  <!-- Hidden field for form -->
+  <input type="hidden" name="manual_total_amount" id="manual_total_amount_hidden">
+</div>
+<div class="summary-row mb-4">
+  <label class="inline-flex items-center gap-2">
+    <input
+      type="checkbox"
+      name="is_full_paid"
+      id="is_full_paid"
+      class="form-checkbox h-4 w-4 text-blue-600"
+   
+    />
+    <span class="summary-label font-medium">Mark as Full Paid</span>
+  </label>
+</div>
+
+<div class="summary-row mb-4">
+  <label class="summary-label font-semibold" for="payment_mode">Payment Mode</label>
+  <select
+    name="payment_mode"
+    id="payment_mode"
+    class="border px-3 py-1 rounded-lg w-40 dark:bg-gray-800 dark:text-white"
+  >
+    <option value="">-- Select --</option>
+    <option value="UPI">UPI</option>
+    <option value="Cash">Cash</option>
+    <option value="Bank Transfer">Bank Transfer</option>
+    <option value="Card">Card</option>
+    <option value="Cheque">Cheque</option>
+  </select>
+</div>
         <!-- Action Buttons -->
         <div class="flex space-x-3 pt-4">
           <button type="submit" class="bg-blue-500 text-black px-4 py-2 rounded-lg text-sm font-semibold mr-2">Generate Invoice</button>
@@ -426,7 +492,11 @@
       <button type="button" class="btn-done" onclick="confirmSelection()">Done</button>
     </div>
   </div>
+
+  
 </div>
+
+
 
 <script>
 let invoiceItems = [];
@@ -748,5 +818,42 @@ document.addEventListener('keydown', function(e) {
         }
     }
 });
+
+let manualTotalEdited = false;
+
+function enableManualTotalEdit() {
+  const currentTotal = document.getElementById('total-amount').textContent;
+  document.getElementById('total-display').classList.add('hidden');
+  document.getElementById('total-input-wrapper').classList.remove('hidden');
+  document.getElementById('total_amount_input').value = currentTotal;
+}
+
+function saveManualTotalEdit() {
+  const newAmount = parseFloat(document.getElementById('total_amount_input').value || 0).toFixed(2);
+  document.getElementById('total-amount').textContent = newAmount;
+  document.getElementById('total-display').classList.remove('hidden');
+  document.getElementById('total-input-wrapper').classList.add('hidden');
+  manualTotalEdited = true;
+}
+
+function updateTotal() {
+  const calculatedTotal = invoiceItems.reduce((sum, item) => sum + item.amount, 0);
+  if (!manualTotalEdited) {
+    document.getElementById('total-amount').textContent = calculatedTotal.toFixed(2);
+  }
+}
+
+document.getElementById('invoice-form').addEventListener('submit', function(e) {
+  const finalTotal = document.getElementById('total-amount').textContent;
+  const hiddenInput = document.getElementById('manual_total_amount_hidden');
+  if (hiddenInput) {
+    hiddenInput.value = finalTotal;
+  }
+});
+
+
 </script>
+
+
+
 {% endblock %}

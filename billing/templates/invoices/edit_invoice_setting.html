@@ -455,16 +455,7 @@
                 <!-- File Uploads -->
                 <div class="form-section">
                     <h3 class="section-title">Documents</h3>
-                    <div class="form-group">
-                        <label for="qrcode">QR Code</label>
-                        <div class="file-input-container">
-                            <input type="file" id="qrcode" name="qrcode" class="file-input" accept="image/*">
-                            <label for="qrcode" class="file-input-label">📷 Choose QR Code Image</label>
-                        </div>
-                        <div id="qrcodePreview" class="file-preview">
-                            {% if invoice_setting.qrcode %}<img src="{{ invoice_setting.qrcode.url }}" alt="QR Code" style="max-height: 120px;">{% endif %}
-                        </div>
-                    </div>
+                  
                     <div class="form-group">
                         <label for="uploadSign">Digital Signature</label>
                         <div class="file-input-container">

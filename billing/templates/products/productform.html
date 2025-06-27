@@ -447,14 +447,17 @@
                            
                            <br>
                             <div class="form-grid">
-                                <div class="form-group">
-                                    <label class="form-label">Sales Price</label>
+                                 <div class="form-group">
+                                    <label class="form-label">Mrp.</label>
                                     <div class="price-input-group">
                                         <span class="price-symbol">₹</span>
-                                        <input type="number" class="price-input ass" placeholder="ex: ₹200" name="sale_price">
-                                        
+                                        <input type="number" class="price-input" placeholder="ex: ₹200" name="purchase_price">
+                                       
                                     </div>
+                                
                                 </div>
+                              
+                                
                                 
                              <div class="form-group" id="taxRateGroup">
     <label class="form-label">Tax Rate (%)</label>
@@ -475,30 +478,24 @@
                             </div>
                             <br>
                             
-                            <div class="form-grid">
-                               <div class="form-group" id="unitMeasureGroup">
-    <label class="form-label">Unit of Measure</label>
-
-    <!-- Dropdown for existing units -->
-    <select class="form-select" id="unitSelect" name="unit_of_measure">
-        <option value="">Select Unit</option>
-        {% for unit in unit_of_measure %}
-            <option value="{{ unit }}">{{ unit }}</option>
-        {% endfor %}
-        <option value="__new__">➕ Add New Unit</option>
-    </select>
-
-    <!-- Input for new unit -->
-    <input type="text" id="unitInput" name="unit_of_measure"
-           class="form-control form-input mt-2 hidden" placeholder="Enter new unit (e.g. pcs, kg)">
-</div>
-                                <div class="form-group">
-                                    <label class="form-label">Opening Stock</label>
-                                    <div class="input-with-unit">
-                                        <input type="number" class="form-input ass" placeholder="ex: 150 PCS" style="flex: 1;" name="opening_stock">
-                                     
+                             <div class="form-grid">
+                                  <div class="form-group">
+                                    <label class="form-label">Sales Price</label>
+                                    <div class="price-input-group">
+                                        <span class="price-symbol">₹</span>
+                                        <input type="number" class="price-input ass" placeholder="ex: ₹200" name="sale_price">
+                                        
                                     </div>
                                 </div>
+                                <div class="form-group">
+                                    <label class="form-label">Discount</label>
+                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                        <input type="text" class="form-input" placeholder="ex: 10%" style="flex: 1;"  name="discount">
+                                
+                                    </div>
+                                </div>
+                            
+                          
                             </div>
                      
                     </div>
@@ -523,33 +520,39 @@
                                         </div>
                                     </div>
                                 </div>
-                                
                                 <div class="form-group">
-                                    <label class="form-label">HSN code</label>
-                                    <div style="display: flex; gap: 10px; align-items: center;">
-                                        <input type="text" class="form-input" placeholder="ex: 4010" style="flex: 1;"  name="hsn_code">
-                                
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="form-grid">
-                                 <div class="form-group">
-                                    <label class="form-label">Purchase Price</label>
-                                    <div class="price-input-group">
-                                        <span class="price-symbol">₹</span>
-                                        <input type="number" class="price-input" placeholder="ex: ₹200" name="purchase_price">
-                                       
-                                    </div>
-                                
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">As of Date</label>
+                                    <label class="form-label">Expiry Date</label>
                                     <input type="date" class="date-input" value="2025-06-21" name="date">
                                 </div>
-                            
-                          
+                                
                             </div>
+                               <div class="form-grid">
+                               <div class="form-group" id="unitMeasureGroup">
+    <label class="form-label">Unit of Measure</label>
+
+    <!-- Dropdown for existing units -->
+    <select class="form-select" id="unitSelect" name="unit_of_measure">
+        <option value="">Select Unit</option>
+        {% for unit in unit_of_measure %}
+            <option value="{{ unit }}">{{ unit }}</option>
+        {% endfor %}
+        <option value="__new__">➕ Add New Unit</option>
+    </select>
+
+    <!-- Input for new unit -->
+    <input type="text" id="unitInput" name="unit_of_measure"
+           class="form-control form-input mt-2 hidden" placeholder="Enter new unit (e.g. pcs, kg)">
+</div>
+                                <div class="form-group">
+                                    <label class="form-label">Opening Stock</label>
+                                    <div class="input-with-unit">
+                                        <input type="number" class="form-input ass" placeholder="ex: 150 PCS" style="flex: 1;" name="opening_stock">
+                                     
+                                    </div>
+                                </div>
+                            </div>
+                            
+                        
                             
                             <div class="form-group full-width">
                                 <label class="form-label">Description</label>
@@ -575,6 +578,136 @@
             
         </div>
     </div>
+<script>
+// Get input elements
+const salePrice = document.querySelector('input[name="sale_price"]');
+const mrp = document.querySelector('input[name="purchase_price"]');
+const discount = document.querySelector('input[name="discount"]');
+
+// Create refresh button
+const refreshButton = document.createElement('button');
+refreshButton.textContent = 'Refresh';
+refreshButton.type = 'button';
+refreshButton.style.cssText = 'margin-left: 10px; padding: 8px 16px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;';
+
+// Add refresh button after discount input
+discount.parentNode.appendChild(refreshButton);
+
+// Track which field was last calculated to avoid conflicts
+let lastCalculated = null;
+let isCalculating = false;
+
+// Add event listeners to all inputs (using 'blur' event - triggers when user clicks outside)
+salePrice.addEventListener('blur', calculateMissingValue);
+mrp.addEventListener('blur', calculateMissingValue);
+discount.addEventListener('blur', calculateMissingValue);
+
+// Add refresh button functionality
+refreshButton.addEventListener('click', function() {
+    salePrice.value = '';
+    mrp.value = '';
+    discount.value = '';
+    salePrice.classList.remove('calculated');
+    mrp.classList.remove('calculated');
+    discount.classList.remove('calculated');
+    lastCalculated = null;
+});
+
+function calculateMissingValue() {
+    if (isCalculating) return; // Prevent infinite loops
+    
+    const salePriceValue = parseFloat(salePrice.value) || 0;
+    const mrpValue = parseFloat(mrp.value) || 0;
+    const discountValue = parseFloat(discount.value.replace('%', '')) || 0;
+    
+    isCalculating = true;
+    
+    // Count how many fields are filled
+    const filledFields = [
+        salePriceValue > 0 ? 'sale' : null,
+        mrpValue > 0 ? 'mrp' : null,
+        discountValue > 0 ? 'discount' : null
+    ].filter(Boolean);
+    
+    // Only calculate when exactly 2 fields are filled
+    if (filledFields.length === 2) {
+        
+        // If sale price and MRP are filled, calculate discount
+        if (salePriceValue > 0 && mrpValue > 0 && (!discount.value || lastCalculated === 'discount')) {
+            const calculatedDiscount = ((mrpValue - salePriceValue) / mrpValue) * 100;
+            discount.value = Math.round(calculatedDiscount * 100) / 100 + '%';
+            discount.classList.add('calculated');
+            lastCalculated = 'discount';
+        }
+        
+        // If MRP and discount are filled, calculate sale price
+        else if (mrpValue > 0 && discountValue > 0 && (!salePrice.value || lastCalculated === 'sale')) {
+            const calculatedSalePrice = mrpValue - (mrpValue * discountValue / 100);
+            salePrice.value = Math.round(calculatedSalePrice * 100) / 100;
+            salePrice.classList.add('calculated');
+            lastCalculated = 'sale';
+        }
+        
+        // If sale price and discount are filled, calculate MRP
+        else if (salePriceValue > 0 && discountValue > 0 && (!mrp.value || lastCalculated === 'mrp')) {
+            const calculatedMrp = salePriceValue / (1 - discountValue / 100);
+            mrp.value = Math.round(calculatedMrp * 100) / 100;
+            mrp.classList.add('calculated');
+            lastCalculated = 'mrp';
+        }
+    }
+    
+    isCalculating = false;
+}
+
+// Remove calculated class and reset tracking when user focuses on a field
+salePrice.addEventListener('focus', function() {
+    if (this.classList.contains('calculated')) {
+        this.classList.remove('calculated');
+        if (lastCalculated === 'sale') lastCalculated = null;
+    }
+});
+
+mrp.addEventListener('focus', function() {
+    if (this.classList.contains('calculated')) {
+        this.classList.remove('calculated');
+        if (lastCalculated === 'mrp') lastCalculated = null;
+    }
+});
+
+discount.addEventListener('focus', function() {
+    if (this.classList.contains('calculated')) {
+        this.classList.remove('calculated');
+        if (lastCalculated === 'discount') lastCalculated = null;
+    }
+});
+
+// Clear calculated fields when user starts typing in them
+salePrice.addEventListener('input', function() {
+    if (this.classList.contains('calculated')) {
+        this.classList.remove('calculated');
+        if (lastCalculated === 'sale') lastCalculated = null;
+    }
+});
+
+mrp.addEventListener('input', function() {
+    if (this.classList.contains('calculated')) {
+        this.classList.remove('calculated');
+        if (lastCalculated === 'mrp') lastCalculated = null;
+    }
+});
+
+discount.addEventListener('input', function() {
+    if (this.classList.contains('calculated')) {
+        this.classList.remove('calculated');
+        if (lastCalculated === 'discount') lastCalculated = null;
+    }
+});
+</script>
+
+
+
+
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     const form = document.getElementById("itemForm");

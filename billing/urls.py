@@ -20,7 +20,7 @@ urlpatterns = [
     path('api/auth/products/delete/<int:product_id>/', views.product_delete, name='product-delete'),
     
     # Invoice URLs
-    path('api/auth/invoices/', views.invoice_list, name='invoice-list'),
+    path('api/auth/invoices/', views.api_invoice_list, name='invoice-list'),
     path('api/auth/invoices/store/', views.invoice_store, name='invoice-store'),
     path('api/auth/invoices/<int:invoice_id>/', views.invoice_detail, name='invoice-detail'),
     path('api/auth/invoices/edit/<int:invoice_id>/', views.invoice_edit, name='invoice-edit'),
@@ -61,7 +61,6 @@ urlpatterns = [
     
     # Invoice URLs
     path('invoices/', views.invoice_list, name='invoice_list'),
-    path('invoices/', views.invoice_list, name='invoice_list'),
     path('invoice-setting/', views.invoicesetting, name='invoicesetting'),
     path('invoice-setting-edit/', views.invoicesettingedit, name='invoicesettingedit'),
     path('invoices/add/', views.invoice_create, name='invoice_create'),
@@ -76,6 +75,7 @@ urlpatterns = [
     path("cashbank/<int:pk>/edit",views.cashedit, name="cashedit"),
     path("cashbank/<int:pk>/delete",views.cashdelete, name="cashdelete"),
     path('logout/', views.logout_view, name='logout_view'),
+    path("ajax/set-invoice-paid/", views.set_invoice_paid, name="set_invoice_paid"),
     # AJAX endpoints
     path('ajax/products/', views.get_products_ajax, name='get_products_ajax'),
     path('ajax/party/<int:party_id>/', views.get_party_details_ajax, name='get_party_details_ajax'),

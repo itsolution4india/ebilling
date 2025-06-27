@@ -18,7 +18,186 @@
     <script src="https://unpkg.com/@popperjs/core@2"></script>
     <!-- Main Styling -->
     <link href="{% static 'css/argon-dashboard-tailwind.css' %}" rel="stylesheet" />
+
     {% block extra_css %}{% endblock %}
+<style>
+  /* Overlay */
+.expiry-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(3px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  animation: expiryFadeIn 0.3s ease-out;
+}
+
+/* Modal */
+.expiry-modal-content {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #ccc;
+  border-radius: 16px;
+  width: 95%;
+  max-width: 720px;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+  animation: expirySlideIn 0.4s ease-out;
+}
+
+/* Header */
+.expiry-modal-header {
+  background: linear-gradient(to right, #0284c7, #6366f1);
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+}
+
+.expiry-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.expiry-modal-icon {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 8px;
+  border-radius: 50%;
+}
+
+.expiry-modal-header h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+/* Close Button */
+.expiry-modal-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 28px;
+  font-weight: bold;
+  color: white;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.expiry-modal-close-btn:hover {
+  color: #ffd3d3;
+}
+
+/* Body */
+.expiry-modal-body {
+  padding: 20px 24px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.8), white);
+  overflow-y: auto;
+  flex: 1;
+}
+.expiry-modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+.expiry-modal-body::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 6px;
+}
+
+/* Product Card */
+.expiry-product-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s;
+}
+.expiry-product-card:hover {
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.1);
+}
+
+.expiry-product-name {
+  font-weight: bold;
+  margin-bottom: 4px;
+  color: #111827;
+}
+
+.expiry-date {
+  color: #6b7280;
+  font-size: 14px;
+}
+.expiry-date span {
+  font-weight: 600;
+  color: #dc2626;
+}
+
+/* Badge */
+.expiry-badge {
+  background: #fcd34d;
+  color: #92400e;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 9999px;
+}
+
+/* Empty State */
+.expiry-empty-message {
+  text-align: center;
+  padding: 40px 0;
+  color: #6b7280;
+}
+.expiry-empty-message i {
+  font-size: 36px;
+  color: #10b981;
+  margin-bottom: 10px;
+}
+
+/* Footer */
+.expiry-modal-footer {
+  padding: 16px 24px;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  text-align: right;
+}
+.expiry-action-btn {
+  background-color: #4f46e5;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+.expiry-action-btn:hover {
+  background-color: #4338ca;
+}
+
+/* Animations */
+@keyframes expiryFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes expirySlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+</style>
+
   </head>
 
   <body class="m-0 font-sans text-base antialiased font-normal dark:bg-slate-900 leading-default bg-gray-50 text-slate-500">
@@ -148,12 +327,72 @@
               <!-- <li class="flex items-center">
                 <a class="inline-block px-8 py-2 mb-0 mr-4 text-xs font-bold text-center text-blue-500 uppercase align-middle transition-all ease-in bg-transparent border border-blue-500 border-solid rounded-lg shadow-none cursor-pointer leading-pro hover:-translate-y-px active:shadow-xs hover:border-blue-500 active:bg-blue-500 active:hover:text-blue-500 hover:text-blue-500 tracking-tight-rem hover:bg-transparent hover:opacity-75 hover:shadow-none active:text-white active:hover:bg-transparent" target="_blank" href="https://www.creative-tim.com/builder/soft-ui?ref=navbar-dashboard&amp;_ga=2.76518741.1192788655.1647724933-1242940210.1644448053">Online Builder</a>
               </li> -->
-              <li class="flex items-center">
-                <a href="./pages/sign-in.html" class="block px-0 py-2 text-sm font-semibold text-white transition-all ease-nav-brand">
-                  <i class="fa fa-user sm:mr-1"></i>
-                  <span class="hidden sm:inline">Sign In</span>
-                </a>
-              </li>
+<!-- 🔔 Notification Trigger -->
+<li class="flex items-center relative">
+  <button onclick="openModal()" class="block px-0 py-2 text-sm font-semibold text-white">
+    <i class="ni ni-bell-55 text-lg sm:mr-1"></i>
+    {% if expiring_soon_count > 0 %}
+    <span class="absolute -top-1 -right-2 bg-red-600 text-white text-xs font-bold px-1.5 py-0.5 rounded-full">
+      {{ expiring_soon_count }}
+    </span>
+    {% endif %}
+  </button>
+</li>
+
+
+<!-- Modal -->
+<div id="expiryModal" class="expiry-modal-overlay" style="display: none;">
+  <div class="expiry-modal-content">
+    
+    <!-- Header -->
+    <div class="expiry-modal-header">
+      <div class="expiry-modal-title">
+        <div class="expiry-modal-icon">
+          <i class="fas fa-clock"></i>
+        </div>
+        <h2>Upcoming Expiries</h2>
+      </div>
+      <button class="expiry-modal-close-btn" onclick="closeModal()">&times;</button>
+    </div>
+
+    <!-- Product List -->
+    <div class="expiry-modal-body">
+      {% for product in expiring_soon_products %}
+        <div class="expiry-product-card">
+          <div class="expiry-product-info">
+            <p class="expiry-product-name">{{ product.product_name }}</p>
+            <p class="expiry-date">Expires on: <span>{{ product.expiry_date }}</span></p>
+          </div>
+          <span class="expiry-badge">Expiring Soon</span>
+        </div>
+      {% empty %}
+        <div class="expiry-empty-message">
+          <i class="fas fa-check-circle"></i>
+          <p>No products expiring in the next 3 days.</p>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Footer -->
+    <div class="expiry-modal-footer">
+      <button class="expiry-action-btn" onclick="closeModal()">Close</button>
+    </div>
+
+  </div>
+</div>
+
+
+
+
+<script>
+function openModal() {
+  document.getElementById("expiryModal").style.display = "flex";
+}
+function closeModal() {
+  document.getElementById("expiryModal").style.display = "none";
+}
+</script>
+
               <li class="flex items-center pl-4 xl:hidden">
                 <a href="javascript:;" class="block p-0 text-sm text-white transition-all ease-nav-brand" sidenav-trigger>
                   <div class="w-4.5 overflow-hidden">

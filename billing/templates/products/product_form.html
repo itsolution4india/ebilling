@@ -388,6 +388,34 @@
         .hidden {
     display: none;
 }
+/* Optional styles */
+.discount-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.discount-input-wrapper input {
+  flex: 1;
+}
+
+.refresh-btn {
+  padding: 8px 14px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.refresh-btn:hover {
+  background-color: #0056b3;
+}
+
+.calculated {
+  background-color: #e0f7fa;
+  border: 1px solid #00acc1;
+}
     </style>
 {% endblock %}
 
@@ -439,13 +467,14 @@
 
           <br>
           <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label">Sales Price</label>
+             <div class="form-group">
+              <label class="form-label">Mrp</label>
               <div class="price-input-group">
                 <span class="price-symbol">₹</span>
-                <input type="number" name="sale_price" class="price-input ass" value="{{ product.sale_price }}">
+                <input type="number" name="purchase_price" class="price-input" value="{{ product.mrp }}">
               </div>
             </div>
+          
 
             <div class="form-group" id="taxRateGroup">
               <label class="form-label">Tax Rate (%)</label>
@@ -462,22 +491,21 @@
 
           <br>
           <div class="form-grid">
-            <div class="form-group" id="unitMeasureGroup">
-              <label class="form-label">Unit of Measure</label>
-              <select class="form-select" name="unit_of_measure" id="unitSelect">
-                <option value="">Select Unit</option>
-                {% for unit in unit_of_measure %}
-                <option value="{{ unit }}" {% if product.unit_of_measure == unit %}selected{% endif %}>{{ unit }}</option>
-                {% endfor %}
-                <option value="__new__">➕ Add New Unit</option>
-              </select>
-              <input type="text" name="unitInput" id="unitInput" class="form-control form-input mt-2 hidden" placeholder="Enter new unit">
-            </div>
-
             <div class="form-group">
-              <label class="form-label">Opening Stock</label>
-              <input type="number" name="opening_stock" class="form-input ass" value="{{ product.opening_stock }}">
+              <label class="form-label">Sales Price</label>
+              <div class="price-input-group">
+                <span class="price-symbol">₹</span>
+                <input type="number" name="sale_price" class="price-input ass" value="{{ product.sale_price }}">
+              </div>
             </div>
+<div class="form-group">
+  <label class="form-label">Discount</label>
+  <div class="discount-input-wrapper">
+    <input type="text" name="discount" class="form-input" value="{{ product.discount }}">
+    <button type="button" id="refreshBtn" class="refresh-btn">Refresh</button>
+  </div>
+</div>
+           
           </div>
         </div>
 
@@ -495,26 +523,32 @@
 
    
 </div>
-
-            <div class="form-group">
-              <label class="form-label">HSN Code</label>
-              <input type="text" class="form-input" name="hsn_code" value="{{ product.hsn_code }}">
+<div class="form-group">
+              <label class="form-label">Expiry Date</label>
+              <input type="date" class="date-input" name="date" value="{{ product.expiry_date|date:'Y-m-d' }}">
             </div>
+
+          
           </div>
 
           <div class="form-grid">
-            <div class="form-group">
-              <label class="form-label">Purchase Price</label>
-              <div class="price-input-group">
-                <span class="price-symbol">₹</span>
-                <input type="number" name="purchase_price" class="price-input" value="{{ product.purchase_price }}">
-              </div>
+           
+  <div class="form-group" id="unitMeasureGroup">
+              <label class="form-label">Unit of Measure</label>
+              <select class="form-select" name="unit_of_measure" id="unitSelect">
+                <option value="">Select Unit</option>
+                {% for unit in unit_of_measure %}
+                <option value="{{ unit }}" {% if product.unit_of_measure == unit %}selected{% endif %}>{{ unit }}</option>
+                {% endfor %}
+                <option value="__new__">➕ Add New Unit</option>
+              </select>
+              <input type="text" name="unitInput" id="unitInput" class="form-control form-input mt-2 hidden" placeholder="Enter new unit">
             </div>
-
-            <div class="form-group">
-              <label class="form-label">As of Date</label>
-              <input type="date" class="date-input" name="date" value="{{ product.updated_at|date:'Y-m-d' }}">
+             <div class="form-group">
+              <label class="form-label">Opening Stock</label>
+              <input type="number" name="opening_stock" class="form-input ass" value="{{ product.opening_stock }}">
             </div>
+            
           </div>
 
           <div class="form-group full-width">
@@ -535,6 +569,97 @@
   </div>
 </div>
     </div>
+
+<script>
+// Get input elements
+const salePrice = document.querySelector('input[name="sale_price"]');
+const mrp = document.querySelector('input[name="purchase_price"]');
+const discount = document.querySelector('input[name="discount"]');
+
+// Get refresh button
+const refreshButton = document.getElementById('refreshBtn');
+
+// Track which field was last calculated to avoid conflicts
+let lastCalculated = null;
+let isCalculating = false;
+
+// Add event listeners to all inputs
+salePrice.addEventListener('blur', calculateMissingValue);
+mrp.addEventListener('blur', calculateMissingValue);
+discount.addEventListener('blur', calculateMissingValue);
+
+// Refresh functionality
+refreshButton.addEventListener('click', function () {
+  salePrice.value = '';
+  mrp.value = '';
+  discount.value = '';
+  [salePrice, mrp, discount].forEach(el => el.classList.remove('calculated'));
+  lastCalculated = null;
+});
+
+function calculateMissingValue() {
+  if (isCalculating) return;
+
+  const salePriceValue = parseFloat(salePrice.value) || 0;
+  const mrpValue = parseFloat(mrp.value) || 0;
+  const discountRaw = discount.value.replace('%', '').trim();
+  const discountValue = parseFloat(discountRaw) || 0;
+
+  const filledFields = [
+    salePriceValue > 0 ? 'sale' : null,
+    mrpValue > 0 ? 'mrp' : null,
+    discountRaw !== '' && discountValue > 0 ? 'discount' : null
+  ].filter(Boolean);
+
+  if (filledFields.length === 2) {
+    isCalculating = true;
+
+    // MRP + Sale → Discount
+    if (salePriceValue > 0 && mrpValue > 0 && (!discount.value || lastCalculated === 'discount')) {
+      const calculatedDiscount = ((mrpValue - salePriceValue) / mrpValue) * 100;
+      discount.value = Math.round(calculatedDiscount * 100) / 100 + '%';
+      discount.classList.add('calculated');
+      lastCalculated = 'discount';
+    }
+
+    // MRP + Discount → Sale
+    else if (mrpValue > 0 && discountValue > 0 && (!salePrice.value || lastCalculated === 'sale')) {
+      const calculatedSalePrice = mrpValue - (mrpValue * discountValue / 100);
+      salePrice.value = Math.round(calculatedSalePrice * 100) / 100;
+      salePrice.classList.add('calculated');
+      lastCalculated = 'sale';
+    }
+
+    // Sale + Discount → MRP
+    else if (salePriceValue > 0 && discountValue > 0 && (!mrp.value || lastCalculated === 'mrp')) {
+      const calculatedMrp = salePriceValue / (1 - discountValue / 100);
+      mrp.value = Math.round(calculatedMrp * 100) / 100;
+      mrp.classList.add('calculated');
+      lastCalculated = 'mrp';
+    }
+
+    isCalculating = false;
+  }
+}
+
+// Reset on focus/input
+[salePrice, mrp, discount].forEach(field => {
+  field.addEventListener('focus', () => {
+    if (field.classList.contains('calculated')) {
+      field.classList.remove('calculated');
+      if (lastCalculated === field.name) lastCalculated = null;
+    }
+  });
+  field.addEventListener('input', () => {
+    if (field.classList.contains('calculated')) {
+      field.classList.remove('calculated');
+      if (lastCalculated === field.name) lastCalculated = null;
+    }
+  });
+});
+</script>
+
+
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const barcodeValue = "{{ product.barcode_id|default:'' }}"; // safe fallback if empty

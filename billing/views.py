@@ -9,6 +9,8 @@ from .models import Party, Product, Invoice, InvoiceItem, Payment, TotalBalance,
 from .serializers import PartySerializer, ProductSerializer, InvoiceSerializer, InvoiceListSerializer, InvoiceItemSerializer, PaymentSerializer
 from django.views.decorators.csrf import csrf_exempt
 import json
+from django.utils import timezone
+from datetime import datetime, timedelta
 import logging
 from decimal import Decimal, ROUND_HALF_UP
 from rest_framework.permissions import AllowAny
@@ -27,11 +29,9 @@ from decimal import Decimal
 from django.db import transaction
 
 import csv
-from datetime import datetime, timedelta
-from django.utils import timezone
 from django.core.paginator import Paginator
 from django.http import HttpResponse
-from django.db.models.functions import TruncDate, TruncWeek, TruncMonth, TruncYear
+from django.db.models.functions import TruncWeek, TruncMonth, TruncYear
 
 logger = logging.getLogger('django')
 
@@ -193,7 +193,7 @@ def product_delete(request, product_id):
 # Invoice Views
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def invoice_list(request):
+def api_invoice_list(request):
     """Get all invoices with optional filtering"""
     invoices = Invoice.objects.filter(is_active=True)
     
@@ -637,6 +637,13 @@ def generate_hsn_code():
 
 @login_required
 def product_list(request):
+    today = timezone.now().date()
+    upcoming_expiry_date = today + timedelta(days=3)
+
+    expiring_soon_products = Product.objects.filter(
+        user=request.user,
+        expiry_date__range=(today, upcoming_expiry_date)
+    )
     products = Product.objects.filter(user=request.user)
     category_filter = request.GET.get('category', '')
     if category_filter:
@@ -647,6 +654,8 @@ def product_list(request):
         'products': products,
         'category_filter': category_filter,
         'categories': categories,
+        'expiring_soon_products': expiring_soon_products,
+        'expiring_soon_count': expiring_soon_products.count()
     }
     
     return render(request, 'products/product_list.html', context)
@@ -686,7 +695,10 @@ def product_create(request):
             
             product_code =  generate_unique_product_code()
             description = request.POST.get('description', '').strip()
-            hsn_code = request.POST.get('hsn_code', '').strip()
+            discount_raw = request.POST.get('discount', '').strip()
+            discount = float(discount_raw.replace('%', '').strip())
+            expirydate_raw = request.POST.get('date', '').strip()
+            expiry_date = datetime.strptime(expirydate_raw, '%Y-%m-%d').date() if expirydate_raw else None
 
             # Category (new or existing)
             category = request.POST.get('category')
@@ -722,15 +734,16 @@ def product_create(request):
                 unit_price=sale_price,
                 product_code=product_code,
                 description=description,
-                hsn_code=hsn_code,
+                discount=discount,
                 category=category,
                 tax_rate=tax_rate,
                 unit_of_measure=unit_of_measure,
                 sale_price=sale_price,
-                purchase_price=purchase_price,
+                mrp=purchase_price,
                 opening_stock=opening_stock,
                 stock_quantity=stock_quantity,
                 barcode_id=barcode_id,
+                expiry_date=expiry_date,
                 user=user,
             )
 
@@ -756,7 +769,9 @@ def product_update(request, pk):
         try:
             product.product_name = request.POST.get('itemName', '').strip()
             product.description = request.POST.get('description', '').strip()
-            product.hsn_code = request.POST.get('hsn_code', '').strip()
+            discount_raw = request.POST.get('discount', '').strip()
+            discount = float(discount_raw.replace('%', '').strip())
+            product.discount = discount
 
             # Category
             category = request.POST.get('category')
@@ -778,9 +793,12 @@ def product_update(request, pk):
 
             product.sale_price = Decimal(request.POST.get('sale_price', '0') or '0')
             product.unit_price =Decimal(request.POST.get('sale_price', '0') or '0')
-            product.purchase_price = Decimal(request.POST.get('purchase_price', '0') or '0')
+            product.mrp = Decimal(request.POST.get('purchase_price', '0') or '0')
             product.opening_stock = int(request.POST.get('opening_stock', '0') or '0')
             product.stock_quantity = product.opening_stock
+            expirydate_raw = request.POST.get('date', '').strip()
+            expiry_date = datetime.strptime(expirydate_raw, '%Y-%m-%d').date() if expirydate_raw else None
+            expiry_date=expiry_date
             product.barcode_id = request.POST.get('barcode_id', '').strip()
 
             product.save()
@@ -805,6 +823,13 @@ def product_delete(request, pk):
 
 @login_required
 def party_list(request):
+    today = timezone.now().date()
+    upcoming_expiry_date = today + timedelta(days=3)
+
+    expiring_soon_products = Product.objects.filter(
+        user=request.user,
+        expiry_date__range=(today, upcoming_expiry_date)
+    )
     parties = Party.objects.filter(user=request.user)
     types = Party.objects.filter(user=request.user).values_list('party_type', flat=True).distinct()
     categories = Party.objects.filter(user=request.user).values_list('party_category', flat=True).distinct()
@@ -813,6 +838,8 @@ def party_list(request):
         'parties': parties,
         'types': types,
         'categories': categories,
+        'expiring_soon_products': expiring_soon_products,
+        'expiring_soon_count': expiring_soon_products.count()
     }
     return render(request, 'party/party_list.html', context)
 
@@ -964,6 +991,12 @@ def invoice_create(request):
                 
                 party_name = request.POST.get('party_name')
                 party_phone = request.POST.get('party_phone')
+                invoice_status = request.POST.get('is_full_paid')
+
+                if invoice_status == 'on':  # checkbox is checked
+                    status = "paid"
+                else:
+                    status = "unpaid"
                 
                 party_phone = "0987654321" if not party_phone else party_phone
                 
@@ -984,9 +1017,10 @@ def invoice_create(request):
                 if not items:
                     messages.error(request, 'Please add at least one item to the invoice.')
                     return redirect('invoice_create')
-                
+                total_amount=request.POST.get('manual_total_amount')
+                print(total_amount)
                 # Calculate total amount
-                total_amount = sum(Decimal(str(item['amount'])) for item in items)
+                # total_amount = sum(Decimal(str(item['amount'])) for item in items)
                 
                 # Create invoice
                 invoice = Invoice.objects.create(
@@ -996,8 +1030,10 @@ def invoice_create(request):
                     invoice_no=invoice_no,
                     invoice_date=invoice_date,
                     due_date=due_date,
+                    status=status,
+                    
                     amount=total_amount,
-                    status='unpaid'
+                
                 )
                 
                 # Create invoice items
@@ -1034,11 +1070,12 @@ def invoice_create(request):
     # Generate next invoice number
     last_invoice = Invoice.objects.filter(user=request.user).order_by('-id').first()
     next_invoice_no = f"INV-{(last_invoice.id + 1) if last_invoice else 1:06d}"
-    
+   
     context = {
         'parties': parties,
         'products': products,
         'next_invoice_no': next_invoice_no,
+   
     }
     
     return render(request, 'invoices/invoice_create.html', context)
@@ -1046,6 +1083,13 @@ def invoice_create(request):
 @login_required
 def invoice_detail(request, pk):
     """View invoice details"""
+    today = timezone.now().date()
+    upcoming_expiry_date = today + timedelta(days=3)
+
+    expiring_soon_products = Product.objects.filter(
+        user=request.user,
+        expiry_date__range=(today, upcoming_expiry_date)
+    )
     invoice = get_object_or_404(Invoice, pk=pk, user=request.user)
     invoice_setting = get_object_or_404(Sales_invoice_settings, user=request.user)
 
@@ -1055,6 +1099,8 @@ def invoice_detail(request, pk):
     enriched_items = []
     subtotal = Decimal('0.00')
     total_tax = Decimal('0.00')
+    
+    
 
     for item in items:
         tax_rate = getattr(item, 'tax_rate', Decimal('0.00'))
@@ -1076,8 +1122,9 @@ def invoice_detail(request, pk):
             'tax_rate': tax_rate,
             'unit': unit,
         })
-
+    total_amount1=invoice.amount
     total_amount = subtotal + total_tax
+    extra_amount=invoice.amount-total_amount
 
     context = {
         'invoice': invoice,
@@ -1086,6 +1133,10 @@ def invoice_detail(request, pk):
         'subtotal': subtotal,
         'total_tax': total_tax,
         'total_amount': total_amount,
+        'extra_amount':extra_amount,
+        'total_amount1':total_amount1,
+        'expiring_soon_products': expiring_soon_products,
+        'expiring_soon_count': expiring_soon_products.count()
     }
     return render(request, 'invoices/invoice_detail.html', context)
 @login_required
@@ -1109,10 +1160,9 @@ def invoicesetting(request):
             terms1=request.POST.get('terms1'),
             terms2=request.POST.get('terms2'),
             terms3=request.POST.get('terms3'),
-            acc_branch_name=request.POST.get('acc_branch_name'),
+            acc_bank_name=request.POST.get('acc_branch_name'),
             ifsc_code=request.POST.get('ifsc_code'),
             account_no=request.POST.get('account_no'),
-            qrcode=request.FILES['qrcode'],
             upload_sign=request.FILES.get('upload_sign')
         )
         instance.save()
@@ -1198,7 +1248,7 @@ def invoicesettingedit(request):
         invoice_setting.terms1 = request.POST.get('terms1')
         invoice_setting.terms2 = request.POST.get('terms2')
         invoice_setting.terms3 = request.POST.get('terms3')
-        invoice_setting.acc_branch_name = request.POST.get('acc_branch_name')
+        invoice_setting.acc_bank_name = request.POST.get('acc_branch_name')
         invoice_setting.ifsc_code = request.POST.get('ifsc_code')
         invoice_setting.account_no = request.POST.get('account_no')
 
@@ -1213,6 +1263,13 @@ def invoicesettingedit(request):
 @login_required
 def invoice_delete(request, pk):
     """Delete invoice"""
+    today = timezone.now().date()
+    upcoming_expiry_date = today + timedelta(days=3)
+
+    expiring_soon_products = Product.objects.filter(
+        user=request.user,
+        expiry_date__range=(today, upcoming_expiry_date)
+    )
     invoice = get_object_or_404(Invoice, pk=pk, user=request.user)
     
     if request.method == 'POST':
@@ -1258,8 +1315,17 @@ def get_party_details_ajax(request, party_id):
     
 @login_required
 def payments(request):
+    today = timezone.now().date()
+    upcoming_expiry_date = today + timedelta(days=3)
+
+    expiring_soon_products = Product.objects.filter(
+        user=request.user,
+        expiry_date__range=(today, upcoming_expiry_date)
+    )
     payment=Payment.objects.filter(user=request.user).order_by('-created_at')
-    context={'payment':payment}
+    context={'payment':payment,
+             'expiring_soon_products': expiring_soon_products,
+        'expiring_soon_count': expiring_soon_products.count()}
     return render(request,'Payments/payment.html',context)
 @login_required
 def payment2_partial(request):
@@ -1329,6 +1395,13 @@ def paydelete(request, pk):
 
 @login_required
 def cashbank(request):
+    today = timezone.now().date()
+    upcoming_expiry_date = today + timedelta(days=3)
+
+    expiring_soon_products = Product.objects.filter(
+        user=request.user,
+        expiry_date__range=(today, upcoming_expiry_date)
+    )
     transactions = TotalBalance.objects.filter(user=request.user).order_by('-date')
     total_balance = TotalBalance.objects.aggregate(total=Sum('amount'))['total'] or 0
     cash_in_hand = TotalBalance.objects.filter(user=request.user,payment_type='Cash').aggregate(total=Sum('amount'))['total'] or 0
@@ -1357,7 +1430,9 @@ def cashbank(request):
              'total_balance':total_balance,
              'cash_in_hand':cash_in_hand,
              'cash_in_bank':cash_in_bank,
-             'accounts':accounts
+             'accounts':accounts,
+             'expiring_soon_products': expiring_soon_products,
+        'expiring_soon_count': expiring_soon_products.count()
              }
 
 
@@ -1403,3 +1478,23 @@ def cashdelete(request,pk):
 def logout_view(request):
     logout(request)
     return redirect('/')
+@csrf_exempt  # only if you're not using CSRF token in the header
+def set_invoice_paid(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            invoice_id = data.get("invoice_id")
+            print(invoice_id)
+            is_paid = data.get("is_paid", False)
+
+            print(f"Received invoice_id: {invoice_id}, is_paid: {is_paid}")
+
+            invoice = Invoice.objects.get(id=invoice_id)
+            invoice.status = "paid" if is_paid else "unpaid"
+            invoice.save()
+
+            return JsonResponse({"success": True})
+        except Exception as e:
+            print("Error in set_invoice_paid view:", str(e))  # 👈 print error to console
+            return JsonResponse({"success": False, "error": str(e)})
+    return JsonResponse({"success": False, "error": "Invalid method"})
