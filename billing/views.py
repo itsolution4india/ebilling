@@ -967,6 +967,7 @@ def invoice_create(request):
         try:
             with transaction.atomic():
                 # Get form data
+                
                 party_id = request.POST.get('party')
                 invoice_no = request.POST.get('invoice_no')
                 invoice_date = request.POST.get('invoice_date')
@@ -1057,7 +1058,6 @@ def invoice_create(request):
     
     # Get parties and products for the form
     banks=TotalBalance.objects.filter(user=request.user,payment_type='Bank')
-    print(banks)
     parties = Party.objects.filter(user=request.user, status=True)
     products = Product.objects.filter(user=request.user, status=True)
     
@@ -1110,31 +1110,22 @@ def invoice_detail(request, pk):
             'unit': unit,
         })
 
-    total_amount = subtotal + total_tax
-    
+    calculated_total = subtotal + total_tax
 
-  
-    total_amount1 = invoice.amount
-    if total_amount1>total_amount:
-         total_amount1 = invoice.amount
-    else:
-         total_amount1 = invoice.amount + total_tax
+            # Final amount: either user-defined invoice.amount or calculated if less
+    final_total = max(invoice.amount, calculated_total)
 
-
-    # compute extra
-    extra_amount = total_amount1 - total_amount
-    if extra_amount < 0:
-        extra_amount = Decimal('0.00')
+            # Extra amount = difference between final_total and calculated_total
+    extra_amount = final_total - calculated_total
     context = {
         'invoice': invoice,
         'invoice_setting': invoice_setting,
         'items': enriched_items,
         'subtotal': subtotal,
         'total_tax': total_tax,
-        'total_amount': total_amount,
-        'extra_amount':extra_amount,
-        'total_amount1':total_amount1
-   
+        'calculated_total': calculated_total,
+        'final_total': final_total,
+        'extra_amount': extra_amount,
     }
     return render(request, 'invoices/invoice_detail.html', context)
 @login_required
@@ -1280,8 +1271,6 @@ def invoice_update(request, pk):
 
                 # Final save
                 invoice.save()
-
-                print(f"🧾 Invoice #{invoice.invoice_no} | Status: {original_status} → {invoice.status} | Mode: {original_payment_mode} → {invoice.payment_mode} | Bank: {original_bank} → {invoice.bank} | Amount: {original_amount} → {invoice.amount} | Manual Total: {manual_total} | Items Total: {total_amount}")
                 messages.success(request, f"Invoice #{invoice.invoice_no} updated successfully!")
                 return redirect('invoice_detail', pk=invoice.pk)
 
@@ -1346,7 +1335,7 @@ def invoice_delete(request, pk):
                             payment_type='Bank',
                             account_name=invoice.bank if invoice.payment_mode in ['UPI', 'Card', 'NetBanking', 'Bank Transfer', 'Cheque'] else None
                         )
-                        print(balance,"balance")
+          
 
                         balance.amount -= Decimal(str(invoice.amount))
 
@@ -1370,7 +1359,15 @@ def invoice_delete(request, pk):
 def get_products_ajax(request):
     """AJAX endpoint to get products with their details"""
     products = Product.objects.filter(user=request.user, status=True).values(
-        'id', 'product_name', 'category', 'unit_price', 'stock_quantity'
+        'id',
+        'product_name',
+        'product_code',
+        'description',
+        'category',
+        'unit_price',
+        'stock_quantity',
+        'tax_rate',
+        'unit_of_measure',
     )
     return JsonResponse(list(products), safe=False)
 
@@ -1586,17 +1583,12 @@ def set_invoice_paid(request):
         try:
             data = json.loads(request.body)
             invoice_id = data.get("invoice_id")
-            print(invoice_id)
             is_paid = data.get("is_paid", False)
-
-            print(f"Received invoice_id: {invoice_id}, is_paid: {is_paid}")
-
             invoice = Invoice.objects.get(id=invoice_id)
             invoice.status = "paid" if is_paid else "unpaid"
             invoice.save()
 
             return JsonResponse({"success": True})
         except Exception as e:
-            print("Error in set_invoice_paid view:", str(e))  # 👈 print error to console
             return JsonResponse({"success": False, "error": str(e)})
     return JsonResponse({"success": False, "error": "Invalid method"})

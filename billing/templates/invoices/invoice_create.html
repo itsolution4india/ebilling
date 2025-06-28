@@ -530,24 +530,20 @@ document.addEventListener('DOMContentLoaded', function () {
 <script>
 let invoiceItems = [];
 let products = [];
-let selectedProducts = {}; // Track selected products in modal
-let filteredProducts = []; // Store filtered products
-let categories = []; // Store unique categories
+let selectedProducts = {};
+let filteredProducts = [];
+let categories = [];
 
-// Load products on page load
 document.addEventListener('DOMContentLoaded', function() {
     loadProducts();
-    
-    // Set today's date as default
+
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('invoice_date').value = today;
-    
-    // Set due date 30 days from today
+
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 30);
     document.getElementById('due_date').value = dueDate.toISOString().split('T')[0];
-    
-    // Add search and filter event listeners
+
     document.getElementById('product-search').addEventListener('input', filterProducts);
     document.getElementById('category-filter').addEventListener('change', filterProducts);
 });
@@ -557,23 +553,19 @@ function togglePartyFields() {
     const customPartyRadio = document.getElementById('custom-party');
     const existingPartyField = document.getElementById('existing-party-field');
     const customPartyFields = document.getElementById('custom-party-fields');
-    
+
     if (existingPartyRadio.checked) {
         existingPartyField.style.display = 'block';
         customPartyFields.classList.remove('active');
-        // Clear custom party fields
         document.getElementById('party_name').value = '';
         document.getElementById('party_phone').value = '';
-        // Make party selection required
         document.getElementById('party').required = true;
         document.getElementById('party_name').required = false;
         document.getElementById('party_phone').required = false;
     } else if (customPartyRadio.checked) {
         existingPartyField.style.display = 'none';
         customPartyFields.classList.add('active');
-        // Clear existing party selection
         document.getElementById('party').value = '';
-        // Make custom party fields required (at least one)
         document.getElementById('party').required = false;
         document.getElementById('party_name').required = false;
         document.getElementById('party_phone').required = false;
@@ -585,7 +577,7 @@ function loadProducts() {
         .then(response => response.json())
         .then(data => {
             products = data;
-            filteredProducts = [...products]; // Initialize filtered products
+            filteredProducts = [...products];
             extractCategories();
             populateCategoryFilter();
         })
@@ -605,7 +597,7 @@ function extractCategories() {
 function populateCategoryFilter() {
     const categoryFilter = document.getElementById('category-filter');
     categoryFilter.innerHTML = '<option value="">All Categories</option>';
-    
+
     categories.forEach(category => {
         const option = document.createElement('option');
         option.value = category;
@@ -617,18 +609,13 @@ function populateCategoryFilter() {
 function filterProducts() {
     const searchTerm = document.getElementById('product-search').value.toLowerCase();
     const selectedCategory = document.getElementById('category-filter').value;
-    
+
     filteredProducts = products.filter(product => {
-        const matchesSearch = !searchTerm || 
-            product.product_name.toLowerCase().includes(searchTerm) ||
-            (product.product_code && product.product_code.toLowerCase().includes(searchTerm)) ||
-            (product.hsn_code && product.hsn_code.toLowerCase().includes(searchTerm));
-        
+        const matchesSearch = !searchTerm || product.product_name.toLowerCase().includes(searchTerm);
         const matchesCategory = !selectedCategory || product.category === selectedCategory;
-        
         return matchesSearch && matchesCategory;
     });
-    
+
     updateProductTable();
 }
 
@@ -641,60 +628,37 @@ function clearFilters() {
 
 function openProductModal() {
     const modal = document.getElementById('product-modal');
-    
-    // Reset selected products for fresh selection
     selectedProducts = {};
-    
-    // Populate existing items if any
     invoiceItems.forEach(item => {
-        selectedProducts[item.product_id] = {
-            ...item,
-            quantity: item.quantity
-        };
+        selectedProducts[item.product_id] = { ...item, quantity: item.quantity };
     });
-    
-    // Reset filters
     clearFilters();
     updateProductTable();
-    
     modal.style.display = 'block';
-    
-    // Focus on search box
-    setTimeout(() => {
-        document.getElementById('product-search').focus();
-    }, 100);
+    setTimeout(() => document.getElementById('product-search').focus(), 100);
 }
 
 function updateProductTable() {
     const tableBody = document.getElementById('product-table-body');
     const noResults = document.getElementById('no-results');
-    
     tableBody.innerHTML = '';
-    
+
     if (filteredProducts.length === 0) {
         noResults.style.display = 'block';
         return;
     }
-    
     noResults.style.display = 'none';
-    
+
     filteredProducts.forEach(product => {
-        const existingQty = selectedProducts[product.id] ? selectedProducts[product.id].quantity : 0;
+        const existingQty = selectedProducts[product.id]?.quantity || 0;
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>
-                <strong>${product.product_name}</strong>
-                ${product.product_code ? `<br><small>Code: ${product.product_code}</small>` : ''}
-                ${product.hsn_code ? `<br><small>HSN: ${product.hsn_code}</small>` : ''}
-            </td>
+            <td><strong>${product.product_name}</strong></td>
             <td>${product.category || 'N/A'}</td>
             <td>₹${parseFloat(product.unit_price).toFixed(2)}</td>
             <td>${product.stock_quantity}</td>
             <td>
-                <button type="button" class="add-btn" onclick="addProductToSelection(${product.id})" 
-                        id="add-btn-${product.id}" ${existingQty > 0 ? 'style="display:none"' : ''}>
-                    Add
-                </button>
+                <button type="button" class="add-btn" onclick="addProductToSelection(${product.id})" id="add-btn-${product.id}" ${existingQty > 0 ? 'style="display:none"' : ''}>Add</button>
             </td>
             <td>
                 <div class="qty-controls" id="qty-controls-${product.id}" ${existingQty === 0 ? 'style="display:none"' : ''}>
@@ -712,20 +676,26 @@ function closeProductModal() {
     document.getElementById('product-modal').style.display = 'none';
 }
 
+function calculateAmountWithTax(rate, quantity, taxRate) {
+    const baseAmount = quantity * rate;
+    const taxAmount = (baseAmount * (taxRate || 0)) / 100;
+    return baseAmount + taxAmount;
+}
+
 function addProductToSelection(productId) {
     const product = products.find(p => p.id === productId);
     if (!product) return;
-    
+
     selectedProducts[productId] = {
         product_id: product.id,
         product_name: product.product_name,
         description: product.description,
         quantity: 1,
         rate: parseFloat(product.unit_price),
-        amount: parseFloat(product.unit_price)
+        tax_rate: parseFloat(product.tax_rate || 0),
+        amount: calculateAmountWithTax(parseFloat(product.unit_price), 1, parseFloat(product.tax_rate || 0))
     };
-    
-    // Hide add button and show quantity controls
+
     document.getElementById(`add-btn-${productId}`).style.display = 'none';
     document.getElementById(`qty-controls-${productId}`).style.display = 'flex';
     document.getElementById(`qty-${productId}`).textContent = '1';
@@ -734,7 +704,11 @@ function addProductToSelection(productId) {
 function increaseQuantity(productId) {
     if (selectedProducts[productId]) {
         selectedProducts[productId].quantity++;
-        selectedProducts[productId].amount = selectedProducts[productId].quantity * selectedProducts[productId].rate;
+        selectedProducts[productId].amount = calculateAmountWithTax(
+            selectedProducts[productId].rate,
+            selectedProducts[productId].quantity,
+            selectedProducts[productId].tax_rate
+        );
         document.getElementById(`qty-${productId}`).textContent = selectedProducts[productId].quantity;
     }
 }
@@ -742,10 +716,13 @@ function increaseQuantity(productId) {
 function decreaseQuantity(productId) {
     if (selectedProducts[productId] && selectedProducts[productId].quantity > 1) {
         selectedProducts[productId].quantity--;
-        selectedProducts[productId].amount = selectedProducts[productId].quantity * selectedProducts[productId].rate;
+        selectedProducts[productId].amount = calculateAmountWithTax(
+            selectedProducts[productId].rate,
+            selectedProducts[productId].quantity,
+            selectedProducts[productId].tax_rate
+        );
         document.getElementById(`qty-${productId}`).textContent = selectedProducts[productId].quantity;
-    } else if (selectedProducts[productId] && selectedProducts[productId].quantity === 1) {
-        // Remove from selection
+    } else if (selectedProducts[productId]) {
         delete selectedProducts[productId];
         document.getElementById(`add-btn-${productId}`).style.display = 'inline-block';
         document.getElementById(`qty-controls-${productId}`).style.display = 'none';
@@ -758,7 +735,6 @@ function cancelSelection() {
 }
 
 function confirmSelection() {
-    // Update invoice items with selected products
     invoiceItems = Object.values(selectedProducts);
     updateItemsDisplay();
     closeProductModal();
@@ -766,12 +742,10 @@ function confirmSelection() {
 
 function updateItemsDisplay() {
     const container = document.getElementById('items-container');
-    
-    // Keep the header row
     const headerRow = container.querySelector('.item-header');
     container.innerHTML = '';
     container.appendChild(headerRow);
-    
+
     invoiceItems.forEach((item, index) => {
         const itemRow = document.createElement('div');
         itemRow.className = 'item-row';
@@ -780,13 +754,11 @@ function updateItemsDisplay() {
             <div>${item.quantity}</div>
             <div>₹${item.rate.toFixed(2)}</div>
             <div>₹${item.amount.toFixed(2)}</div>
-            <div>
-                <button type="button" class="bg-red-500 text-white px-3 py-1 rounded text-sm" onclick="removeItem(${index})">Remove</button>
-            </div>
+            <div><button type="button" class="bg-red-500 text-white px-3 py-1 rounded text-sm" onclick="removeItem(${index})">Remove</button></div>
         `;
         container.appendChild(itemRow);
     });
-    
+
     updateTotal();
 }
 
@@ -795,42 +767,59 @@ function removeItem(index) {
     updateItemsDisplay();
 }
 
+let manualTotalEdited = false;
+
 function updateTotal() {
     const total = invoiceItems.reduce((sum, item) => sum + item.amount, 0);
-    document.getElementById('total-amount').textContent = total.toFixed(2);
+    if (!manualTotalEdited) {
+        document.getElementById('total-amount').textContent = total.toFixed(2);
+    }
 }
 
-// Form submission
+function enableManualTotalEdit() {
+    const currentTotal = document.getElementById('total-amount').textContent;
+    document.getElementById('total-display').classList.add('hidden');
+    document.getElementById('total-input-wrapper').classList.remove('hidden');
+    document.getElementById('total_amount_input').value = currentTotal;
+}
+
+function saveManualTotalEdit() {
+    const newAmount = parseFloat(document.getElementById('total_amount_input').value || 0).toFixed(2);
+    document.getElementById('total-amount').textContent = newAmount;
+    document.getElementById('total-display').classList.remove('hidden');
+    document.getElementById('total-input-wrapper').classList.add('hidden');
+    manualTotalEdited = true;
+}
+
 document.getElementById('invoice-form').addEventListener('submit', function(e) {
     const existingPartyRadio = document.getElementById('existing-party');
     const customPartyRadio = document.getElementById('custom-party');
     const partySelect = document.getElementById('party');
     const partyName = document.getElementById('party_name');
     const partyPhone = document.getElementById('party_phone');
-    
-    // Validate party information
+
     if (existingPartyRadio.checked && !partySelect.value) {
         e.preventDefault();
         alert('Please select a party from the dropdown.');
         return;
     }
-    
+
     if (customPartyRadio.checked && !partyName.value.trim() && !partyPhone.value.trim()) {
         e.preventDefault();
         alert('Please provide either party name or phone number.');
         return;
     }
-    
+
     if (invoiceItems.length === 0) {
         e.preventDefault();
         alert('Please add at least one item to the invoice.');
         return;
     }
-    
+
     document.getElementById('items_data').value = JSON.stringify(invoiceItems);
+    document.getElementById('manual_total_amount_hidden').value = document.getElementById('total-amount').textContent;
 });
 
-// Close modal when clicking outside
 window.onclick = function(event) {
     const modal = document.getElementById('product-modal');
     if (event.target === modal) {
@@ -838,50 +827,15 @@ window.onclick = function(event) {
     }
 }
 
-// Handle keyboard shortcuts in modal
 document.addEventListener('keydown', function(e) {
     const modal = document.getElementById('product-modal');
-    if (modal.style.display === 'block') {
-        if (e.key === 'Escape') {
-            closeProductModal();
-        }
+    if (modal.style.display === 'block' && e.key === 'Escape') {
+        closeProductModal();
     }
 });
-
-let manualTotalEdited = false;
-
-function enableManualTotalEdit() {
-  const currentTotal = document.getElementById('total-amount').textContent;
-  document.getElementById('total-display').classList.add('hidden');
-  document.getElementById('total-input-wrapper').classList.remove('hidden');
-  document.getElementById('total_amount_input').value = currentTotal;
-}
-
-function saveManualTotalEdit() {
-  const newAmount = parseFloat(document.getElementById('total_amount_input').value || 0).toFixed(2);
-  document.getElementById('total-amount').textContent = newAmount;
-  document.getElementById('total-display').classList.remove('hidden');
-  document.getElementById('total-input-wrapper').classList.add('hidden');
-  manualTotalEdited = true;
-}
-
-function updateTotal() {
-  const calculatedTotal = invoiceItems.reduce((sum, item) => sum + item.amount, 0);
-  if (!manualTotalEdited) {
-    document.getElementById('total-amount').textContent = calculatedTotal.toFixed(2);
-  }
-}
-
-document.getElementById('invoice-form').addEventListener('submit', function(e) {
-  const finalTotal = document.getElementById('total-amount').textContent;
-  const hiddenInput = document.getElementById('manual_total_amount_hidden');
-  if (hiddenInput) {
-    hiddenInput.value = finalTotal;
-  }
-});
-
-
 </script>
+
+
 
 
 

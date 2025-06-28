@@ -455,10 +455,10 @@
             </div>
 
             <!-- Summary -->
-      <div class="summary-section">
+ <div class="summary-section">
   <div class="summary-row">
     <span class="summary-label">Subtotal</span>
-    <span class="summary-value">₹ {{ total_amount|floatformat:2 }}</span>
+    <span class="summary-value">₹ {{ subtotal|floatformat:2 }}</span>
   </div>
 
   <div class="summary-row">
@@ -473,13 +473,13 @@
 
   <div class="summary-row total-amount-row font-semibold">
     <span class="summary-label">Total Amount</span>
-    <span class="summary-value">₹ {{ total_amount1|floatformat:2 }}</span>
+    <span class="summary-value">₹ {{ final_total|floatformat:2 }}</span>
   </div>
 
   {% if invoice.status == "paid" %}
     <div class="summary-row">
       <span class="summary-label">Received Amount</span>
-      <span class="summary-value">₹ {{ total_amount1|floatformat:2 }}</span>
+      <span class="summary-value">₹ {{ final_total|floatformat:2 }}</span>
     </div>
     <div class="summary-row">
       <span class="summary-label">Balance</span>
@@ -492,7 +492,7 @@
     </div>
     <div class="summary-row">
       <span class="summary-label">Balance</span>
-      <span class="summary-value">₹ {{ total_amount1|floatformat:2 }}</span>
+      <span class="summary-value">₹ {{ final_total|floatformat:2 }}</span>
     </div>
   {% endif %}
 </div>
@@ -566,7 +566,7 @@
     function generateUPIQRCode() {
         const upiId = "{{ invoice_setting.upi_id|default:'' }}";
         const businessName = "{{ invoice_setting.business_name|default:'' }}";
-        const amount = "{{ total_amount1|floatformat:2 }}";
+        const amount = "{{ final_total|floatformat:2 }}";
         const invoiceNo = "{{ invoice.invoice_no|default:'' }}";
         
         const qrContainer = document.getElementById('qrcode');
