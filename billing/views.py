@@ -293,7 +293,7 @@ def invoice_edit(request, invoice_id):
 
 @api_view(['PUT'])
 @permission_classes([AllowAny])
-def invoice_update(request, invoice_id):
+def api_invoice_update(request, invoice_id):
     """Update invoice details"""
     try:
         invoice = Invoice.objects.get(id=invoice_id, is_active=True)
@@ -313,7 +313,7 @@ def invoice_update(request, invoice_id):
 
 @api_view(['DELETE'])
 @permission_classes([AllowAny])
-def invoice_delete(request, invoice_id):
+def api_invoice_delete(request, invoice_id):
     """Delete an invoice (soft delete by setting is_active to False)"""
     try:
         invoice = Invoice.objects.get(id=invoice_id, is_active=True)
@@ -1004,7 +1004,6 @@ def invoice_create(request):
                     messages.error(request, 'Please add at least one item to the invoice.')
                     return redirect('invoice_create')
                 total_amount=request.POST.get('manual_total_amount')
-                print(total_amount)
                 # Calculate total amount
                 # total_amount = sum(Decimal(str(item['amount'])) for item in items)
                 
@@ -1181,6 +1180,7 @@ def invoice_update(request, pk):
     original_payment_mode = invoice.payment_mode
     original_bank = invoice.bank
     original_amount = invoice.amount
+    original_status = invoice.status
 
     if request.method == 'POST':
         try:
@@ -1195,6 +1195,13 @@ def invoice_update(request, pk):
                 invoice.invoice_date = request.POST.get('invoice_date')
                 invoice.due_date = request.POST.get('due_date')
                 invoice_status = request.POST.get('is_full_paid')
+                manual_total = request.POST.get('manual_total_amount')
+                total_amount = Decimal('0.00')
+                if manual_total:
+                    try:
+                        total_amount = Decimal(str(manual_total))
+                    except:
+                        total_amount = Decimal('0.00')
                 if invoice_status == 'on':  # checkbox is checked
                     status = "paid"
                 else:
@@ -1206,14 +1213,6 @@ def invoice_update(request, pk):
                 new_bank = request.POST.get('bank_name') if invoice.payment_mode != 'Cash' else ''
                 invoice.bank = new_bank
 
-                # Handle manual total
-                manual_total = request.POST.get('manual_total_amount')
-                total_amount = Decimal('0.00')
-                if manual_total:
-                    try:
-                        total_amount = Decimal(str(manual_total))
-                    except:
-                        total_amount = Decimal('0.00')
                 invoice.amount = total_amount  # Will be overwritten if manual_total is blank
 
                 # Delete old items
@@ -1247,18 +1246,48 @@ def invoice_update(request, pk):
                     if not manual_total:
                         invoice.amount = total_amount
 
-                # Adjust bank balance:
-                    
+                # 🔁 Adjust bank balance only if status changed
+                if original_status != status:
+                    # Status changed from paid to unpaid → subtract original amount from original bank
+                    if original_bank and original_status == "paid" and status == "unpaid":
+                        try:
+                            bank_entry = TotalBalance.objects.get(
+                                user=request.user,
+                                account_name=original_bank,
+                                payment_type='Bank'
+                            )
+                            bank_entry.amount -= original_amount
+                            bank_entry.save()
+                        except TotalBalance.DoesNotExist:
+                            raise Exception(f"Bank '{original_bank}' not found for deduction.")
 
+                    # Status changed from unpaid to paid → add amount to selected bank
+                    elif status == "paid" and invoice.bank:
+                        try:
+                            bank_entry = TotalBalance.objects.get(
+                                user=request.user,
+                                account_name=invoice.bank,
+                                payment_type='Bank'
+                            )
+                            if original_status == "unpaid" and total_amount == original_amount:
+                                bank_entry.amount += total_amount
+                            elif total_amount != original_amount:
+                                diff = total_amount - original_amount
+                                bank_entry.amount += diff
+                            bank_entry.save()
+                        except TotalBalance.DoesNotExist:
+                            raise Exception(f"Bank '{invoice.bank}' not found for credit.")
+
+                # Final save
                 invoice.save()
-                print(f"🧾 Invoice #{invoice.invoice_no} | Status: {invoice.status} → {invoice.status} | Mode: {original_payment_mode} → {invoice.payment_mode} | Bank: {original_bank} → {invoice.bank} | Amount: {original_amount} → {invoice.amount} | Manual Total: {manual_total} | Items Total: {total_amount}")
+
+                print(f"🧾 Invoice #{invoice.invoice_no} | Status: {original_status} → {invoice.status} | Mode: {original_payment_mode} → {invoice.payment_mode} | Bank: {original_bank} → {invoice.bank} | Amount: {original_amount} → {invoice.amount} | Manual Total: {manual_total} | Items Total: {total_amount}")
                 messages.success(request, f"Invoice #{invoice.invoice_no} updated successfully!")
                 return redirect('invoice_detail', pk=invoice.pk)
 
         except Exception as e:
             messages.error(request, f"Error updating invoice: {str(e)}")
 
-    
     # Data for form
     parties = Party.objects.filter(user=request.user, status=True).order_by('party_name')
     products = Product.objects.filter(user=request.user, status=True).order_by('product_name')

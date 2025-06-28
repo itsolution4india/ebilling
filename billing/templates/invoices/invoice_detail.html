@@ -345,7 +345,7 @@
         <div class="action-buttons">
             <div class="btn-group">
                 <a href="{% url 'invoice_list' %}" class="btn btn-primary">Back to List</a>
-                <a href="{% url 'invoice_update' invoice.pk %}" class="btn btn-warning">Edit Invoice</a>
+                <!-- <a href="{% url 'invoice_update' invoice.pk %}" class="btn btn-warning">Edit Invoice</a> -->
                 <button onclick="printInvoice()" class="btn btn-success">Print Invoice</button>
                 <button onclick="downloadPDF()" class="btn btn-info">Download PDF</button>
                 <a href="{% url 'invoice_delete' invoice.pk %}" class="btn btn-danger">Delete Invoice</a>

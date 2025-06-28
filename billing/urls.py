@@ -24,8 +24,8 @@ urlpatterns = [
     path('api/auth/invoices/store/', views.invoice_store, name='invoice-store'),
     path('api/auth/invoices/<int:invoice_id>/', views.invoice_detail, name='invoice-detail'),
     path('api/auth/invoices/edit/<int:invoice_id>/', views.invoice_edit, name='invoice-edit'),
-    path('api/auth/invoices/update/<int:invoice_id>/', views.invoice_update, name='invoice-update'),
-    path('api/auth/invoices/delete/<int:invoice_id>/', views.invoice_delete, name='invoice-delete'),
+    path('api/auth/invoices/update/<int:invoice_id>/', views.api_invoice_update, name='invoice-update'),
+    path('api/auth/invoices/delete/<int:invoice_id>/', views.api_invoice_delete, name='invoice-delete'),
     path('api/auth/invoices/<int:invoice_id>/status/', views.invoice_status_update, name='invoice-status-update'),
     
     # Invoice Items URLs
