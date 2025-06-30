@@ -1062,8 +1062,8 @@ def invoice_create(request):
     products = Product.objects.filter(user=request.user, status=True)
     
     # Generate next invoice number
-    last_invoice = Invoice.objects.filter(user=request.user).order_by('-id').first()
-    next_invoice_no = f"INV-{(last_invoice.id + 1) if last_invoice else 1:06d}"
+    random_number = random.randint(10**9, 10**10 - 1)  # 10-digit number
+    next_invoice_no = f"INV-{random_number}"
    
     context = {
         'parties': parties,
