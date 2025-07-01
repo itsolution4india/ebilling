@@ -1025,10 +1025,34 @@ def invoice_create(request):
                 
                 )
                 if bank:
-                    money = get_object_or_404(TotalBalance, user=request.user, payment_type='Bank', account_name=bank)
-                    money_acc = money.amount + Decimal(total_amount)
-                    money.amount = money_acc
-                    money.save()
+                    try:
+                        money = TotalBalance.objects.get(
+                            user=request.user,
+                            payment_type='Bank',
+                            account_name=bank
+                        )
+                        money.amount += Decimal(total_amount)
+                        money.save()
+                    except TotalBalance.MultipleObjectsReturned:
+                        # Handle the case where multiple balances exist for the same bank
+                        # You can pick the first one or raise a clear error
+                        money = TotalBalance.objects.filter(
+                            user=request.user,
+                            payment_type='Bank',
+                            account_name=bank
+                        ).first()
+                        if money:
+                            money.amount += Decimal(total_amount)
+                            money.save()
+                    except TotalBalance.DoesNotExist:
+                        # Handle if no balance exists — optionally create one
+                        TotalBalance.objects.create(
+                            user=request.user,
+                            payment_type='Bank',
+                            account_name=bank,
+                            amount=Decimal(total_amount)
+                        )
+
                 # Create invoice items
                 for item in items:
                     product = get_object_or_404(Product, id=item['product_id'], user=request.user)
@@ -1057,7 +1081,7 @@ def invoice_create(request):
             messages.error(request, f'Error creating invoice: {str(e)}')
     
     # Get parties and products for the form
-    banks=TotalBalance.objects.filter(user=request.user,payment_type='Bank')
+    banks = TotalBalance.objects.filter(user=request.user, payment_type='Bank').values('account_name').distinct()
     parties = Party.objects.filter(user=request.user, status=True)
     products = Product.objects.filter(user=request.user, status=True)
     
