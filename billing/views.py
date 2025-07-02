@@ -1100,6 +1100,91 @@ def invoice_create(request):
     return render(request, 'invoices/invoice_create.html', context)
 
 @login_required
+@csrf_exempt
+def scan_barcode(request):
+    """Handle barcode scanning and return product details"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            barcode = data.get('barcode', '').strip()
+            
+            if not barcode:
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Barcode is required'
+                })
+            
+            # Search for product by barcode_id
+            try:
+                product = Product.objects.get(
+                    barcode_id=barcode,
+                    user=request.user,
+                    status=True
+                )
+                
+                return JsonResponse({
+                    'success': True,
+                    'product': {
+                        'id': product.id,
+                        'product_name': product.product_name,
+                        'product_code': product.product_code,
+                        'description': product.description,
+                        'unit_price': float(product.unit_price),
+                        'sale_price': float(product.sale_price),
+                        'stock_quantity': product.stock_quantity,
+                        'category': product.category,
+                        'tax_rate': float(product.tax_rate),
+                        'barcode_id': product.barcode_id,
+                        'unit_of_measure': product.unit_of_measure
+                    }
+                })
+                
+            except Product.DoesNotExist:
+                return JsonResponse({
+                    'success': False,
+                    'message': f'Product with barcode "{barcode}" not found in your inventory'
+                })
+                
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'message': 'Invalid JSON data'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f'Error processing barcode: {str(e)}'
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'message': 'Only POST method allowed'
+    })
+
+@login_required
+def get_products_ajax(request):
+    """Get products for AJAX requests"""
+    products = Product.objects.filter(user=request.user, status=True)
+    
+    products_data = []
+    for product in products:
+        products_data.append({
+            'id': product.id,
+            'product_name': product.product_name,
+            'product_code': product.product_code,
+            'description': product.description,
+            'unit_price': float(product.unit_price),
+            'sale_price': float(product.sale_price),
+            'stock_quantity': product.stock_quantity,
+            'category': product.category,
+            'tax_rate': float(product.tax_rate),
+            'barcode_id': product.barcode_id,
+            'unit_of_measure': product.unit_of_measure
+        })
+    
+    return JsonResponse(products_data, safe=False)
+
+@login_required
 def invoice_detail(request, pk):
     """View invoice details"""
     invoice = get_object_or_404(Invoice, pk=pk, user=request.user)

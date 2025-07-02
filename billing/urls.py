@@ -79,4 +79,6 @@ urlpatterns = [
     # AJAX endpoints
     path('ajax/products/', views.get_products_ajax, name='get_products_ajax'),
     path('ajax/party/<int:party_id>/', views.get_party_details_ajax, name='get_party_details_ajax'),
+    path('ajax/scan-barcode/', views.scan_barcode, name='scan_barcode'),
+    path('ajax/products/', views.get_products_ajax, name='get_products_ajax'),
 ]

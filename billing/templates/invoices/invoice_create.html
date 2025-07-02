@@ -264,8 +264,93 @@
     label {
         font-weight: 700;
     }
+    .barcode-section {
+        border: 2px dashed #e5e7eb;
+        border-radius: 8px;
+        padding: 20px;
+        background-color: #f9fafb;
+        margin-bottom: 20px;
+    }
+
+    .barcode-input-container {
+        position: relative;
+        flex: 1;
+    }
+
+    .barcode-input {
+        width: 100%;
+        padding: 12px 16px;
+        border: 2px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 16px;
+        font-family: monospace;
+        background-color: white;
+        transition: border-color 0.3s ease;
+    }
+
+    .barcode-input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .barcode-loading {
+        position: absolute;
+        top: 50%;
+        right: 16px;
+        transform: translateY(-50%);
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+    .barcode-loading.hidden {
+        display: none;
+    }
+
+    .barcode-message {
+        margin-top: 10px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .barcode-message.success {
+        background-color: #d1fae5;
+        color: #065f46;
+        border: 1px solid #a7f3d0;
+    }
+
+    .barcode-message.error {
+        background-color: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fca5a5;
+    }
+
+    .barcode-message.info {
+        background-color: #dbeafe;
+        color: #1e40af;
+        border: 1px solid #93c5fd;
+    }
+
+    .dark .barcode-section {
+        background-color: #1f2937;
+        border-color: #374151;
+    }
+
+    .dark .barcode-input {
+        background-color: #374151;
+        border-color: #4b5563;
+        color: white;
+    }
+
+    .dark .barcode-input:focus {
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+    }
 </style>
 {% endblock %}
+
 
 {% block content %}
 <div class="w-full max-w-full px-3 mt-6 lg:flex-none">
@@ -347,10 +432,43 @@
           </div>
         </div>
 
+        <!-- Barcode Scanner Section -->
+        <div class="mb-6">
+          <div class="barcode-section">
+            <h6 class="text-md font-semibold dark:text-white mb-4">Barcode Scanner</h6>
+            <div class="flex items-center space-x-4 mb-4">
+              <div class="barcode-input-container">
+                <input type="text" 
+                       id="barcode-input" 
+                       placeholder="Scan or enter barcode here..." 
+                       class="barcode-input"
+                       autocomplete="off">
+                <div id="barcode-loading" class="barcode-loading hidden">
+                  <span>Scanning...</span>
+                </div>
+              </div>
+              <button type="button" 
+                      class="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-600" 
+                      onclick="manualBarcodeSearch()">
+                Search
+              </button>
+              <button type="button" 
+                      class="bg-gray-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-600" 
+                      onclick="clearBarcodeInput()">
+                Clear
+              </button>
+            </div>
+            <div id="barcode-message" class="barcode-message"></div>
+          </div>
+        </div>
+
         <!-- Items Section -->
         <div class="mb-6">
           <h6 class="text-md font-semibold dark:text-white mb-4">Invoice Items</h6>
-          <button type="button" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold mb-4" onclick="openProductModal()">Add Item</button>
+          <div class="flex space-x-2 mb-4">
+            <button type="button" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold" onclick="openProductModal()">Add Item Manually</button>
+            <button type="button" class="bg-purple-500 text-white px-4 py-2 rounded-lg text-sm font-semibold" onclick="focusBarcodeInput()">Focus Barcode Scanner</button>
+          </div>
           
           <div id="items-container">
             <div class="item-row item-header">
@@ -364,90 +482,91 @@
         </div>
 
         <!-- Total Section -->
- <div class="text-right mb-6">
-  <div class="flex justify-end items-center gap-2 mb-2">
-    <label class="text-lg font-bold ">Total Amount:</label>
-    <button
-      type="button"
-      id="edit-total-btn"
-      onclick="enableManualTotalEdit()"
-      class="bg-blue-600  px-3 py-1 rounded-lg text-sm hover:bg-blue-700 transition"
-    >
-      Edit
-    </button>
-  </div>
+        <div class="text-right mb-6">
+          <div class="flex justify-end items-center gap-2 mb-2">
+            <label class="text-lg font-bold ">Total Amount:</label>
+            <button
+              type="button"
+              id="edit-total-btn"
+              onclick="enableManualTotalEdit()"
+              class="bg-blue-600  px-3 py-1 rounded-lg text-sm hover:bg-blue-700 transition"
+            >
+              Edit
+            </button>
+          </div>
 
-  <!-- Static Total Display -->
-  <div id="total-display" class="text-lg font-semibold dark:text-white">
-    ₹<span id="total-amount">0.00</span>
-  </div>
+          <!-- Static Total Display -->
+          <div id="total-display" class="text-lg font-semibold dark:text-white">
+            ₹<span id="total-amount">0.00</span>
+          </div>
 
-  <!-- Editable Total Input -->
-  <div id="total-input-wrapper" class="hidden mt-2">
-    <div class="inline-flex items-center space-x-2">
-      <span class="text-lg font-bold dark:text-white">₹</span>
-      <input
-        type="number"
-        step="0.01"
-        id="total_amount_input"
-        name="manual_total_amount"
-        class="border rounded-lg px-3 py-1 w-32 text-right font-semibold dark:bg-gray-800 dark:text-white"
-      />
-      <button
-        type="button"
-        onclick="saveManualTotalEdit()"
-        class="bg-blue-600 px-3 py-1 rounded-lg text-sm hover:bg-blue-700 transition"
-      >
-        Save
-      </button>
-    </div>
-  </div>
+          <!-- Editable Total Input -->
+          <div id="total-input-wrapper" class="hidden mt-2">
+            <div class="inline-flex items-center space-x-2">
+              <span class="text-lg font-bold dark:text-white">₹</span>
+              <input
+                type="number"
+                step="0.01"
+                id="total_amount_input"
+                name="manual_total_amount"
+                class="border rounded-lg px-3 py-1 w-32 text-right font-semibold dark:bg-gray-800 dark:text-white"
+              />
+              <button
+                type="button"
+                onclick="saveManualTotalEdit()"
+                class="bg-blue-600 px-3 py-1 rounded-lg text-sm hover:bg-blue-700 transition"
+              >
+                Save
+              </button>
+            </div>
+          </div>
 
-  <!-- Hidden field for form -->
-  <input type="hidden" name="manual_total_amount" id="manual_total_amount_hidden">
-</div>
-<div class="summary-row mb-4">
-  <label class="inline-flex items-center gap-2">
-    <input
-      type="checkbox"
-      name="is_full_paid"
-      id="is_full_paid"
-      class="form-checkbox h-4 w-4 text-blue-600"
-   
-    />
-    <span class="summary-label font-medium mx-2">Mark as Full Paid</span>
-  </label>
-</div>
+          <!-- Hidden field for form -->
+          <input type="hidden" name="manual_total_amount" id="manual_total_amount_hidden">
+        </div>
 
-<div class="summary-row mb-4">
-  <label class="summary-label font-semibold mx-2" for="payment_mode">Payment Mode</label>
-  <select
-      name="payment_mode"
-      id="payment_mode"
-      class="border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 w-48 bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-    >
-      <option value="">-- Select --</option>
-      <option value="UPI">UPI</option>
-      <option value="Cash">Cash</option>
-      <option value="Bank Transfer">Bank Transfer</option>
-      <option value="Card">Card</option>
-      <option value="Cheque">Cheque</option>
-    </select>
-</div>
-<div class="summary-row mb-4" id="bankSelectRow" style="display: none;">
-  <label class="summary-label font-semibold mx-2" for="bank_name">Choose Bank</label>
-  <select
-      name="bank_name"
-      id="bank_name"
-      class="border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 w-48 bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-    >
-      <option value="">-- Select Bank --</option>
-      {% for i in banks %}
-      <option value="{{i.account_name}}">{{i.account_name}}</option>
-      {% endfor %}
-     
-    </select>
-</div>
+        <div class="summary-row mb-4">
+          <label class="inline-flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="is_full_paid"
+              id="is_full_paid"
+              class="form-checkbox h-4 w-4 text-blue-600"
+            />
+            <span class="summary-label font-medium mx-2">Mark as Full Paid</span>
+          </label>
+        </div>
+
+        <div class="summary-row mb-4">
+          <label class="summary-label font-semibold mx-2" for="payment_mode">Payment Mode</label>
+          <select
+              name="payment_mode"
+              id="payment_mode"
+              class="border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 w-48 bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">-- Select --</option>
+              <option value="UPI">UPI</option>
+              <option value="Cash">Cash</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Card">Card</option>
+              <option value="Cheque">Cheque</option>
+            </select>
+        </div>
+
+        <div class="summary-row mb-4" id="bankSelectRow" style="display: none;">
+          <label class="summary-label font-semibold mx-2" for="bank_name">Choose Bank</label>
+          <select
+              name="bank_name"
+              id="bank_name"
+              class="border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 w-48 bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">-- Select Bank --</option>
+              {% for i in banks %}
+              <option value="{{i.account_name}}">{{i.account_name}}</option>
+              {% endfor %}
+          </select>
+        </div>
+
         <!-- Action Buttons -->
         <div class="flex space-x-3 pt-4">
           <button type="submit" class="bg-blue-500 text-black px-4 py-2 rounded-lg text-sm font-semibold mr-2">Generate Invoice</button>
@@ -506,11 +625,10 @@
       <button type="button" class="btn-done" onclick="confirmSelection()">Done</button>
     </div>
   </div>
-
-  
 </div>
 
 <script>
+// Payment mode script
 document.addEventListener('DOMContentLoaded', function () {
   const paymentMode = document.getElementById('payment_mode');
   const bankSelectRow = document.getElementById('bankSelectRow');
@@ -524,30 +642,209 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 });
-</script>
 
-
-<script>
+// Global variables
 let invoiceItems = [];
 let products = [];
 let selectedProducts = {};
 let filteredProducts = [];
 let categories = [];
+let barcodeTimeout;
+let lastScannedBarcode = '';
 
+// Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
     loadProducts();
+    initializeBarcodeScanner();
+    initializeDates();
+    
+    document.getElementById('product-search').addEventListener('input', filterProducts);
+    document.getElementById('category-filter').addEventListener('change', filterProducts);
+});
 
+// Initialize barcode scanner
+function initializeBarcodeScanner() {
+    const barcodeInput = document.getElementById('barcode-input');
+    
+    // Focus on barcode input by default
+    setTimeout(() => {
+        barcodeInput.focus();
+    }, 100);
+    
+    // Handle barcode input
+    barcodeInput.addEventListener('input', function(e) {
+        const barcode = e.target.value.trim();
+        
+        // Clear previous timeout
+        if (barcodeTimeout) {
+            clearTimeout(barcodeTimeout);
+        }
+        
+        // Set timeout to process barcode after user stops typing
+        barcodeTimeout = setTimeout(() => {
+            if (barcode && barcode !== lastScannedBarcode) {
+                processBarcode(barcode);
+            }
+        }, 500); // 500ms delay
+    });
+    
+    // Handle Enter key
+    barcodeInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const barcode = e.target.value.trim();
+            if (barcode) {
+                processBarcode(barcode);
+            }
+        }
+    });
+}
+
+// Process scanned barcode
+function processBarcode(barcode) {
+    if (!barcode) return;
+    
+    lastScannedBarcode = barcode;
+    showBarcodeLoading(true);
+    showBarcodeMessage('Searching for product...', 'info');
+    
+    // Make AJAX request to find product
+    fetch('/ajax/scan-barcode/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            barcode: barcode
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        showBarcodeLoading(false);
+        
+        if (data.success) {
+            addScannedProductToInvoice(data.product);
+            showBarcodeMessage(`Product "${data.product.product_name}" added successfully!`, 'success');
+            clearBarcodeInput();
+        } else {
+            showBarcodeMessage(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        showBarcodeLoading(false);
+        showBarcodeMessage('Error processing barcode. Please try again.', 'error');
+        console.error('Barcode scan error:', error);
+    });
+}
+
+// Add scanned product to invoice
+function addScannedProductToInvoice(product) {
+    // Check if product already exists in invoice
+    const existingItemIndex = invoiceItems.findIndex(item => item.product_id === product.id);
+    
+    if (existingItemIndex !== -1) {
+        // Product already exists, increase quantity
+        invoiceItems[existingItemIndex].quantity += 1;
+        invoiceItems[existingItemIndex].amount = calculateAmountWithTax(
+            invoiceItems[existingItemIndex].rate,
+            invoiceItems[existingItemIndex].quantity,
+            invoiceItems[existingItemIndex].tax_rate
+        );
+    } else {
+        // Add new product to invoice
+        const newItem = {
+            product_id: product.id,
+            product_name: product.product_name,
+            description: product.description,
+            quantity: 1,
+            rate: parseFloat(product.unit_price),
+            tax_rate: parseFloat(product.tax_rate || 0),
+            amount: calculateAmountWithTax(parseFloat(product.unit_price), 1, parseFloat(product.tax_rate || 0))
+        };
+        invoiceItems.push(newItem);
+    }
+    
+    updateItemsDisplay();
+}
+
+// Manual barcode search
+function manualBarcodeSearch() {
+    const barcode = document.getElementById('barcode-input').value.trim();
+    if (barcode) {
+        processBarcode(barcode);
+    } else {
+        showBarcodeMessage('Please enter a barcode to search', 'error');
+    }
+}
+
+// Clear barcode input
+function clearBarcodeInput() {
+    document.getElementById('barcode-input').value = '';
+    lastScannedBarcode = '';
+    showBarcodeMessage('', '');
+    focusBarcodeInput();
+}
+
+// Focus barcode input
+function focusBarcodeInput() {
+    document.getElementById('barcode-input').focus();
+}
+
+// Show/hide barcode loading
+function showBarcodeLoading(show) {
+    const loading = document.getElementById('barcode-loading');
+    if (show) {
+        loading.classList.remove('hidden');
+    } else {
+        loading.classList.add('hidden');
+    }
+}
+
+// Show barcode message
+function showBarcodeMessage(message, type) {
+    const messageDiv = document.getElementById('barcode-message');
+    messageDiv.textContent = message;
+    messageDiv.className = 'barcode-message';
+    
+    if (type) {
+        messageDiv.classList.add(type);
+    }
+    
+    if (message && type === 'success') {
+        setTimeout(() => {
+            showBarcodeMessage('', '');
+        }, 3000);
+    }
+}
+
+// Get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Initialize dates
+function initializeDates() {
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('invoice_date').value = today;
 
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 30);
     document.getElementById('due_date').value = dueDate.toISOString().split('T')[0];
+}
 
-    document.getElementById('product-search').addEventListener('input', filterProducts);
-    document.getElementById('category-filter').addEventListener('change', filterProducts);
-});
-
+// Party field toggles
 function togglePartyFields() {
     const existingPartyRadio = document.getElementById('existing-party');
     const customPartyRadio = document.getElementById('custom-party');
@@ -572,6 +869,7 @@ function togglePartyFields() {
     }
 }
 
+// Load products
 function loadProducts() {
     fetch('/ajax/products/')
         .then(response => response.json())
@@ -584,6 +882,7 @@ function loadProducts() {
         .catch(error => console.error('Error loading products:', error));
 }
 
+// Extract categories
 function extractCategories() {
     const categorySet = new Set();
     products.forEach(product => {
@@ -594,6 +893,7 @@ function extractCategories() {
     categories = Array.from(categorySet).sort();
 }
 
+// Populate category filter
 function populateCategoryFilter() {
     const categoryFilter = document.getElementById('category-filter');
     categoryFilter.innerHTML = '<option value="">All Categories</option>';
@@ -606,6 +906,7 @@ function populateCategoryFilter() {
     });
 }
 
+// Filter products
 function filterProducts() {
     const searchTerm = document.getElementById('product-search').value.toLowerCase();
     const selectedCategory = document.getElementById('category-filter').value;
@@ -619,6 +920,7 @@ function filterProducts() {
     updateProductTable();
 }
 
+// Clear filters
 function clearFilters() {
     document.getElementById('product-search').value = '';
     document.getElementById('category-filter').value = '';
@@ -626,6 +928,7 @@ function clearFilters() {
     updateProductTable();
 }
 
+// Open product modal
 function openProductModal() {
     const modal = document.getElementById('product-modal');
     selectedProducts = {};
