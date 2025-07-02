@@ -536,6 +536,19 @@
             <span class="summary-label font-medium mx-2">Mark as Full Paid</span>
           </label>
         </div>
+        <div class="summary-row mb-4" id="partial_payment_section">
+  <label for="amount_paid" class="summary-label font-semibold mx-2 block">Partial Amount Paid</label>
+  <input
+    type="number"
+    name="amount_paid"
+    id="amount_paid"
+    step="0.01"
+    placeholder="Enter partial paid amount"
+    class="form-input w-48 border border-gray-300 rounded px-3 py-2 bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+  />
+  <input type="hidden" id="remaining_amount" name="remaining_amount"> 
+</div>
+
 
         <div class="summary-row mb-4">
           <label class="summary-label font-semibold mx-2" for="payment_mode">Payment Mode</label>
@@ -626,13 +639,11 @@
     </div>
   </div>
 </div>
-
 <script>
-// Payment mode script
 document.addEventListener('DOMContentLoaded', function () {
+  // Toggle Bank Select Row
   const paymentMode = document.getElementById('payment_mode');
   const bankSelectRow = document.getElementById('bankSelectRow');
-
   paymentMode.addEventListener('change', function () {
     if (this.value === 'Cash') {
       bankSelectRow.style.display = 'none';
@@ -641,7 +652,48 @@ document.addEventListener('DOMContentLoaded', function () {
       bankSelectRow.style.display = 'block';
     }
   });
+
+  // Toggle Partial Payment Section
+  const isFullPaidCheckbox = document.getElementById('is_full_paid');
+  const partialPaymentSection = document.getElementById('partial_payment_section');
+
+  isFullPaidCheckbox.addEventListener('change', function () {
+    partialPaymentSection.style.display = this.checked ? 'none' : 'block';
+    if (this.checked) {
+      document.getElementById('amount_paid').value = '';
+    }
+  });
+
+  // Party selection toggle
+  const existingPartyRadio = document.getElementById('existing-party');
+  const customPartyRadio = document.getElementById('custom-party');
+  const existingPartyField = document.getElementById('existing-party-field');
+  const customPartyFields = document.getElementById('custom-party-fields');
+
+  function togglePartyFields() {
+    if (existingPartyRadio.checked) {
+      existingPartyField.style.display = 'block';
+      customPartyFields.classList.remove('active');
+      document.getElementById('party_name').value = '';
+      document.getElementById('party_phone').value = '';
+      document.getElementById('party').required = true;
+    } else if (customPartyRadio.checked) {
+      existingPartyField.style.display = 'none';
+      customPartyFields.classList.add('active');
+      document.getElementById('party').value = '';
+      document.getElementById('party').required = false;
+    }
+  }
+
+  existingPartyRadio.addEventListener('change', togglePartyFields);
+  customPartyRadio.addEventListener('change', togglePartyFields);
+  togglePartyFields();  // Initialize on load
 });
+</script>
+
+<script>
+// Payment mode script
+
 
 // Global variables
 let invoiceItems = [];

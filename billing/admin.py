@@ -48,7 +48,7 @@ class InvoiceAdmin(admin.ModelAdmin):
             'fields': ('invoice_date', 'due_date')
         }),
         ('Financial', {
-            'fields': ('amount', 'status')
+            'fields': ('amount', 'amount_paid','remaining_amount','status')
         }),
         ('System', {
             'fields': ('user', 'is_active', 'created_at', 'updated_at'),

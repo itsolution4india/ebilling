@@ -962,52 +962,54 @@ def download_invoices_csv(invoices, start_date=None, end_date=None):
 
 @login_required
 def invoice_create(request):
-    """Create new invoice"""
+    """Create new invoice with partial payment logic"""
     if request.method == 'POST':
         try:
             with transaction.atomic():
                 # Get form data
-                
                 party_id = request.POST.get('party')
                 invoice_no = request.POST.get('invoice_no')
                 invoice_date = request.POST.get('invoice_date')
                 due_date = request.POST.get('due_date')
                 items_data = request.POST.get('items_data')
-                
                 party_name = request.POST.get('party_name')
-                party_phone = request.POST.get('party_phone')
+                party_phone = request.POST.get('party_phone') or "0987654321"
                 invoice_status = request.POST.get('is_full_paid')
-                payment_mode=request.POST.get('payment_mode')
-                bank=request.POST.get('bank_name')
+                payment_mode = request.POST.get('payment_mode')
+                bank = request.POST.get('bank_name')
 
-                if invoice_status == 'on':  # checkbox is checked
-                    status = "paid"
+                # Parse and validate amount
+                total_amount = Decimal(request.POST.get('manual_total_amount') or '0')
+                amount_paid = Decimal(request.POST.get('amount_paid') or '0')
+
+                # Calculate payment status and balance
+                if invoice_status == 'on' or amount_paid >= total_amount:
+                    status = 'paid'
+                    amount_paid = total_amount
+                    remaining_amount = Decimal('0.00')
+                elif amount_paid > 0:
+                    status = 'partial'
+                    remaining_amount = total_amount - amount_paid
                 else:
-                    status = "unpaid"
-                
-                party_phone = "0987654321" if not party_phone else party_phone
-                
-                # Validate party
+                    status = 'unpaid'
+                    remaining_amount = total_amount
+
+                # Handle party
                 if party_id:
                     party = get_object_or_404(Party, id=party_id, user=request.user)
                     selected_party_name = party.party_name
                     selected_party_num = party_id
                 else:
-                    selected_party_name = selected_party_num = None
-                
-                selected_party_name = party_name if party_name else selected_party_name
-                selected_party_num = party_phone if party_phone else selected_party_num
-                
-                # Parse items data
+                    selected_party_name = party_name
+                    selected_party_num = party_phone
+                    Party.objects.create(user=request.user, party_name=selected_party_name, party_contact=selected_party_num)
+
+                # Parse items
                 items = json.loads(items_data) if items_data else []
-                
                 if not items:
-                    messages.error(request, 'Please add at least one item to the invoice.')
+                    messages.error(request, 'Please add at least one item.')
                     return redirect('invoice_create')
-                total_amount=request.POST.get('manual_total_amount')
-                # Calculate total amount
-                # total_amount = sum(Decimal(str(item['amount'])) for item in items)
-                
+
                 # Create invoice
                 invoice = Invoice.objects.create(
                     user=request.user,
@@ -1019,51 +1021,34 @@ def invoice_create(request):
                     status=status,
                     payment_mode=payment_mode,
                     bank=bank,
-
-                    
                     amount=total_amount,
-                
+                    amount_paid=amount_paid,
+                    remaining_amount=remaining_amount,
                 )
-                if bank:
-                    try:
-                        money = TotalBalance.objects.get(
-                            user=request.user,
-                            payment_type='Bank',
-                            account_name=bank
-                        )
-                        money.amount += Decimal(total_amount)
-                        money.save()
-                    except TotalBalance.MultipleObjectsReturned:
-                        # Handle the case where multiple balances exist for the same bank
-                        # You can pick the first one or raise a clear error
-                        money = TotalBalance.objects.filter(
-                            user=request.user,
-                            payment_type='Bank',
-                            account_name=bank
-                        ).first()
-                        if money:
-                            money.amount += Decimal(total_amount)
-                            money.save()
-                    except TotalBalance.DoesNotExist:
-                        # Handle if no balance exists — optionally create one
-                        TotalBalance.objects.create(
-                            user=request.user,
-                            payment_type='Bank',
-                            account_name=bank,
-                            amount=Decimal(total_amount)
-                        )
 
-                # Create invoice items
+                # Update bank balance if paid
+                if bank and amount_paid > 0:
+                    try:
+                        money = TotalBalance.objects.get(user=request.user, payment_type='Bank', account_name=bank)
+                    except TotalBalance.MultipleObjectsReturned:
+                        money = TotalBalance.objects.filter(user=request.user, payment_type='Bank', account_name=bank).first()
+                    except TotalBalance.DoesNotExist:
+                        money = TotalBalance.objects.create(user=request.user, payment_type='Bank', account_name=bank, amount=0)
+
+                    money.amount += amount_paid
+                    money.save()
+
+                # Create invoice items and update stock
                 for item in items:
                     product = get_object_or_404(Product, id=item['product_id'], user=request.user)
-    
-                    # Reduce stock
+
                     if product.stock_quantity < item['quantity']:
-                        messages.error(request, f'Not enough stock for product: {product.product_name}')
+                        messages.error(request, f'Not enough stock for {product.product_name}')
                         raise Exception(f'Insufficient stock for {product.product_name}')
-                    
+
                     product.stock_quantity -= item['quantity']
                     product.save()
+
                     InvoiceItem.objects.create(
                         invoice=invoice,
                         product_id=item['product_id'],
@@ -1073,30 +1058,26 @@ def invoice_create(request):
                         rate=Decimal(str(item['rate'])),
                         amount=Decimal(str(item['amount']))
                     )
-                
+
                 messages.success(request, f'Invoice {invoice_no} created successfully!')
                 return redirect('invoice_detail', pk=invoice.pk)
-                
+
         except Exception as e:
             messages.error(request, f'Error creating invoice: {str(e)}')
-    
-    # Get parties and products for the form
+
+    # Initial data for GET form
     banks = TotalBalance.objects.filter(user=request.user, payment_type='Bank').values('account_name').distinct()
     parties = Party.objects.filter(user=request.user, status=True)
     products = Product.objects.filter(user=request.user, status=True)
-    
-    # Generate next invoice number
-    random_number = random.randint(10**9, 10**10 - 1)  # 10-digit number
-    next_invoice_no = f"INV-{random_number}"
-   
+    next_invoice_no = f"INV-{random.randint(10**9, 10**10 - 1)}"
+
     context = {
         'parties': parties,
         'products': products,
         'next_invoice_no': next_invoice_no,
-        'banks':banks
-   
+        'banks': banks,
     }
-    
+
     return render(request, 'invoices/invoice_create.html', context)
 
 @login_required
@@ -1186,27 +1167,24 @@ def get_products_ajax(request):
 
 @login_required
 def invoice_detail(request, pk):
-    """View invoice details"""
     invoice = get_object_or_404(Invoice, pk=pk, user=request.user)
     invoice_setting = get_object_or_404(Sales_invoice_settings, user=request.user)
-
     items = invoice.items.all()
 
-    # Prepare enriched items with tax values
     enriched_items = []
     subtotal = Decimal('0.00')
     total_tax = Decimal('0.00')
 
     for item in items:
-        tax_rate = getattr(item, 'tax_rate', Decimal('0.00'))
+        tax_rate = Decimal('0.00')
+        unit = ''
 
         try:
             product = Product.objects.get(id=item.product_id)
             tax_rate = product.tax_rate
             unit = product.unit_of_measure
         except Product.DoesNotExist:
-            tax_rate = Decimal('0.00')
-            unit = ''
+            pass
 
         tax_amount = item.amount * (tax_rate / Decimal('100.00'))
         subtotal += item.amount
@@ -1220,12 +1198,9 @@ def invoice_detail(request, pk):
         })
 
     calculated_total = subtotal + total_tax
-
-            # Final amount: either user-defined invoice.amount or calculated if less
     final_total = max(invoice.amount, calculated_total)
-
-            # Extra amount = difference between final_total and calculated_total
     extra_amount = final_total - calculated_total
+
     context = {
         'invoice': invoice,
         'invoice_setting': invoice_setting,
@@ -1235,6 +1210,9 @@ def invoice_detail(request, pk):
         'calculated_total': calculated_total,
         'final_total': final_total,
         'extra_amount': extra_amount,
+        'paid_amount': invoice.amount_paid,
+        'balance': invoice.remaining_amount,
+        'status': invoice.status,
     }
     return render(request, 'invoices/invoice_detail.html', context)
 @login_required
