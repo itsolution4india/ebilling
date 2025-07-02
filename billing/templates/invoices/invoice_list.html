@@ -99,10 +99,10 @@
       <table class="items-center w-full mb-4 align-top border-collapse border-gray-200 dark:border-white/40">
         <thead>
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Invoice No</th>
             <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Party Name</th>
             <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Invoice Date</th>
             <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Due Date</th>
+            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Total Amount</th>
             <th class="px-6 py-3 text-right text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Amount Paid</th>
             <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Status</th>
             <th class="px-6 py-3 text-center text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Actions</th>
@@ -111,10 +111,10 @@
         <tbody>
           {% for invoice in page_obj %}
           <tr>
-            <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.invoice_no }}</td>
             <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.name }}</td>
             <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.invoice_date }}</td>
             <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.due_date }}</td>
+            <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.amount }}</td>
             <td class="px-6 py-3 text-right text-sm text-slate-700 dark:text-white">₹{{ invoice.amount_paid }}</td>
             <td class="px-6 py-3 text-center text-sm font-semibold {% if invoice.status == 'paid' %}text-green-600{% else %}text-red-600{% endif %}">
               {{ invoice.get_status_display }}
