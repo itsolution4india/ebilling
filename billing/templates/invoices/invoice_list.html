@@ -1,4 +1,14 @@
 {% extends 'base.html' %}
+{% block extra_css %}
+<style>
+  .text-green-600 {
+    color: green;
+  }
+  .text-yellow-600 {
+    color: rgb(207, 190, 0);
+  }
+</style>
+{% endblock %}
 {% block content %}
 <div class="w-full max-w-full px-3 mt-0 lg:flex-none">
   <div class="relative flex flex-col min-w-0 break-words bg-white border-0 border-solid shadow-xl dark:bg-slate-850 dark:shadow-dark-xl dark:bg-gray-950 border-black-125 rounded-2xl bg-clip-border">
@@ -116,14 +126,20 @@
             <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.due_date }}</td>
             <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.amount }}</td>
             <td class="px-6 py-3 text-right text-sm text-slate-700 dark:text-white">₹{{ invoice.amount_paid }}</td>
-            <td class="px-6 py-3 text-center text-sm font-semibold {% if invoice.status == 'paid' %}text-green-600{% else %}text-red-600{% endif %}">
+            <td class="px-6 py-3 text-center text-sm font-semibold {% if invoice.status == 'paid' %}text-green-600{% elif invoice.status == 'refund' %}text-yellow-600{% else %}text-red-600{% endif %}">
               {{ invoice.get_status_display }}
             </td>
             <td class="px-6 py-3 text-center">
-              <a href="{% url 'invoice_detail' invoice.pk %}" class="text-sm text-blue-600 hover:underline">View</a> |
+              {% if invoice.status == 'refund' %}
+                <a href="{% url 'return_invoice_detail' invoice.pk %}" class="text-sm text-blue-600 hover:underline">View</a>
+              {% else %}
+                <a href="{% url 'invoice_detail' invoice.pk %}" class="text-sm text-blue-600 hover:underline">View</a>
+              {% endif %}
+              |
               <!-- <a href="{% url 'invoice_update' invoice.pk %}" class="text-sm text-yellow-600 hover:underline">Edit</a> | -->
               <a href="{% url 'invoice_delete' invoice.pk %}" class="text-sm text-red-600 hover:underline">Delete</a>
             </td>
+
           </tr>
           {% empty %}
           <tr>

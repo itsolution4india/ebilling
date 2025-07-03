@@ -1,0 +1,640 @@
+{% extends 'base.html' %}
+{% block extra_css %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .invoice-wrapper {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .action-buttons {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .action-buttons .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary { background: #007bff; color: white; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-info { background: #17a2b8; color: white; }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .invoice-content {
+            padding: 40px;
+        }
+        
+        .document-type {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .business-header {
+            margin-bottom: 30px;
+        }
+        
+        .business-name {
+            font-size: 32px;
+            font-weight: bold;
+            color: #000;
+            margin-bottom: 5px;
+        }
+        
+        .business-mobile {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .invoice-meta {
+            background: #e9ecef;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            border-radius: 3px;
+        }
+        
+        .meta-item {
+            font-size: 14px;
+        }
+        
+        .meta-label {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .meta-value {
+            color: #666;
+        }
+        
+        .bill-from-section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .party-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 3px;
+        }
+        
+        .party-details {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .items-section {
+            margin-bottom: 30px;
+        }
+        
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        .items-table th {
+            background: #f8f9fa;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            color: #333;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        .items-table td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #dee2e6;
+            font-size: 14px;
+        }
+        
+        .item-name {
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 2px;
+        }
+        
+        .item-description {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .tax-breakdown {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .summary-section {
+            border-top: 2px solid #000;
+            padding-top: 20px;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .summary-label {
+            font-weight: 600;
+            color: #000;
+        }
+        
+        .summary-value {
+            color: #000;
+            font-weight: 600;
+        }
+        
+        .terms-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .terms-title {
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .terms-list {
+            font-size: 12px;
+            color: #666;
+            line-height: 1.5;
+        }
+        
+        .tax-details {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .tax-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .tax-label {
+            color: #333;
+        }
+        
+        .tax-value {
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .total-amount-row {
+            background: #f8f9fa;
+            padding: 10px 0px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+        
+        .paid-amount-row {
+            color: #007bff;
+            font-weight: 600;
+        }
+        
+        .amount-words {
+            text-align: center;
+            margin-top: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 3px;
+        }
+        
+        .amount-words-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 3px;
+        }
+        
+        .amount-words-text {
+            font-size: 14px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .qr-code-container {
+            text-align: center;
+        }
+
+        .qr-code-container canvas {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .qr-code-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        @media print {
+            .action-buttons { display: none !important; }
+            body { background: white; }
+            .container { max-width: none; margin: 0; padding: 0; }
+            .invoice-wrapper { box-shadow: none; }
+        }
+        
+        @media (max-width: 768px) {
+            .invoice-meta {
+                grid-template-columns: 1fr;
+            }
+            
+            .items-table {
+                font-size: 12px;
+            }
+            
+            .items-table th,
+            .items-table td {
+                padding: 8px 4px;
+            }
+        }
+       .page-break {
+   
+    break-before: page;
+    display: block; /* Avoid flex at the breaking container level */
+    margin-top: 20px;
+  }
+
+  .page-break-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: stretch;
+    gap: 20px;
+  }
+  .invoice-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.invoice-footer {
+  margin-top: auto;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+    </style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="invoice-wrapper">
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <div class="btn-group">
+                <a href="{% url 'invoice_list' %}" class="btn btn-primary">Back to List</a>
+                <!-- <a href="{% url 'invoice_update' invoice.pk %}" class="btn btn-warning">Edit Invoice</a> -->
+                <button onclick="printInvoice()" class="btn btn-success">Print Invoice</button>
+                <button onclick="downloadPDF()" class="btn btn-info">Download PDF</button>
+                <a href="{% url 'invoice_delete' invoice.pk %}" class="btn btn-danger">Delete Invoice</a>
+            </div>
+        </div>
+
+        <div class="invoice-content" id="invoice-content">
+            <div id="invoice-page-1">
+            <!-- Document Type -->
+            <div class="document-type">
+                {{ invoice.document_type|default:"REFUND"|upper }}
+            </div>
+
+            <!-- Business Header -->
+            <div class="business-header">
+                <div class="business-name">
+                    {{ invoice_setting.business_name|default:"Business Name" }}
+                </div>
+                <div class="business-mobile">
+                    Mobile: {{ invoice_setting.mobile }}<br>
+                    GST No: {{ invoice_setting.gstin }}
+                </div>
+            </div>
+
+            <!-- Invoice Meta Information -->
+            <div class="invoice-meta">
+                <div class="meta-item">
+                    <span class="meta-label">Invoice No.:</span>
+                    <span class="meta-value">{{ invoice.invoice_no|default:"N/A" }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Invoice Date:</span>
+                    <span class="meta-value">{{ invoice.invoice_date|date:"d/m/Y" }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Expiry Date:</span>
+                    <span class="meta-value">{{ invoice.due_date|date:"d/m/Y" }}</span>
+                </div>
+            </div>
+
+            <!-- Party Details -->
+            <div style="display: flex; justify-content: space-between; gap: 20px; margin: 30px 0;">
+                <div style="flex: 1;">
+                    <div class="section-title">BILL FROM</div>
+                    <div class="party-name">{{ invoice_setting.business_name|default:"Supplier Name" }}</div>
+                    <div class="party-details">
+                        {% if invoice_setting.mobile %}Mobile: {{ invoice_setting.mobile }}<br>{% endif %}
+                        {% if invoice_setting.address %}Address: {{invoice_setting.address}}<br>{% endif %}
+                  
+                    </div>
+                </div>
+                <div style="flex: 1;">
+                    <div class="section-title">BILL TO</div>
+                    <div class="party-name">{{ invoice.name|default:"Customer Name" }}</div>
+                    <div class="party-details">
+                        {% if invoice.customer_mobile %}Mobile: {{ invoice.customer_mobile }}<br>{% endif %}
+                        {% if invoice.billing_address %}{{ invoice.billing_address }}<br>{% endif %}
+                        {% if invoice.customer_gstin %}GST: {{ invoice.customer_gstin }}{% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Items Section -->
+            <div class="items-section">
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 40%;">ITEMS</th>
+                            <th style="width: 15%;">QTY.</th>
+                            <th style="width: 15%;">RATE</th>
+                            <th style="width: 15%;">TAX</th>
+                            <th style="width: 15%;">AMOUNT</th>
+                        </tr>
+                    </thead>
+<tbody>
+  {% for i in items %}
+  <tr>
+    <td>
+      <div class="item-name">{{ i.item.product_name }}</div>
+      {% if i.item.product_description %}
+        <div class="item-description">{{ i.item.product_description }}</div>
+      {% endif %}
+    </td>
+
+    <td>{{ i.item.quantity }} {{ i.unit|default:"" }}</td>
+
+    <td>₹ {{ i.item.rate|floatformat:"2" }}</td>
+
+    <td>
+      ₹ {{ i.tax_amount|floatformat:"2" }}<br>
+      <span class="tax-breakdown">({{ i.tax_rate|floatformat:"2" }}%)</span>
+    </td>
+
+    <td>
+      {% with total_with_tax=i.item.amount|add:i.tax_amount %}
+        ₹ {{ total_with_tax|floatformat:"2" }}<br>
+        <small class="text-gray-500">Base: ₹{{ i.item.amount|floatformat:"2" }}</small>
+      {% endwith %}
+    </td>
+  </tr>
+  {% empty %}
+  <tr>
+    <td colspan="5" class="text-center text-gray-500 italic">No items found</td>
+  </tr>
+  {% endfor %}
+</tbody> </table>
+            </div>
+
+            <!-- Summary -->
+<div class="summary-section">
+  <div class="summary-row">
+    <span class="summary-label">Subtotal</span>
+    <span class="summary-value">₹ {{ subtotal|floatformat:2 }}</span>
+  </div>
+
+  <div class="summary-row">
+    <span class="summary-label">Tax</span>
+    <span class="summary-value">₹ {{ total_tax|floatformat:2 }}</span>
+  </div>
+
+  <!-- <div class="summary-row">
+    <span class="summary-label">Extra Amount</span>
+    <span class="summary-value">₹ {{ extra_amount|floatformat:2 }}</span>
+  </div> -->
+
+  <div class="summary-row font-semibold total-amount-row">
+    <span class="summary-label">Total Refund Amount</span>
+    <span class="summary-value">₹ {{ final_total|floatformat:2 }}</span>
+  </div>
+
+  <!-- <div class="summary-row">
+    <span class="summary-label">Received Amount</span>
+    <span class="summary-value">₹ {{ paid_amount|floatformat:2 }}</span>
+  </div>
+
+  <div class="summary-row">
+    <span class="summary-label">Balance</span>
+    <span class="summary-value">₹ {{ balance|floatformat:2 }}</span>
+  </div> -->
+
+  <div class="summary-row">
+    <span class="summary-label">Payment Status</span>
+    <span class="summary-value capitalize">{{ status }}</span>
+  </div>
+</div>
+
+
+<!-- <div id="invoice-content" class="invoice-container">
+
+  <div class="invoice-footer" style="margin-top: 30px;">
+    <div class="bank-and-terms" style="display: flex; justify-content: space-between; gap: 20px; align-items: stretch;">
+      
+      <div style="flex: 1; border-right: 1px solid #ccc; padding-right: 20px;">
+        <div>
+          <strong>Bank Details</strong><br>
+          Bank Name: {{ invoice_setting.acc_bank_name }}<br>
+          A/C No: {{ invoice_setting.account_no }}<br>
+          UPI ID: {{ invoice_setting.upi_id }}<br>
+          IFSC: {{ invoice_setting.ifsc_code }}<br>
+          GST No: {{ invoice_setting.gstin }}
+        </div>
+        <div style="margin-top: 20px;">
+          <strong>Terms & Conditions</strong>
+          <ol style="list-style: disc; padding-left: 20px;">
+            {% if invoice_setting.terms1 %}<li>{{ invoice_setting.terms1 }}</li>{% endif %}
+            {% if invoice_setting.terms2 %}<li>{{ invoice_setting.terms2 }}</li>{% endif %}
+            {% if invoice_setting.terms3 %}<li>{{ invoice_setting.terms3 }}</li>{% endif %}
+          </ol>
+        </div>
+      </div>
+
+      <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; align-items: flex-end; padding-left: 20px;">
+        
+        <div style="text-align: right;">
+          <div class="qr-code-label" style="font-weight: 600; margin-bottom: 5px;">Scan to Pay</div>
+          <div class="qr-code-container" id="qrcode">
+          </div>
+        </div>
+
+        <div style="text-align: right; margin-top: auto;">
+          <div>Authorized Signatory</div>
+          {% if invoice_setting.upload_sign %}
+            <img src="{{ invoice_setting.upload_sign.url }}" alt="Signature" style="height: 60px; margin: 5px 0;">
+          {% else %}
+            <div style="color: #aaa; font-style: italic;">[Signature Not Available]</div>
+          {% endif %}
+          <div style="font-weight: bold;">{{ invoice_setting.authorized_person_name|default:"Authorized Person" }}</div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+</div> -->
+
+
+
+
+         
+        </div>
+    </div>
+</div>
+</div>
+<script>
+    // UPI QR Code Generation
+    function generateUPIQRCode() {
+        const upiId = "{{ invoice_setting.upi_id|default:'' }}";
+        const businessName = "{{ invoice_setting.business_name|default:'' }}";
+        const amount = "{{ final_total|floatformat:2 }}";
+        const invoiceNo = "{{ invoice.invoice_no|default:'' }}";
+        
+        const qrContainer = document.getElementById('qrcode');
+        
+        if (!upiId) {
+            qrContainer.innerHTML = '<div style="color: #999; font-style: italic; text-align: center;">UPI ID not configured</div>';
+            return;
+        }
+
+        // Check if QR library is loaded
+        if (typeof qrcode === 'undefined') {
+            qrContainer.innerHTML = '<div style="color: #999; font-style: italic; text-align: center;">QR Code library loading...</div>';
+            setTimeout(generateUPIQRCode, 1000); // Retry after 1 second
+            return;
+        }
+
+        try {
+            // UPI Payment URL format
+            const upiUrl = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent(businessName)}&am=${amount}&cu=INR&tn=${encodeURIComponent('Invoice ' + invoiceNo)}`;
+            
+            // Create QR code
+            const qr = qrcode(0, 'M');
+            qr.addData(upiUrl);
+            qr.make();
+            
+            // Generate QR code HTML
+            const qrHtml = qr.createImgTag(4, 8);
+            
+            // Update container
+            qrContainer.innerHTML = `
+                <div class="qr-code-label">Scan to Pay</div>
+                ${qrHtml}
+                <div class="qr-code-label">₹${amount}</div>
+            `;
+            
+            // Style the generated image
+            const qrImg = qrContainer.querySelector('img');
+            if (qrImg) {
+                qrImg.style.border = '1px solid #ddd';
+                qrImg.style.borderRadius = '5px';
+                qrImg.style.maxWidth = '120px';
+                qrImg.style.height = 'auto';
+            }
+            
+        } catch (error) {
+            console.error('QR Code generation error:', error);
+            qrContainer.innerHTML = '<div style="color: #999; font-style: italic; text-align: center;">QR Code generation failed</div>';
+        }
+    }
+
+    // Generate QR code when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add a small delay to ensure library is loaded
+        setTimeout(generateUPIQRCode, 500);
+    });
+
+    function printInvoice() {
+        window.print();
+    }
+
+  function downloadPDF() {
+  const element = document.getElementById('invoice-content');
+  const opt = {
+    margin: 0.5,
+     filename:     'purchase-{{ invoice.invoice_no }}-{{ invoice.invoice_date|date:"Y-m-d" }}.pdf',
+
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+    pagebreak: {
+      mode: ['avoid-all', 'css', 'legacy']
+    }
+  };
+
+  html2pdf().set(opt).from(element).save();
+}
+
+
+</script>
+
+
+{% endblock %}

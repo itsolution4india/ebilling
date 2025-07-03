@@ -16,13 +16,13 @@ from decimal import Decimal, ROUND_HALF_UP
 from rest_framework.permissions import AllowAny
 import random
 import string
-from django.template.loader import render_to_string
+from dateutil.relativedelta import relativedelta
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Sum, F
-from .forms import ProductForm, PartyForm
+from .forms import ReturnInvoiceForm, PartyForm
 import uuid
 from django.http import JsonResponse
 from decimal import Decimal
@@ -271,7 +271,7 @@ def generate_random_invoice_id_mixed():
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def invoice_detail(request, invoice_id):
+def api_invoice_detail(request, invoice_id):
     """Get invoice details"""
     try:
         invoice = Invoice.objects.get(id=invoice_id, is_active=True)
@@ -1215,6 +1215,58 @@ def invoice_detail(request, pk):
         'status': invoice.status,
     }
     return render(request, 'invoices/invoice_detail.html', context)
+
+@login_required
+def return_invoice_detail(request, pk):
+    invoice = get_object_or_404(Invoice, pk=pk, user=request.user)
+    invoice_setting = get_object_or_404(Sales_invoice_settings, user=request.user)
+    items = invoice.items.all()
+
+    enriched_items = []
+    subtotal = Decimal('0.00')
+    total_tax = Decimal('0.00')
+
+    for item in items:
+        tax_rate = Decimal('0.00')
+        unit = ''
+
+        try:
+            product = Product.objects.get(id=item.product_id)
+            tax_rate = product.tax_rate
+            unit = product.unit_of_measure
+        except Product.DoesNotExist:
+            pass
+
+        tax_amount = item.amount * (tax_rate / Decimal('100.00'))
+        subtotal += item.amount
+        total_tax += tax_amount
+
+        enriched_items.append({
+            'item': item,
+            'tax_amount': tax_amount,
+            'tax_rate': tax_rate,
+            'unit': unit,
+        })
+
+    calculated_total = subtotal + total_tax
+    final_total = max(invoice.amount, calculated_total)
+    extra_amount = final_total - calculated_total
+
+    context = {
+        'invoice': invoice,
+        'invoice_setting': invoice_setting,
+        'items': enriched_items,
+        'subtotal': subtotal,
+        'total_tax': total_tax,
+        'calculated_total': calculated_total,
+        'final_total': final_total,
+        'extra_amount': extra_amount,
+        'paid_amount': invoice.amount_paid,
+        'balance': invoice.remaining_amount,
+        'status': invoice.status,
+    }
+    return render(request, 'invoices/return_invoice_detail.html', context)
+
 @login_required
 def invoicesetting(request):
     # Check if user already has a settings record
@@ -1679,3 +1731,168 @@ def set_invoice_paid(request):
         except Exception as e:
             return JsonResponse({"success": False, "error": str(e)})
     return JsonResponse({"success": False, "error": "Invalid method"})
+
+
+@login_required
+def return_invoice_view(request):
+    """Main return invoice view"""
+    if request.method == 'POST':
+        form = ReturnInvoiceForm(request.POST)
+        if form.is_valid():
+            invoice_id = form.cleaned_data['invoice_id']
+            try:
+                invoice = Invoice.objects.get(invoice_no=invoice_id, user=request.user)
+                # Check if invoice is eligible for return
+                if invoice.status == 'refund':
+                    messages.error(request, 'This invoice has already been refunded.')
+                    return render(request, 'return_invoice.html', {'form': form})
+                
+                invoice_items = invoice.items.all()
+                return render(request, 'return_invoice.html', {
+                    'form': form,
+                    'invoice': invoice,
+                    'invoice_items': invoice_items
+                })
+            except Invoice.DoesNotExist:
+                messages.error(request, 'Invoice not found or you do not have permission to access it.')
+    else:
+        form = ReturnInvoiceForm()
+    
+    return render(request, 'return_invoice.html', {'form': form})
+
+@login_required
+@csrf_exempt
+def process_return(request):
+    """Process the return invoice"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            invoice_id = data.get('invoice_id')
+            selected_items = data.get('selected_items', [])
+            
+            if not invoice_id or not selected_items:
+                return JsonResponse({'success': False, 'message': 'Missing required data'})
+            
+            # Get original invoice
+            original_invoice = get_object_or_404(Invoice, invoice_no=invoice_id, user=request.user)
+            
+            # Process return in transaction
+            with transaction.atomic():
+                return_invoice = create_return_invoice(original_invoice, selected_items, request.user)
+                update_inventory(selected_items, request.user)
+                update_balance(return_invoice.amount, request.user)
+                
+                return JsonResponse({
+                    'success': True, 
+                    'message': 'Return processed successfully',
+                    'return_invoice_id': return_invoice.invoice_no
+                })
+                
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+def create_return_invoice(original_invoice, selected_items, user):
+    """Create a return invoice"""
+    # Generate unique return invoice number
+    return_invoice_no = f"RET-{timezone.now().strftime('%Y%m%d%H%M%S')}"
+    
+    # Calculate total return amount
+    total_return_amount = Decimal('0.00')
+    invoice_date=timezone.now().date()
+    # Create return invoice
+    return_invoice = Invoice.objects.create(
+        user=user,
+        name=original_invoice.name,
+        number=original_invoice.number,
+        invoice_no=return_invoice_no,
+        invoice_date=invoice_date,
+        due_date=invoice_date + relativedelta(months=1),
+        amount=0,  # Will be updated after items are added
+        amount_paid=0,
+        remaining_amount=0,
+        status='refund',
+        payment_mode=original_invoice.payment_mode,
+        bank=original_invoice.bank
+    )
+    
+    # Create return invoice items
+    for item_data in selected_items:
+        original_item = get_object_or_404(InvoiceItem, id=item_data['item_id'])
+        return_quantity = int(item_data['quantity'])
+        
+        # Validate return quantity
+        if return_quantity > original_item.quantity:
+            raise ValueError(f"Return quantity cannot exceed original quantity for {original_item.product_name}")
+        
+        # Get product to calculate tax
+        try:
+            product = Product.objects.get(id=original_item.product_id, user=user)
+            tax_rate = product.tax_rate
+        except Product.DoesNotExist:
+            tax_rate = Decimal('0.00')
+        
+        # Calculate amounts
+        base_amount = original_item.rate * return_quantity
+        tax_amount = base_amount * (tax_rate / 100)
+        total_item_amount = base_amount + tax_amount
+        
+        # Create return invoice item
+        InvoiceItem.objects.create(
+            invoice=return_invoice,
+            product_id=original_item.product_id,
+            product_name=original_item.product_name,
+            product_description=original_item.product_description,
+            quantity=return_quantity,
+            rate=original_item.rate,
+            amount=total_item_amount
+        )
+        
+        total_return_amount += total_item_amount
+    
+    # Update return invoice amount
+    return_invoice.amount = total_return_amount
+    return_invoice.save()
+    
+    return return_invoice
+
+def update_inventory(selected_items, user):
+    """Update product inventory for returned items"""
+    for item_data in selected_items:
+        original_item = get_object_or_404(InvoiceItem, id=item_data['item_id'])
+        return_quantity = int(item_data['quantity'])
+        
+        try:
+            product = Product.objects.get(id=original_item.product_id, user=user)
+            product.stock_quantity += return_quantity
+            product.save()
+        except Product.DoesNotExist:
+            # Log this but don't fail the transaction
+            pass
+
+def update_balance(return_amount, user):
+    """Update total balance by deducting return amount"""
+    # Get the most recent balance entry for the user
+    latest_balance = TotalBalance.objects.filter(user=user).order_by('-created_at').first()
+    
+    if latest_balance:
+        # Create a new balance entry with deducted amount
+        TotalBalance.objects.create(
+            user=user,
+            account_name=latest_balance.account_name,
+            amount=-return_amount,  # Negative amount for return
+            date=timezone.now().date(),
+            remarks="Return Invoice Deduction",
+            payment_type=latest_balance.payment_type
+        )
+    else:
+        # If no balance exists, create one with negative amount
+        TotalBalance.objects.create(
+            user=user,
+            account_name="Default Account",
+            amount=-return_amount,
+            date=timezone.now().date(),
+            remarks="Return Invoice Deduction",
+            payment_type="Cash"
+        )

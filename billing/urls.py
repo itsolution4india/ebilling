@@ -22,7 +22,7 @@ urlpatterns = [
     # Invoice URLs
     path('api/auth/invoices/', views.api_invoice_list, name='invoice-list'),
     path('api/auth/invoices/store/', views.invoice_store, name='invoice-store'),
-    path('api/auth/invoices/<int:invoice_id>/', views.invoice_detail, name='invoice-detail'),
+    path('api/auth/invoices/<int:invoice_id>/', views.api_invoice_detail, name='invoice-detail'),
     path('api/auth/invoices/edit/<int:invoice_id>/', views.invoice_edit, name='invoice-edit'),
     path('api/auth/invoices/update/<int:invoice_id>/', views.api_invoice_update, name='invoice-update'),
     path('api/auth/invoices/delete/<int:invoice_id>/', views.api_invoice_delete, name='invoice-delete'),
@@ -65,6 +65,7 @@ urlpatterns = [
     path('invoice-setting-edit/', views.invoicesettingedit, name='invoicesettingedit'),
     path('invoices/add/', views.invoice_create, name='invoice_create'),
     path('invoices/<int:pk>/', views.invoice_detail, name='invoice_detail'),
+    path('return-invoices/<int:pk>/', views.return_invoice_detail, name='return_invoice_detail'),
     path('invoices/<int:pk>/edit/', views.invoice_update, name='invoice_update'),
     path('invoices/<int:pk>/delete/', views.invoice_delete, name='invoice_delete'),
     path('payments/',views.payments,name='payments'),
@@ -76,6 +77,8 @@ urlpatterns = [
     path("cashbank/<int:pk>/delete",views.cashdelete, name="cashdelete"),
     path('logout/', views.logout_view, name='logout_view'),
     path("ajax/set-invoice-paid/", views.set_invoice_paid, name="set_invoice_paid"),
+    path('return-invoice/', views.return_invoice_view, name='return_invoice'),
+    path('process-return/', views.process_return, name='process_return'),
     # AJAX endpoints
     path('ajax/products/', views.get_products_ajax, name='get_products_ajax'),
     path('ajax/party/<int:party_id>/', views.get_party_details_ajax, name='get_party_details_ajax'),

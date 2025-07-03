@@ -62,3 +62,14 @@ class InvoiceForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if user:
             self.fields['party'].queryset = Party.objects.filter(user=user, status=True)
+            
+class ReturnInvoiceForm(forms.Form):
+    invoice_id = forms.CharField(
+        max_length=50,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter Invoice Number',
+            'required': True
+        }),
+        label='Invoice Number'
+    )
