@@ -1036,23 +1036,21 @@ def invoice_create(request):
     if request.method == 'POST':
         try:
             with transaction.atomic():
-                # Get form data
+                # 1. Get form data
                 party_id = request.POST.get('party')
+                party_name = request.POST.get('party_name')
+                party_phone = request.POST.get('party_phone') or "0987654321"
                 invoice_no = request.POST.get('invoice_no')
                 invoice_date = request.POST.get('invoice_date')
                 due_date = request.POST.get('due_date')
-                items_data = request.POST.get('items_data')
-                party_name = request.POST.get('party_name')
-                party_phone = request.POST.get('party_phone') or "0987654321"
-                invoice_status = request.POST.get('is_full_paid')
                 payment_mode = request.POST.get('payment_mode')
                 bank = request.POST.get('bank_name')
+                invoice_status = request.POST.get('is_full_paid')
 
-                # Parse and validate amount
                 total_amount = Decimal(request.POST.get('manual_total_amount') or '0')
                 amount_paid = Decimal(request.POST.get('amount_paid') or '0')
 
-                # Calculate payment status and balance
+                # 2. Determine status
                 if invoice_status == 'on' or amount_paid >= total_amount:
                     status = 'paid'
                     amount_paid = total_amount
@@ -1064,7 +1062,7 @@ def invoice_create(request):
                     status = 'unpaid'
                     remaining_amount = total_amount
 
-                # Handle party (existing or new)
+                # 3. Handle party (new or existing)
                 if party_id:
                     party = get_object_or_404(Party, id=party_id, user=request.user)
                     selected_party_name = party.party_name
@@ -1074,7 +1072,8 @@ def invoice_create(request):
                     selected_party_num = party_phone
                     Party.objects.create(user=request.user, party_name=selected_party_name, party_contact=selected_party_num)
 
-                # Safely parse item data (fixing your error)
+                # 4. Load and validate items
+                items_data = request.POST.get('items_data')
                 parsed_data = json.loads(items_data) if items_data else {}
                 items = parsed_data.get('items', [])
 
@@ -1082,7 +1081,7 @@ def invoice_create(request):
                     messages.error(request, 'Please add at least one item.')
                     return redirect('invoice_create')
 
-                # Create invoice
+                # 5. Create Invoice
                 invoice = Invoice.objects.create(
                     user=request.user,
                     name=selected_party_name,
@@ -1098,7 +1097,7 @@ def invoice_create(request):
                     remaining_amount=remaining_amount,
                 )
 
-                # Update bank balance if paid
+                # 6. Handle bank balance update if any amount paid
                 if bank and amount_paid > 0:
                     try:
                         money = TotalBalance.objects.get(user=request.user, payment_type='Bank', account_name=bank)
@@ -1110,7 +1109,7 @@ def invoice_create(request):
                     money.amount += amount_paid
                     money.save()
 
-                # Create invoice items and update stock
+                # 7. Create Invoice Items and update stock
                 for item in items:
                     product = get_object_or_404(Product, id=item['product_id'], user=request.user)
 
@@ -1128,9 +1127,9 @@ def invoice_create(request):
                         product_description=item.get('description', ''),
                         quantity=item['quantity'],
                         rate=Decimal(str(item['rate'])),
-                        tax=Decimal(str(item.get('tax_rate', 0))),  # ✅ Save tax
-                        discount=item.get('discount_rate', ''),      # ✅ Save discount (can be string like '10%' or '5')
-                        amount=Decimal(str(item['amount']))          # this is precalculated with tax+discount from frontend
+                        tax=Decimal(str(item.get('tax_rate', 0))),  # % stored
+                        discount=item.get('discount_rate', ''),     # % or ₹ as string
+                        amount=Decimal(str(item['amount']))         # includes calculation from frontend
                     )
 
                 messages.success(request, f'Invoice {invoice_no} created successfully!')
@@ -1139,7 +1138,7 @@ def invoice_create(request):
         except Exception as e:
             messages.error(request, f'Error creating invoice: {str(e)}')
 
-    # Initial data for GET form
+    # Initial form load
     banks = TotalBalance.objects.filter(user=request.user, payment_type='Bank').values('account_name').distinct()
     parties = Party.objects.filter(user=request.user, status=True)
     products = Product.objects.filter(user=request.user, status=True)
@@ -1151,9 +1150,7 @@ def invoice_create(request):
         'next_invoice_no': next_invoice_no,
         'banks': banks,
     }
-
     return render(request, 'invoices/invoice_create.html', context)
-
 @login_required
 @csrf_exempt
 def scan_barcode(request):
@@ -1272,7 +1269,7 @@ def invoice_detail(request, pk):
                 discount_value = Decimal(discount_raw.strip('₹'))
             else:
                 discount_value = Decimal(discount_raw)
-        except Exception as e:
+        except Exception:
             discount_value = Decimal('0.00')
 
         # Tax on discounted amount
@@ -1293,9 +1290,10 @@ def invoice_detail(request, pk):
             'net_amount': taxable_amount + tax_amount,
         })
 
+    # Calculate total
     calculated_total = subtotal - total_discount + total_tax
-    final_total = max(invoice.amount, calculated_total)
-    extra_amount = final_total - calculated_total
+    final_total = invoice.amount
+    extra_amount = final_total - calculated_total  # ✅ can be positive or negative
 
     context = {
         'invoice': invoice,
@@ -1306,7 +1304,7 @@ def invoice_detail(request, pk):
         'total_tax': total_tax,
         'calculated_total': calculated_total,
         'final_total': final_total,
-        'extra_amount': extra_amount,
+        'extra_amount': extra_amount,  # ✅ show +ve or -ve as per condition
         'paid_amount': invoice.amount_paid,
         'balance': invoice.remaining_amount,
         'status': invoice.status,
