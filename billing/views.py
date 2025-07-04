@@ -1272,7 +1272,7 @@ def invoice_detail(request, pk):
                 discount_value = Decimal(discount_raw.strip('₹'))
             else:
                 discount_value = Decimal(discount_raw)
-        except (InvalidOperation, ValueError):
+        except Exception as e:
             discount_value = Decimal('0.00')
 
         # Tax on discounted amount

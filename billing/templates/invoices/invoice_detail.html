@@ -11,10 +11,10 @@
         }
         
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Courier New', monospace;
             background-color: #f5f5f5;
-            font-size: 14px;
-            line-height: 1.4;
+            font-size: 12px;
+            line-height: 1.3;
         }
         
         .container {
@@ -66,275 +66,256 @@
         }
         
         .invoice-content {
-            padding: 40px;
+            padding: 20px;
         }
         
-        .document-type {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 20px;
-            font-weight: 600;
-        }
-        
-        .business-header {
-            margin-bottom: 30px;
+        /* POS Specific Styles */
+        .pos-header {
+            text-align: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
         }
         
         .business-name {
-            font-size: 32px;
+            font-size: 18px;
             font-weight: bold;
-            color: #000;
-            margin-bottom: 5px;
-        }
-        
-        .business-mobile {
-            font-size: 14px;
-            color: #666;
-        }
-        
-        .invoice-meta {
-            background: #e9ecef;
-            padding: 12px 15px;
-            margin-bottom: 20px;
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 20px;
-            border-radius: 3px;
-        }
-        
-        .meta-item {
-            font-size: 14px;
-        }
-        
-        .meta-label {
-            font-weight: 600;
-            color: #333;
-        }
-        
-        .meta-value {
-            color: #666;
-        }
-        
-        .bill-from-section {
-            margin-bottom: 30px;
-        }
-        
-        .section-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 8px;
-        }
-        
-        .party-name {
-            font-size: 16px;
-            font-weight: 600;
             color: #000;
             margin-bottom: 3px;
         }
         
-        .party-details {
-            font-size: 14px;
-            color: #666;
-        }
-        
-        .items-section {
-            margin-bottom: 30px;
-        }
-        
-        .items-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 20px;
-        }
-        
-        .items-table th {
-            background: #f8f9fa;
-            padding: 12px 8px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 14px;
+        .business-details {
+            font-size: 10px;
             color: #333;
-            border-bottom: 2px solid #dee2e6;
+            line-height: 1.2;
         }
         
-        .items-table td {
-            padding: 12px 8px;
-            border-bottom: 1px solid #dee2e6;
+        .document-type {
             font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+            border: 1px solid #000;
+            padding: 5px;
         }
         
-        .item-name {
-            font-weight: 600;
-            color: #000;
+        .invoice-meta {
+            margin-bottom: 15px;
+            font-size: 10px;
+        }
+        
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
             margin-bottom: 2px;
         }
         
-        .item-description {
-            font-size: 12px;
-            color: #666;
+        .customer-details {
+            margin-bottom: 15px;
+            border-radius: 3px;
         }
         
-        .tax-breakdown {
-            font-size: 12px;
-            color: #666;
+        .customer-title {
+            font-weight: bold;
+            margin-bottom: 3px;
+            font-size: 11px;
         }
         
-        .summary-section {
+        .customer-info {
+            font-size: 10px;
+            line-height: 1.2;
+        }
+        
+        /* POS Items Table */
+        .pos-items {
+            margin-bottom: 15px;
+        }
+        
+        .pos-item {
+            border-bottom: 1px dashed #ccc;
+            padding: 8px 0;
+        }
+        
+        .pos-item:last-child {
+            border-bottom: none;
+        }
+        
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 11px;
+            margin-bottom: 2px;
+        }
+        
+        .item-details {
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 3px;
+        }
+        
+        .item-calculation {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #333;
+        }
+        
+        /* POS Summary */
+        .pos-summary {
             border-top: 2px solid #000;
-            padding-top: 20px;
+            padding-top: 10px;
+            margin-bottom: 15px;
         }
         
         .summary-row {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 14px;
+            margin-bottom: 3px;
+            font-size: 11px;
         }
         
-        .summary-label {
-            font-weight: 600;
-            color: #000;
+        .summary-row.total {
+            font-weight: bold;
+            font-size: 13px;
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            padding: 5px 0;
+            margin: 8px 0;
         }
         
-        .summary-value {
-            color: #000;
-            font-weight: 600;
+        .summary-row.paid {
+            color: #007bff;
+            font-weight: bold;
+        }
+        
+        .summary-row.balance {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        /* POS Footer */
+        .pos-footer {
+            border-top: 1px dashed #ccc;
+            padding-top: 10px;
+            text-align: center;
+        }
+        
+        .payment-info {
+            margin-bottom: 10px;
+            font-size: 10px;
+        }
+        
+        .qr-section {
+            margin: 10px 0;
+        }
+        
+        .qr-code-container {
+            text-align: center;
+            margin: 10px 0;
+        }
+        
+        .qr-code-container canvas,
+        .qr-code-container img {
+            max-width: 100px;
+            height: auto;
+            border: 1px solid #ddd;
+        }
+        
+        .qr-label {
+            font-size: 10px;
+            color: #666;
+            margin: 3px 0;
         }
         
         .terms-section {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid #dee2e6;
-        }
-        
-        .terms-title {
-            font-weight: 600;
-            color: #000;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-        
-        .terms-list {
-            font-size: 12px;
+            margin-top: 10px;
+            font-size: 9px;
             color: #666;
-            line-height: 1.5;
-        }
-        
-        .tax-details {
-            margin-top: 20px;
-            padding-top: 15px;
-            border-top: 1px solid #dee2e6;
-        }
-        
-        .tax-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-        
-        .tax-label {
-            color: #333;
-        }
-        
-        .tax-value {
-            color: #333;
-            font-weight: 500;
-        }
-        
-        .total-amount-row {
-            background: #f8f9fa;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 3px;
-        }
-        
-        .paid-amount-row {
-            color: #007bff;
-            font-weight: 600;
-        }
-        
-        .amount-words {
             text-align: center;
+        }
+        
+        .signature-section {
             margin-top: 15px;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 3px;
-        }
-        
-        .amount-words-label {
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 3px;
-        }
-        
-        .amount-words-text {
-            font-size: 14px;
-            color: #333;
-            font-weight: 600;
-        }
-
-        .qr-code-container {
             text-align: center;
-        }
-
-        .qr-code-container canvas {
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-
-        .qr-code-label {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
+            font-size: 10px;
         }
         
+        .signature-img {
+            max-width: 80px;
+            height: auto;
+            margin: 5px 0;
+        }
+
+        .m-auto {
+            margin: auto;
+        }
+        
+        .thank-you {
+            text-align: center;
+            font-weight: bold;
+            margin: 15px 0;
+            font-size: 12px;
+            border: 1px solid #000;
+            padding: 8px;
+        }
+        
+        /* Print Styles for POS */
         @media print {
             .action-buttons { display: none !important; }
-            body { background: white; }
-            .container { max-width: none; margin: 0; padding: 0; }
-            .invoice-wrapper { box-shadow: none; }
+            body { 
+                background: white; 
+                font-size: 10px;
+                margin: 0;
+                padding: 0;
+            }
+            .container { 
+                max-width: none; 
+                margin: 0; 
+                padding: 0; 
+                width: 100%;
+            }
+            .invoice-wrapper { 
+                box-shadow: none; 
+                border-radius: 0;
+            }
+            .invoice-content {
+                padding: 10px;
+            }
+            
+            /* Force narrow width for POS printers */
+            @page {
+                size: 80mm auto;
+                margin: 2mm;
+            }
+            
+            .pos-header {
+                margin-bottom: 10px;
+            }
+            
+            .business-name {
+                font-size: 16px;
+            }
+            
+            .business-details {
+                font-size: 9px;
+            }
         }
         
+        /* Mobile responsive */
         @media (max-width: 768px) {
-            .invoice-meta {
-                grid-template-columns: 1fr;
+            .invoice-content {
+                padding: 10px;
             }
             
-            .items-table {
+            .business-name {
+                font-size: 16px;
+            }
+            
+            .summary-row.total {
                 font-size: 12px;
             }
-            
-            .items-table th,
-            .items-table td {
-                padding: 8px 4px;
-            }
         }
-       .page-break {
-   
-    break-before: page;
-    display: block; /* Avoid flex at the breaking container level */
-    margin-top: 20px;
-  }
-
-  .page-break-inner {
-    display: flex;
-    justify-content: space-between;
-    align-items: stretch;
-    gap: 20px;
-  }
-  .invoice-container {
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
-}
-
-.invoice-footer {
-  margin-top: auto;
-  page-break-inside: avoid;
-  break-inside: avoid;
-}
     </style>
 {% endblock %}
 
@@ -345,188 +326,162 @@
         <div class="action-buttons">
             <div class="btn-group">
                 <a href="{% url 'invoice_list' %}" class="btn btn-primary">Back to List</a>
-                <button onclick="printInvoice()" class="btn btn-success">Print Invoice</button>
+                <button onclick="printInvoice()" class="btn btn-success">Print POS</button>
                 <button onclick="downloadPDF()" class="btn btn-info">Download PDF</button>
                 <a href="{% url 'invoice_delete' invoice.pk %}" class="btn btn-danger">Delete Invoice</a>
             </div>
         </div>
 
         <div class="invoice-content" id="invoice-content">
-            <div id="invoice-page-1">
-                <div class="document-type">
-                    {{ invoice.document_type|default:"PURCHASE"|upper }}
+            <!-- POS Header -->
+            <div class="pos-header">
+                <div class="business-name">{{ invoice_setting.business_name|default:"Business Name" }}</div>
+                <div class="business-details">
+                    {% if invoice_setting.mobile %}Mobile: {{ invoice_setting.mobile }}<br>{% endif %}
+                    {% if invoice_setting.address %}{{ invoice_setting.address }}<br>{% endif %}
+                    {% if invoice_setting.gstin %}GST: {{ invoice_setting.gstin }}{% endif %}
                 </div>
+            </div>
 
-                <!-- Business Header -->
-                <div class="business-header">
-                    <div class="business-name">{{ invoice_setting.business_name|default:"Business Name" }}</div>
-                    <div class="business-mobile">
-                        Mobile: {{ invoice_setting.mobile }}<br>
-                        GST No: {{ invoice_setting.gstin }}
-                    </div>
+            <!-- Document Type -->
+            <div class="document-type">
+                {{ invoice.document_type|default:"PURCHASE"|upper }}
+            </div>
+
+            <!-- Invoice Meta -->
+            <div class="invoice-meta">
+                <div class="meta-row">
+                    <span>Invoice No:</span>
+                    <span>{{ invoice.invoice_no|default:"N/A" }}</span>
                 </div>
-
-                <!-- Invoice Meta Information -->
-                <div class="invoice-meta">
-                    <div class="meta-item">
-                        <span class="meta-label">Invoice No.:</span>
-                        <span class="meta-value">{{ invoice.invoice_no|default:"N/A" }}</span>
-                    </div>
-                    <div class="meta-item">
-                        <span class="meta-label">Invoice Date:</span>
-                        <span class="meta-value">{{ invoice.invoice_date|date:"d/m/Y" }}</span>
-                    </div>
-                    <div class="meta-item">
-                        <span class="meta-label">Due Date:</span>
-                        <span class="meta-value">{{ invoice.due_date|date:"d/m/Y" }}</span>
-                    </div>
+                <div class="meta-row">
+                    <span>Date:</span>
+                    <span>{{ invoice.invoice_date|date:"d/m/Y" }}</span>
                 </div>
-
-                <!-- Party Details -->
-                <div class="flex justify-between gap-6 my-6">
-                    <div class="flex-1">
-                        <div class="section-title">BILL FROM</div>
-                        <div class="party-name">{{ invoice_setting.business_name|default:"Supplier Name" }}</div>
-                        <div class="party-details">
-                            {% if invoice_setting.mobile %}Mobile: {{ invoice_setting.mobile }}<br>{% endif %}
-                            {% if invoice_setting.address %}Address: {{invoice_setting.address}}<br>{% endif %}
-                        </div>
-                    </div>
-                    <div class="flex-1">
-                        <div class="section-title">BILL TO</div>
-                        <div class="party-name">{{ invoice.name|default:"Customer Name" }}</div>
-                        <div class="party-details">
-                            {% if invoice.customer_mobile %}Mobile: {{ invoice.customer_mobile }}<br>{% endif %}
-                            {% if invoice.billing_address %}{{ invoice.billing_address }}<br>{% endif %}
-                            {% if invoice.customer_gstin %}GST: {{ invoice.customer_gstin }}{% endif %}
-                        </div>
-                    </div>
+                <div class="meta-row">
+                    <span>Due Date:</span>
+                    <span>{{ invoice.due_date|date:"d/m/Y" }}</span>
                 </div>
+            </div>
 
-                <!-- Items Table -->
-                <div class="items-section">
-                    <table class="items-table">
-                        <thead>
-                            <tr>
-                                <th class="w-1/3">ITEMS</th>
-                                <th class="w-1/12">QTY.</th>
-                                <th class="w-1/12">RATE</th>
-                                <th class="w-1/12">TAX</th>
-                                <th class="w-1/6">DISCOUNT</th>
-                                <th class="w-1/6">AMOUNT</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for i in items %}
-                            <tr>
-                                <td>
-                                    <div class="item-name font-semibold">{{ i.item.product_name }}</div>
-                                    {% if i.item.product_description %}
-                                        <div class="text-sm text-gray-500">{{ i.item.product_description }}</div>
-                                    {% endif %}
-                                </td>
-                                <td>{{ i.item.quantity }} {{ i.unit|default:"" }}</td>
-                                <td>₹ {{ i.item.rate|floatformat:"2" }}</td>
-                                <td>
-                                    ₹ {{ i.tax_amount|floatformat:"2" }}<br>
-                                    <span class="text-xs text-gray-500">({{ i.tax_rate|floatformat:"2" }}%)</span>
-                                </td>
-                                <td>
-                                    {% if i.item.discount %}
-                                        <span class="text-green-600 font-medium">{{ i.item.discount }}</span>
-                                    {% else %}
-                                        <span class="text-gray-400 italic">No Discount</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% with total_with_tax=i.item.amount|add:i.tax_amount %}
-                                        ₹ {{ total_with_tax|floatformat:"2" }}<br>
-                                        <span class="text-xs text-gray-500">Base: ₹{{ i.item.amount|floatformat:"2" }}</span>
-                                    {% endwith %}
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr><td colspan="6" class="text-center text-gray-500 italic">No items found</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+            <!-- Customer Details -->
+            <div class="customer-details">
+                <div class="customer-title">BILL TO:</div>
+                <div class="customer-info">
+                    <p class="m-0 p-0">Name: {{ invoice.name|default:"Customer Name" }}</p>
+                    {% if invoice.number %}Mobile: {{ invoice.number }}<br>{% endif %}
+                    {% if invoice.billing_address %}{{ invoice.billing_address }}<br>{% endif %}
+                    {% if invoice.customer_gstin %}GST: {{ invoice.customer_gstin }}{% endif %}
                 </div>
+            </div>
 
-                <!-- Summary -->
-                <div class="summary-section mt-6">
-                    <div class="summary-row">
-                        <span class="summary-label">Subtotal</span>
-                        <span class="summary-value">₹ {{ subtotal|floatformat:2 }}</span>
+            <!-- Items Section -->
+            <div class="pos-items">
+                {% for i in items %}
+                <div class="pos-item">
+                    <div class="item-header">
+                        <span>{{ i.item.product_name }}</span>
+                        <span>₹{{ i.item.amount|add:i.tax_amount|floatformat:"2" }}</span>
                     </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Tax</span>
-                        <span class="summary-value">₹ {{ total_tax|floatformat:2 }}</span>
+                    {% if i.item.product_description %}
+                    <div class="item-details">{{ i.item.product_description }}</div>
+                    {% endif %}
+                    <div class="item-calculation">
+                        <span>{{ i.item.quantity }} {{ i.unit|default:"pcs" }} × ₹{{ i.item.rate|floatformat:"2" }}</span>
+                        <span>Tax: ₹{{ i.tax_amount|floatformat:"2" }} ({{ i.tax_rate|floatformat:"1" }}%)</span>
                     </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Extra Discount</span>
-                        <span class="summary-value text-green-600">- ₹ {{ total_discount|floatformat:2 }}</span>
+                    {% if i.item.discount %}
+                    <div class="item-calculation">
+                        <span>Discount: {{ i.item.discount }}</span>
+                        <span></span>
                     </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Extra Amount</span>
-                        <span class="summary-value">₹ {{ extra_amount|floatformat:2 }}</span>
-                    </div>
-                    <div class="summary-row font-semibold total-amount-row">
-                        <span class="summary-label">Total Amount</span>
-                        <span class="summary-value">₹ {{ final_total|floatformat:2 }}</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Received Amount</span>
-                        <span class="summary-value">₹ {{ paid_amount|floatformat:2 }}</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Balance</span>
-                        <span class="summary-value">₹ {{ balance|floatformat:2 }}</span>
-                    </div>
-                    <div class="summary-row">
-                        <span class="summary-label">Payment Status</span>
-                        <span class="summary-value capitalize">{{ status }}</span>
-                    </div>
+                    {% endif %}
                 </div>
-
-                <!-- Footer: Bank, Terms, QR, Signature -->
-                <div class="invoice-footer mt-10">
-                    <div class="flex justify-between gap-6">
-                        <div class="flex-1 border-r pr-6">
-                            <div>
-                                <strong>Bank Details</strong><br>
-                                Bank Name: {{ invoice_setting.acc_bank_name }}<br>
-                                A/C No: {{ invoice_setting.account_no }}<br>
-                                UPI ID: {{ invoice_setting.upi_id }}<br>
-                                IFSC: {{ invoice_setting.ifsc_code }}<br>
-                                GST No: {{ invoice_setting.gstin }}
-                            </div>
-                            <div class="mt-4">
-                                <strong>Terms & Conditions</strong>
-                                <ol class="list-disc pl-5">
-                                    {% if invoice_setting.terms1 %}<li>{{ invoice_setting.terms1 }}</li>{% endif %}
-                                    {% if invoice_setting.terms2 %}<li>{{ invoice_setting.terms2 }}</li>{% endif %}
-                                    {% if invoice_setting.terms3 %}<li>{{ invoice_setting.terms3 }}</li>{% endif %}
-                                </ol>
-                            </div>
-                        </div>
-                        <div class="flex-1 flex flex-col items-end pl-6">
-                            <div class="text-right">
-                                <div class="font-semibold mb-2">Scan to Pay</div>
-                                <div id="qrcode" class="qr-code-container"></div>
-                            </div>
-                            <div class="text-right mt-auto">
-                                <div>Authorized Signatory</div>
-                                {% if invoice_setting.upload_sign %}
-                                    <img src="{{ invoice_setting.upload_sign.url }}" alt="Signature" class="h-16 my-1">
-                                {% else %}
-                                    <div class="text-gray-400 italic">[Signature Not Available]</div>
-                                {% endif %}
-                                <div class="font-bold">{{ invoice_setting.authorized_person_name|default:"Authorized Person" }}</div>
-                            </div>
-                        </div>
-                    </div>
+                {% empty %}
+                <div class="pos-item">
+                    <div class="item-header">No items found</div>
                 </div>
+                {% endfor %}
+            </div>
 
+            <!-- Summary Section -->
+            <div class="pos-summary">
+                <div class="summary-row">
+                    <span>Subtotal:</span>
+                    <span>₹{{ subtotal|floatformat:2 }}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Tax:</span>
+                    <span>₹{{ total_tax|floatformat:2 }}</span>
+                </div>
+                {% if total_discount > 0 %}
+                <div class="summary-row">
+                    <span>Extra Discount:</span>
+                    <span>-₹{{ total_discount|floatformat:2 }}</span>
+                </div>
+                {% endif %}
+                {% if extra_amount > 0 %}
+                <div class="summary-row">
+                    <span>Extra Amount:</span>
+                    <span>₹{{ extra_amount|floatformat:2 }}</span>
+                </div>
+                {% endif %}
+                <div class="summary-row total">
+                    <span>TOTAL:</span>
+                    <span>₹{{ final_total|floatformat:2 }}</span>
+                </div>
+                <div class="summary-row paid">
+                    <span>Received:</span>
+                    <span>₹{{ paid_amount|floatformat:2 }}</span>
+                </div>
+                <div class="summary-row balance">
+                    <span>Balance:</span>
+                    <span>₹{{ balance|floatformat:2 }}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Status:</span>
+                    <span style="text-transform: capitalize;">{{ status }}</span>
+                </div>
+            </div>
+
+            <!-- Payment Info -->
+            {% if invoice_setting.upi_id %}
+            <div class="payment-info">
+                <strong>Payment Options:</strong><br>
+                UPI ID: {{ invoice_setting.upi_id }}<br>
+                {% if invoice_setting.account_no %}A/C: {{ invoice_setting.account_no }}<br>{% endif %}
+                {% if invoice_setting.ifsc_code %}IFSC: {{ invoice_setting.ifsc_code }}{% endif %}
+            </div>
+            {% endif %}
+
+            <!-- QR Code Section -->
+            <div class="qr-section">
+                <div class="qr-label">Scan to Pay</div>
+                <div id="qrcode" class="qr-code-container"></div>
+                <div class="qr-label">₹{{ final_total|floatformat:2 }}</div>
+            </div>
+
+            <!-- Terms -->
+            {% if invoice_setting.terms1 or invoice_setting.terms2 or invoice_setting.terms3 %}
+            <div class="terms-section">
+                <strong>Terms & Conditions:</strong><br>
+                {% if invoice_setting.terms1 %}• {{ invoice_setting.terms1 }}<br>{% endif %}
+                {% if invoice_setting.terms2 %}• {{ invoice_setting.terms2 }}<br>{% endif %}
+                {% if invoice_setting.terms3 %}• {{ invoice_setting.terms3 }}<br>{% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Signature -->
+            <div class="signature-section">
+                {% if invoice_setting.upload_sign %}
+                <img src="{{ invoice_setting.upload_sign.url }}" alt="Signature" class="signature-img m-auto">
+                {% endif %}
+                <div>{{ invoice_setting.authorized_person_name|default:"Authorized Signatory" }}</div>
+            </div>
+
+            <!-- Thank You -->
+            <div class="thank-you">
+                THANK YOU FOR YOUR BUSINESS!
             </div>
         </div>
     </div>
@@ -543,14 +498,14 @@
         const qrContainer = document.getElementById('qrcode');
         
         if (!upiId) {
-            qrContainer.innerHTML = '<div style="color: #999; font-style: italic; text-align: center;">UPI ID not configured</div>';
+            qrContainer.innerHTML = '<div class="qr-label">UPI ID not configured</div>';
             return;
         }
 
         // Check if QR library is loaded
         if (typeof qrcode === 'undefined') {
-            qrContainer.innerHTML = '<div style="color: #999; font-style: italic; text-align: center;">QR Code library loading...</div>';
-            setTimeout(generateUPIQRCode, 1000); // Retry after 1 second
+            qrContainer.innerHTML = '<div class="qr-label">Loading QR...</div>';
+            setTimeout(generateUPIQRCode, 1000);
             return;
         }
 
@@ -564,59 +519,86 @@
             qr.make();
             
             // Generate QR code HTML
-            const qrHtml = qr.createImgTag(4, 8);
-            
-            // Update container
-            qrContainer.innerHTML = `
-                <div class="qr-code-label">Scan to Pay</div>
-                ${qrHtml}
-                <div class="qr-code-label">₹${amount}</div>
-            `;
+            const qrHtml = qr.createImgTag(3, 4);
+            qrContainer.innerHTML = qrHtml;
             
             // Style the generated image
             const qrImg = qrContainer.querySelector('img');
             if (qrImg) {
-                qrImg.style.border = '1px solid #ddd';
-                qrImg.style.borderRadius = '5px';
-                qrImg.style.maxWidth = '120px';
+                qrImg.style.maxWidth = '100px';
                 qrImg.style.height = 'auto';
+                qrImg.style.border = '1px solid #ddd';
+                qrImg.style.borderRadius = '3px';
             }
             
         } catch (error) {
             console.error('QR Code generation error:', error);
-            qrContainer.innerHTML = '<div style="color: #999; font-style: italic; text-align: center;">QR Code generation failed</div>';
+            qrContainer.innerHTML = '<div class="qr-label">QR generation failed</div>';
         }
     }
 
     // Generate QR code when page loads
     document.addEventListener('DOMContentLoaded', function() {
-        // Add a small delay to ensure library is loaded
         setTimeout(generateUPIQRCode, 500);
     });
 
     function printInvoice() {
+        // Set print styles for POS
+        const printCSS = `
+            @media print {
+                @page {
+                    size: 80mm auto;
+                    margin: 2mm;
+                }
+                body {
+                    font-size: 10px;
+                    line-height: 1.2;
+                }
+                .action-buttons {
+                    display: none !important;
+                }
+                nav {
+                    display: none !important;
+                }
+            }
+        `;
+        
+        // Add print styles
+        const style = document.createElement('style');
+        style.textContent = printCSS;
+        document.head.appendChild(style);
+        
+        // Print
         window.print();
+        
+        // Remove print styles
+        document.head.removeChild(style);
     }
 
-  function downloadPDF() {
-  const element = document.getElementById('invoice-content');
-  const opt = {
-    margin: 0.5,
-     filename:     'purchase-{{ invoice.invoice_no }}-{{ invoice.invoice_date|date:"Y-m-d" }}.pdf',
+    function downloadPDF() {
+        const element = document.getElementById('invoice-content');
+        const opt = {
+            margin: [0.2, 0.2, 0.2, 0.2],
+            filename: 'pos-invoice-{{ invoice.invoice_no }}-{{ invoice.invoice_date|date:"Y-m-d" }}.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { 
+                scale: 2, 
+                useCORS: true,
+                width: 300,
+                windowWidth: 300
+            },
+            jsPDF: { 
+                unit: 'mm', 
+                format: [80, 'auto'], 
+                orientation: 'portrait' 
+            },
+            pagebreak: {
+                mode: ['avoid-all', 'css', 'legacy']
+            }
+        };
 
-    image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
-    jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
-    pagebreak: {
-      mode: ['avoid-all', 'css', 'legacy']
+        html2pdf().set(opt).from(element).save();
     }
-  };
-
-  html2pdf().set(opt).from(element).save();
-}
-
-
 </script>
-
 
 {% endblock %}
