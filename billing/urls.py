@@ -13,7 +13,7 @@ urlpatterns = [
     path('api/auth/parties/delete/<int:party_id>/', views.party_delete, name='party-delete'),
     
     # Products
-    path('api/auth/products/', views.product_list, name='product-list'),
+    path('api/auth/products/', views.api_product_list, name='product-list'),
     path('api/auth/products/store/', views.product_store, name='product-store'),
     path('api/auth/products/edit/<int:product_id>/', views.product_edit, name='product-edit'),
     path('api/auth/products/update/<int:product_id>/', views.product_update, name='product-update'),
@@ -52,6 +52,8 @@ urlpatterns = [
     path('products/add/', views.product_create, name='product_create'),
     path('products/<int:pk>/edit/', views.product_update, name='product_update'),
     path('products/<int:pk>/delete/', views.product_delete, name='product_delete'),
+    path('products/<int:pk>/', views.product_detail, name='product_detail'),
+    path('products/<int:product_id>/update-barcode/', views.update_product_barcode, name='update_product_barcode'),
     
     # partie
     path('parties/', views.party_list, name='party_list'),

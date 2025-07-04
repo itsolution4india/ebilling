@@ -143,7 +143,7 @@ def party_delete(request, party_id):
 # Product Views
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def product_list(request):
+def api_product_list(request):
     """Get all products"""
     products = Product.objects.filter(status=True)
     serializer = ProductSerializer(products, many=True)
@@ -651,6 +651,62 @@ def product_list(request):
     }
     
     return render(request, 'products/product_list.html', context)
+
+@login_required
+def product_detail(request, pk):
+    product = get_object_or_404(Product, pk=pk, user=request.user)
+    return render(request, 'products/product_detail.html', {'product': product})
+
+@login_required
+def update_product_barcode(request, product_id):
+    """
+    Update the barcode for a specific product
+    """
+    try:
+        product = get_object_or_404(Product, pk=product_id, user=request.user)
+        
+        # Parse JSON data from request
+        data = json.loads(request.body)
+        new_barcode_id = data.get('barcode_id', '').strip()
+        
+        if not new_barcode_id:
+            return JsonResponse({
+                'success': False,
+                'message': 'Barcode ID is required'
+            })
+        
+        # Check if barcode already exists for another product
+        existing_product = Product.objects.filter(
+            barcode_id=new_barcode_id,
+            user=request.user
+        ).exclude(pk=product_id).first()
+        
+        if existing_product:
+            return JsonResponse({
+                'success': False,
+                'message': f'Barcode already exists for product: {existing_product.product_name}'
+            })
+        
+        # Update the barcode
+        product.barcode_id = new_barcode_id
+        product.save()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Barcode updated successfully',
+            'barcode_id': new_barcode_id
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'message': 'Invalid JSON data'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'message': f'Error updating barcode: {str(e)}'
+        })
 
 def generate_unique_product_code(length=8, prefix='PRD'):
     while True:

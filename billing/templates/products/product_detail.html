@@ -1,0 +1,466 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block extra_css %}
+<style>
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    
+    .print-content, .print-content * {
+        visibility: visible;
+    }
+    
+    .print-content {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+}
+
+.btn-sm {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: all 0.15s ease-in-out;
+}
+
+</style>
+{% endblock %}
+{% block content %}
+
+<div class="p-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-2">
+    <h2 class="text-2xl font-semibold text-white capitalize">
+      {{ product.product_name }}
+    </h2>
+    <div class="flex space-x-3">
+        <a href="{% url 'product_delete' product.pk %}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition" onclick="return confirm('Are you sure you want to delete this product?')">
+        Delete
+      </a>
+      <a href="{% url 'product_update' product.pk %}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition">
+        Edit
+      </a>
+    </div>
+  </div>
+
+  <!-- Details Grid -->
+  <div class="flex">
+    <!-- General Details Card -->
+    <div class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6 w-full">
+      <h4 class="text-lg font-semibold mb-4 text-gray-800 dark:text-white">General Details</h4>
+      <div class="space-y-2">
+        <p class="text-sm text-gray-600 dark:text-white"><strong>Product Name:</strong> {{ product.product_name }}</p>
+        <p class="text-sm text-gray-600 dark:text-white"><strong>Product Code:</strong> {{ product.product_code }}</p>
+        <p class="text-sm text-gray-600 dark:text-white"><strong>Category:</strong> {{ product.category|default:"-" }}</p>
+        <p class="text-sm text-gray-600 dark:text-white"><strong>Stock:</strong> {{ product.stock_quantity }} {{ product.unit_of_measure }}</p>
+        <p class="text-sm text-gray-600 dark:text-white"><strong>Description:</strong> {{ product.description|default:"N/A" }}</p>
+        <p class="text-sm text-gray-600 dark:text-white"><strong>Expiry Date:</strong> {{ product.expiry_date|default:"N/A" }}</p>
+      </div>
+    </div>
+
+    <!-- Pricing Details Card -->
+    <div class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6 w-full">
+      <h4 class="text-lg font-semibold mb-4 text-gray-800 dark:text-white">Pricing Details</h4>
+      <div class="space-y-2">
+        <p class="text-sm text-gray-600 dark:text-white"><strong>MRP:</strong> ₹{{ product.mrp }}</p>
+        <p class="text-sm text-gray-600 dark:text-white"><strong>Sale Price:</strong> ₹{{ product.sale_price }}</p>
+        <p class="text-sm text-gray-600 dark:text-white"><strong>Purchase Price:</strong> ₹{{ product.unit_price }}</p>
+        <p class="text-sm text-gray-600 dark:text-white"><strong>Tax Rate:</strong> {{ product.tax_rate }}%</p>
+        <p class="text-sm text-gray-600 dark:text-white"><strong>Discount:</strong> {{ product.discount }}%</p>
+        <p class="text-sm text-gray-600 dark:text-white"><strong>Unit of Measure:</strong> {{ product.unit_of_measure }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barcode Management Card -->
+  <div class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6">
+    <h4 class="text-lg font-semibold mb-4 text-gray-800 dark:text-white">Barcode Management</h4>
+    
+    <!-- Current Barcode Display -->
+    <div class="mb-6">
+      <div class="flex items-center justify-between mb-3">
+        <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Current Barcode ID:</label>
+        <div class="flex space-x-2">
+          {% if product.barcode_id %}
+            <button type="button" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded" onclick="downloadCurrentBarcode()">
+              Download
+            </button>
+            <button type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded" onclick="printCurrentBarcode()">
+              Print
+            </button>
+          {% endif %}
+        </div>
+      </div>
+      
+      {% if product.barcode_id %}
+        <div class="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4 text-center">
+          <div class="text-gray-500 dark:text-gray-400 mb-2">Bee Mart</div>
+          <canvas id="currentBarcodeCanvas" class="mx-auto mb-2"></canvas>
+          <div class="font-mono text-sm font-semibold text-gray-800 dark:text-white">{{ product.barcode_id }}</div>
+          <div class="font-mono text-sm font-semibold text-gray-800 dark:text-white">Discount: {{ product.discount }}%OFF</div>
+          <div class="flex justify-center">
+            <div class="font-mono text-sm font-semibold text-gray-800 dark:text-white">MRP: {{ product.mrp }}</div>
+            <div class="ml-4 font-mono text-sm font-semibold text-gray-800 dark:text-white">Sale Price: {{ product.sale_price }}</div>
+          </div>
+        </div>
+      {% else %}
+        <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 text-center">
+          <div class="text-yellow-700 dark:text-yellow-300 text-sm">No barcode assigned to this product</div>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Generate New Barcode Section -->
+    <div class="border-t border-gray-200 dark:border-gray-600 pt-4">
+      <h5 class="text-md font-medium text-gray-800 dark:text-white mb-3">Generate New Barcode</h5>
+      
+      <div class="space-y-4">
+        <div class="flex items-center space-x-3">
+          <input type="text" 
+                 id="newBarcodeInput" 
+                 placeholder="Auto-generate or enter custom barcode" 
+                 class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm">
+          
+          <button type="button" 
+                  class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition"
+                  onclick="generateNewBarcode()">
+            Generate
+          </button>
+        </div>
+
+        <!-- New Barcode Preview -->
+        <div id="newBarcodeContainer" class="hidden">
+          <div class="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4 text-center">
+            <div class="text-xs text-gray-500 dark:text-gray-400 mb-2">New Barcode Preview:</div>
+            <canvas id="newBarcodeCanvas" class="mx-auto mb-2"></canvas>
+            <div id="newBarcodeId" class="font-mono text-sm font-semibold text-gray-800 dark:text-white mb-3"></div>
+            
+            <div class="flex justify-center space-x-3">
+              <button type="button" 
+                      class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition"
+                      onclick="saveNewBarcode()">
+                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                Save Barcode
+              </button>
+              
+              <button type="button" 
+                      class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium transition"
+                      onclick="downloadNewBarcode()">
+                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Download
+              </button>
+              
+              <button type="button" 
+                      class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition"
+                      onclick="printNewBarcode()">
+                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                </svg>
+                Print
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden print area -->
+<div id="printArea" class="hidden">
+  <div class="print-content" style="text-align: center; padding: 20px;">
+    <h3 style="margin-bottom: 20px;">Product Barcode</h3>
+    <div style="margin-bottom: 10px;">
+      <strong>Product:</strong> {{ product.product_name }}
+    </div>
+    <div style="margin-bottom: 20px;">
+      <strong>Code:</strong> {{ product.product_code }}
+    </div>
+    <canvas id="printBarcodeCanvas" style="margin-bottom: 10px;"></canvas>
+    <div id="printBarcodeId" style="font-family: monospace; font-size: 14px; font-weight: bold;"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+<script>
+        // Updated JavaScript functions - Replace the existing ones in your Django template
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Display current barcode if exists
+            const currentBarcodeId = '{{ product.barcode_id|default:"" }}';
+            if (currentBarcodeId) {
+                displayBarcode('currentBarcodeCanvas', currentBarcodeId);
+            }
+        });
+
+        function displayBarcode(canvasId, barcodeId) {
+            const canvas = document.getElementById(canvasId);
+            if (canvas && barcodeId) {
+                JsBarcode(canvas, barcodeId, {
+                    format: "CODE128",
+                    lineColor: "#000",
+                    width: 2,
+                    height: 60,
+                    displayValue: true,
+                    fontSize: 12,
+                    margin: 10
+                });
+            }
+        }
+
+        // NEW: Function to create detailed barcode with product info
+        function createDetailedBarcodeCanvas(barcodeId) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size
+            canvas.width = 300;
+            canvas.height = 200;
+            
+            // Fill white background
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Set text properties
+            ctx.fillStyle = 'black';
+            ctx.textAlign = 'center';
+            
+            // Store name
+            ctx.font = '12px Arial';
+            ctx.fillText('Bee Mart', canvas.width / 2, 20);
+            
+            // Generate barcode on temporary canvas
+            const tempCanvas = document.createElement('canvas');
+            JsBarcode(tempCanvas, barcodeId, {
+                format: "CODE128",
+                lineColor: "#000",
+                width: 2,
+                height: 60,
+                displayValue: false,
+                margin: 0
+            });
+            
+            // Draw barcode on main canvas
+            const barcodeY = 35;
+            ctx.drawImage(tempCanvas, (canvas.width - tempCanvas.width) / 2, barcodeY);
+            
+            // Barcode ID
+            ctx.font = 'bold 14px monospace';
+            ctx.fillText(barcodeId, canvas.width / 2, barcodeY + tempCanvas.height + 20);
+            
+            // Product details - using template variables
+            const discount = '{{ product.discount }}';
+            const mrp = '{{ product.mrp }}';
+            const salePrice = '{{ product.sale_price }}';
+            
+            // Discount
+            ctx.font = '12px Arial';
+            ctx.fillText(`Discount: ${discount}%OFF`, canvas.width / 2, barcodeY + tempCanvas.height + 40);
+            
+            // MRP and Sale Price
+            ctx.font = '12px Arial';
+            ctx.fillText(`MRP: ₹${mrp}`, canvas.width / 2 - 60, barcodeY + tempCanvas.height + 60);
+            ctx.fillText(`Sale Price: ₹${salePrice}`, canvas.width / 2 + 60, barcodeY + tempCanvas.height + 60);
+            
+            return canvas;
+        }
+
+        function generateNewBarcode() {
+            let newBarcodeId = document.getElementById('newBarcodeInput').value.trim();
+            
+            if (!newBarcodeId) {
+                // Auto-generate barcode
+                const timestamp = Date.now().toString();
+                const randomPart = Math.random().toString(36).substr(2, 4).toUpperCase();
+                newBarcodeId = `{{ product.product_code }}${timestamp.slice(-4)}${randomPart}`;
+            }
+            
+            document.getElementById('newBarcodeInput').value = newBarcodeId;
+            document.getElementById('newBarcodeId').textContent = newBarcodeId;
+            
+            // Generate and display new barcode
+            displayBarcode('newBarcodeCanvas', newBarcodeId);
+            
+            // Show the preview container
+            document.getElementById('newBarcodeContainer').classList.remove('hidden');
+        }
+
+        function saveNewBarcode() {
+            const newBarcodeId = document.getElementById('newBarcodeInput').value.trim();
+            
+            if (!newBarcodeId) {
+                alert('Please generate a barcode first');
+                return;
+            }
+            
+            // Send AJAX request to save barcode
+            fetch(`/products/{{ product.pk }}/update-barcode/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    barcode_id: newBarcodeId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Barcode saved successfully!');
+                    // Update current barcode display
+                    displayBarcode('currentBarcodeCanvas', newBarcodeId);
+                    document.querySelector('.font-mono').textContent = newBarcodeId;
+                    
+                    // Hide new barcode container
+                    document.getElementById('newBarcodeContainer').classList.add('hidden');
+                    document.getElementById('newBarcodeInput').value = '';
+                    
+                    // Show current barcode section if it was hidden
+                    const currentSection = document.querySelector('.bg-gray-50');
+                    if (currentSection) {
+                        currentSection.classList.remove('hidden');
+                    }
+                    
+                    // Reload page to show updated barcode
+                    location.reload();
+                } else {
+                    alert('Error saving barcode: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error saving barcode');
+            });
+        }
+
+        // UPDATED: Download functions with detailed barcode
+        function downloadCurrentBarcode() {
+            const barcodeId = '{{ product.barcode_id }}';
+            if (!barcodeId) {
+                alert('No barcode to download');
+                return;
+            }
+            
+            const canvas = createDetailedBarcodeCanvas(barcodeId);
+            downloadBarcodeFromCanvas(canvas, barcodeId);
+        }
+
+        function downloadNewBarcode() {
+            const barcodeId = document.getElementById('newBarcodeId').textContent;
+            if (!barcodeId) {
+                alert('No barcode to download');
+                return;
+            }
+            
+            const canvas = createDetailedBarcodeCanvas(barcodeId);
+            downloadBarcodeFromCanvas(canvas, barcodeId);
+        }
+
+        function downloadBarcodeFromCanvas(canvas, barcodeId) {
+            const link = document.createElement('a');
+            link.download = `barcode_${barcodeId}.png`;
+            link.href = canvas.toDataURL();
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // UPDATED: Print functions with detailed barcode
+        function printCurrentBarcode() {
+            const barcodeId = '{{ product.barcode_id }}';
+            if (!barcodeId) {
+                alert('No barcode to print');
+                return;
+            }
+            printDetailedBarcode(barcodeId);
+        }
+
+        function printNewBarcode() {
+            const barcodeId = document.getElementById('newBarcodeId').textContent;
+            if (!barcodeId) {
+                alert('No barcode to print');
+                return;
+            }
+            printDetailedBarcode(barcodeId);
+        }
+
+        function printDetailedBarcode(barcodeId) {
+            // Create detailed barcode canvas
+            const canvas = createDetailedBarcodeCanvas(barcodeId);
+            
+            // Create print window
+            const printWindow = window.open('', '_blank');
+            const printContent = `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Print Barcode</title>
+                    <style>
+                        body { 
+                            margin: 0; 
+                            padding: 20px; 
+                            text-align: center; 
+                            font-family: Arial, sans-serif;
+                        }
+                        .product-info {
+                            margin-bottom: 20px;
+                        }
+                        .barcode-container {
+                            margin: 20px 0;
+                        }
+                        @media print {
+                            body { margin: 0; padding: 10px; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="product-info">
+                        <div><strong>Product:</strong> {{ product.product_name }}</div>
+                        <div><strong>Code:</strong> {{ product.product_code }}</div>
+                    </div>
+                    <div class="barcode-container">
+                        <img src="${canvas.toDataURL()}" alt="Barcode" style="max-width: 100%;">
+                    </div>
+                </body>
+                </html>
+            `;
+            
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+            
+            // Wait for content to load, then print
+            printWindow.onload = function() {
+                setTimeout(() => {
+                    printWindow.print();
+                    printWindow.close();
+                }, 100);
+            };
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+
+{% endblock %}

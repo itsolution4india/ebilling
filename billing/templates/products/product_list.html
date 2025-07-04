@@ -94,6 +94,9 @@
             <td class="px-6 py-3 text-center text-sm text-slate-700 dark:text-white">{{ product.category }}</td>
             <td class="px-6 py-3 text-center">
               <div class="flex justify-center gap-2">
+                <a href="{% url 'product_detail' product.pk %}" 
+                   class="text-sm text-gree-600 hover:underline transition-colors">View</a>
+                <span class="text-gray-400">|</span>
                 <a href="{% url 'product_update' product.pk %}" 
                    class="text-sm text-yellow-600 hover:text-yellow-700 hover:underline transition-colors">Edit</a>
                 <span class="text-gray-400">|</span>

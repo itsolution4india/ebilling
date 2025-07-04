@@ -516,7 +516,7 @@
                                             <div style="font-size: 12px; color: #666; margin-bottom: 10px;">Generated Barcode:</div>
                                             <canvas id="barcodeCanvas" style="max-width: 100%;"></canvas>
                                             <div id="barcodeId" style="font-family: monospace; font-size: 14px; margin-top: 8px; font-weight: 600;"></div>
-                                            <button type="button" class="btn btn-secondary" onclick="downloadBarcode()" style="margin-top: 10px; font-size: 12px;">Download Barcode</button>
+                                            <!-- <button type="button" class="btn btn-secondary" onclick="downloadBarcode()" style="margin-top: 10px; font-size: 12px;">Download Barcode</button> -->
                                         </div>
                                     </div>
                                 </div>
@@ -897,31 +897,31 @@ discount.addEventListener('input', function() {
         }
         
        function generateBarcode() {
-    const timestamp = Date.now().toString();
-    const randomPart = Math.random().toString(36).substr(2, 4).toUpperCase();
-    const uniqueId = `ITM${timestamp.slice(-6)}${randomPart}`;
+            const timestamp = Date.now().toString();
+            const randomPart = Math.random().toString(36).substr(2, 4).toUpperCase();
+            const uniqueId = `ITM${timestamp.slice(-6)}${randomPart}`;
 
-    document.getElementById('itemCode').value = uniqueId;
+            document.getElementById('itemCode').value = uniqueId;
 
-    const barcodeContainer = document.getElementById('barcodeContainer');
-    const barcodeId = document.getElementById('barcodeId');
-    const canvas = document.getElementById('barcodeCanvas');
+            const barcodeContainer = document.getElementById('barcodeContainer');
+            const barcodeId = document.getElementById('barcodeId');
+            const canvas = document.getElementById('barcodeCanvas');
 
-    barcodeContainer.style.display = 'block';
-    barcodeId.textContent = uniqueId;
+            barcodeContainer.style.display = 'block';
+            barcodeId.textContent = uniqueId;
 
-    // ✅ Generate real Code128 barcode using JsBarcode
-    JsBarcode(canvas, uniqueId, {
-        format: "CODE128",
-        lineColor: "#000",
-        width: 2,
-        height: 60,
-        displayValue: true,
-        fontSize: 14
-    });
+            // ✅ Generate real Code128 barcode using JsBarcode
+            JsBarcode(canvas, uniqueId, {
+                format: "CODE128",
+                lineColor: "#000",
+                width: 2,
+                height: 60,
+                displayValue: true,
+                fontSize: 14
+            });
 
-    checkAndEnableScrolling();
-}
+            checkAndEnableScrolling();
+        }
         
         function downloadBarcode() {
             const canvas = document.getElementById('barcodeCanvas');
