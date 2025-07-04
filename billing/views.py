@@ -655,7 +655,22 @@ def product_list(request):
 @login_required
 def product_detail(request, pk):
     product = get_object_or_404(Product, pk=pk, user=request.user)
-    return render(request, 'products/product_detail.html', {'product': product})
+    invoice_items = InvoiceItem.objects.filter(product_id=product.pk, invoice__user=request.user).select_related('invoice')
+    
+    party_prices = []
+    for item in invoice_items:
+        party_prices.append({
+            'party_name': item.invoice.name,
+            'invoice_no': item.invoice.invoice_no,
+            'rate': item.rate,
+            'quantity': item.quantity,
+            'date': item.invoice.invoice_date,
+        })
+
+    return render(request, 'products/product_detail.html', {
+        'product': product,
+        'party_prices': party_prices
+    })
 
 @login_required
 def update_product_barcode(request, product_id):

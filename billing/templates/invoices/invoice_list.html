@@ -109,6 +109,7 @@
       <table class="items-center w-full mb-4 align-top border-collapse border-gray-200 dark:border-white/40">
         <thead>
           <tr>
+            <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Invoice ID</th>
             <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Party Name</th>
             <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Invoice Date</th>
             <th class="px-6 py-3 text-left text-xs font-bold uppercase text-slate-400 dark:text-white opacity-70">Due Date</th>
@@ -121,6 +122,7 @@
         <tbody>
           {% for invoice in page_obj %}
           <tr>
+            <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.invoice_no }}</td>
             <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.name }}</td>
             <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.invoice_date }}</td>
             <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.due_date }}</td>

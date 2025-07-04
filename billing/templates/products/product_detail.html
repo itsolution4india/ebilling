@@ -189,6 +189,42 @@
   </div>
 </div>
 
+<!-- Party-wise Sales Card -->
+<div class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6 pt-1 ml-4 mr-4">
+  <h4 class="text-lg font-semibold mb-4 text-gray-800 dark:text-white">Party-wise Sales</h4>
+
+  <div class="overflow-x-auto" style="height: 270px;overflow: auto;">
+    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+      <thead class="bg-gray-100 dark:bg-gray-700">
+        <tr>
+          <th scope="col" class="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Party Name</th>
+          <th scope="col" class="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Invoice No</th>
+          <th scope="col" class="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Date</th>
+          <th scope="col" class="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Rate</th>
+          <th scope="col" class="px-4 py-2 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Quantity</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+        {% for item in party_prices %}
+        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+          <td class="px-4 py-2 text-sm text-gray-800 dark:text-white">{{ item.party_name }}</td>
+          <td class="px-4 py-2 text-sm text-gray-800 dark:text-white">{{ item.invoice_no }}</td>
+          <td class="px-4 py-2 text-sm text-gray-800 dark:text-white">{{ item.date }}</td>
+          <td class="px-4 py-2 text-sm text-green-600 dark:text-green-400 font-semibold">₹{{ item.rate }}</td>
+          <td class="px-4 py-2 text-sm text-gray-800 dark:text-white">{{ item.quantity }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="px-4 py-3 text-center text-sm text-gray-600 dark:text-gray-300">
+            No sales found for this product.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 <script>
         // Updated JavaScript functions - Replace the existing ones in your Django template

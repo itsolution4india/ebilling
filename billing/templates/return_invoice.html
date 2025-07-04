@@ -55,6 +55,7 @@
         #id_invoice_id {
             padding: 5px 15px;
             width: 100%;
+            border: 1px solid #000;
         }
         .search-btn {
             border: 1px solid #000;
@@ -342,7 +343,7 @@
                     
                     if (data.success) {
                         alert('Return processed successfully! Return Invoice ID: ' + data.return_invoice_id);
-                        window.location.reload();
+                        window.location.href = '/invoices/';
                     } else {
                         alert('Error: ' + data.message);
                     }
