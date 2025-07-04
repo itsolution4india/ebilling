@@ -1018,7 +1018,6 @@ def download_invoices_csv(invoices, start_date=None, end_date=None):
 
 @login_required
 def invoice_create(request):
-    """Create new invoice with partial payment logic"""
     if request.method == 'POST':
         try:
             with transaction.atomic():
@@ -1050,7 +1049,7 @@ def invoice_create(request):
                     status = 'unpaid'
                     remaining_amount = total_amount
 
-                # Handle party
+                # Handle party (existing or new)
                 if party_id:
                     party = get_object_or_404(Party, id=party_id, user=request.user)
                     selected_party_name = party.party_name
@@ -1060,9 +1059,11 @@ def invoice_create(request):
                     selected_party_num = party_phone
                     Party.objects.create(user=request.user, party_name=selected_party_name, party_contact=selected_party_num)
 
-                # Parse items
-                items = json.loads(items_data) if items_data else []
-                if not items:
+                # Safely parse item data (fixing your error)
+                parsed_data = json.loads(items_data) if items_data else {}
+                items = parsed_data.get('items', [])
+
+                if not isinstance(items, list) or not items:
                     messages.error(request, 'Please add at least one item.')
                     return redirect('invoice_create')
 
@@ -1112,7 +1113,9 @@ def invoice_create(request):
                         product_description=item.get('description', ''),
                         quantity=item['quantity'],
                         rate=Decimal(str(item['rate'])),
-                        amount=Decimal(str(item['amount']))
+                        tax=Decimal(str(item.get('tax_rate', 0))),  # ✅ Save tax
+                        discount=item.get('discount_rate', ''),      # ✅ Save discount (can be string like '10%' or '5')
+                        amount=Decimal(str(item['amount']))          # this is precalculated with tax+discount from frontend
                     )
 
                 messages.success(request, f'Invoice {invoice_no} created successfully!')
@@ -1230,30 +1233,52 @@ def invoice_detail(request, pk):
     enriched_items = []
     subtotal = Decimal('0.00')
     total_tax = Decimal('0.00')
+    total_discount = Decimal('0.00')
 
     for item in items:
-        tax_rate = Decimal('0.00')
+        tax_rate = item.tax or Decimal('0.00')
         unit = ''
+        discount_value = Decimal('0.00')
 
+        # Optional: Fetch unit from Product
         try:
             product = Product.objects.get(id=item.product_id)
-            tax_rate = product.tax_rate
             unit = product.unit_of_measure
         except Product.DoesNotExist:
             pass
 
-        tax_amount = item.amount * (tax_rate / Decimal('100.00'))
+        # Parse discount string
+        discount_raw = item.discount or ''
+        try:
+            if discount_raw.endswith('%'):
+                percent = Decimal(discount_raw.strip('%'))
+                discount_value = item.amount * (percent / Decimal('100'))
+            elif discount_raw.startswith('₹'):
+                discount_value = Decimal(discount_raw.strip('₹'))
+            else:
+                discount_value = Decimal(discount_raw)
+        except (InvalidOperation, ValueError):
+            discount_value = Decimal('0.00')
+
+        # Tax on discounted amount
+        taxable_amount = item.amount - discount_value
+        tax_amount = taxable_amount * (tax_rate / Decimal('100'))
+
+        # Totals
         subtotal += item.amount
+        total_discount += discount_value
         total_tax += tax_amount
 
         enriched_items.append({
             'item': item,
-            'tax_amount': tax_amount,
-            'tax_rate': tax_rate,
             'unit': unit,
+            'tax_rate': tax_rate,
+            'tax_amount': tax_amount,
+            'discount': discount_value,
+            'net_amount': taxable_amount + tax_amount,
         })
 
-    calculated_total = subtotal + total_tax
+    calculated_total = subtotal - total_discount + total_tax
     final_total = max(invoice.amount, calculated_total)
     extra_amount = final_total - calculated_total
 
@@ -1262,6 +1287,7 @@ def invoice_detail(request, pk):
         'invoice_setting': invoice_setting,
         'items': enriched_items,
         'subtotal': subtotal,
+        'total_discount': total_discount,
         'total_tax': total_tax,
         'calculated_total': calculated_total,
         'final_total': final_total,
@@ -1270,8 +1296,8 @@ def invoice_detail(request, pk):
         'balance': invoice.remaining_amount,
         'status': invoice.status,
     }
-    return render(request, 'invoices/invoice_detail.html', context)
 
+    return render(request, 'invoices/invoice_detail.html', context)
 @login_required
 def return_invoice_detail(request, pk):
     invoice = get_object_or_404(Invoice, pk=pk, user=request.user)
