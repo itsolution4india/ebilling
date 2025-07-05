@@ -1838,7 +1838,7 @@ def return_invoice_view(request):
             try:
                 invoice = Invoice.objects.get(invoice_no=invoice_id, user=request.user)
                 # Check if invoice is eligible for return
-                if invoice.status == 'refund':
+                if invoice.status == 'return':
                     messages.error(request, 'This invoice has already been refunded.')
                     return render(request, 'return_invoice.html', {'form': form})
                 
@@ -1888,15 +1888,18 @@ def process_return(request):
     
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
+from decimal import Decimal
+from django.utils import timezone
+from django.shortcuts import get_object_or_404
+from dateutil.relativedelta import relativedelta
+
 def create_return_invoice(original_invoice, selected_items, user):
-    """Create a return invoice"""
-    # Generate unique return invoice number
+    """Create a return invoice and deduct from original invoice"""
+
     return_invoice_no = f"RET-{timezone.now().strftime('%Y%m%d%H%M%S')}"
-    
-    # Calculate total return amount
+    invoice_date = timezone.now().date()
     total_return_amount = Decimal('0.00')
-    invoice_date=timezone.now().date()
-    # Create return invoice
+
     return_invoice = Invoice.objects.create(
         user=user,
         name=original_invoice.name,
@@ -1904,36 +1907,37 @@ def create_return_invoice(original_invoice, selected_items, user):
         invoice_no=return_invoice_no,
         invoice_date=invoice_date,
         due_date=invoice_date + relativedelta(months=1),
-        amount=0,  # Will be updated after items are added
+        amount=0,
         amount_paid=0,
         remaining_amount=0,
-        status='refund',
+        status='return',
         payment_mode=original_invoice.payment_mode,
         bank=original_invoice.bank
     )
-    
-    # Create return invoice items
+
     for item_data in selected_items:
         original_item = get_object_or_404(InvoiceItem, id=item_data['item_id'])
         return_quantity = int(item_data['quantity'])
-        
-        # Validate return quantity
+
         if return_quantity > original_item.quantity:
-            raise ValueError(f"Return quantity cannot exceed original quantity for {original_item.product_name}")
-        
-        # Get product to calculate tax
+            raise ValueError(f"Return quantity exceeds original quantity for {original_item.product_name}")
+
+        # Deduct quantity from original item
+        original_item.quantity -= return_quantity
+        original_item.save()  # amount auto-updates in model
+
+        # Get tax
         try:
             product = Product.objects.get(id=original_item.product_id, user=user)
             tax_rate = product.tax_rate
         except Product.DoesNotExist:
             tax_rate = Decimal('0.00')
-        
-        # Calculate amounts
+
         base_amount = original_item.rate * return_quantity
         tax_amount = base_amount * (tax_rate / 100)
         total_item_amount = base_amount + tax_amount
-        
-        # Create return invoice item
+
+        # Create return item
         InvoiceItem.objects.create(
             invoice=return_invoice,
             product_id=original_item.product_id,
@@ -1941,16 +1945,25 @@ def create_return_invoice(original_invoice, selected_items, user):
             product_description=original_item.product_description,
             quantity=return_quantity,
             rate=original_item.rate,
-            amount=total_item_amount
+            amount=total_item_amount,
+            discount=original_item.discount
         )
-        
+
         total_return_amount += total_item_amount
-    
-    # Update return invoice amount
+
+    # Set return invoice total
     return_invoice.amount = total_return_amount
     return_invoice.save()
-    
+
+    # Deduct return from original invoice's amount and remaining
+    original_invoice.amount = max(original_invoice.amount - total_return_amount, Decimal('0.00'))
+    original_invoice.amount_paid = max(original_invoice.amount_paid - total_return_amount, Decimal('0.00'))
+    original_invoice.remaining_amount = max(original_invoice.amount - original_invoice.amount_paid, Decimal('0.00'))
+    original_invoice.save()
+
     return return_invoice
+
+
 
 def update_inventory(selected_items, user):
     """Update product inventory for returned items"""

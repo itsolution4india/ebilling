@@ -376,33 +376,42 @@
             </div>
 
             <!-- Items Section -->
-            <div class="pos-items">
-                {% for i in items %}
+<div class="pos-items">
+    {% with shown=0 %}
+        {% for i in items %}
+            {% if i.item.quantity > 0 %}
+                {% with shown=shown|add:"1" %}
                 <div class="pos-item">
                     <div class="item-header">
                         <span>{{ i.item.product_name }}</span>
                         <span>₹{{ i.item.amount|add:i.tax_amount|floatformat:"2" }}</span>
                     </div>
                     {% if i.item.product_description %}
-                    <div class="item-details">{{ i.item.product_description }}</div>
+                        <div class="item-details">{{ i.item.product_description }}</div>
                     {% endif %}
                     <div class="item-calculation">
                         <span>{{ i.item.quantity }} {{ i.unit|default:"pcs" }} × ₹{{ i.item.rate|floatformat:"2" }}</span>
                         <span>Tax: ₹{{ i.tax_amount|floatformat:"2" }} ({{ i.tax_rate|floatformat:"1" }}%)</span>
                     </div>
                     {% if i.item.discount %}
-                    <div class="item-calculation">
-                        <span>Discount: {{ i.item.discount }}</span>
-                        <span></span>
-                    </div>
+                        <div class="item-calculation">
+                            <span>Discount: {{ i.item.discount }}</span>
+                        </div>
                     {% endif %}
                 </div>
-                {% empty %}
-                <div class="pos-item">
-                    <div class="item-header">No items found</div>
-                </div>
-                {% endfor %}
+                {% endwith %}
+            {% endif %}
+        {% endfor %}
+
+        {% if shown == 0 %}
+            <div class="pos-item">
+                <div class="item-header text-danger">There are no products in this invoice.</div>
             </div>
+        {% endif %}
+    {% endwith %}
+</div>
+
+
 
             <!-- Summary Section -->
             <div class="pos-summary">
@@ -481,7 +490,7 @@
 
             <!-- Thank You -->
             <div class="thank-you">
-                THANK YOU FOR YOUR BUSINESS!
+                THANK YOU FOR YOUR PURCHASE!
             </div>
         </div>
     </div>

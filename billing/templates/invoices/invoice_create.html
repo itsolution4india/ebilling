@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 {% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css" rel="stylesheet">
+
 <style>
     input, textarea, select {
         border: 1px solid gray;
@@ -387,16 +389,14 @@
                   <label for="custom-party">Enter New Party</label>
                 </div>
               </div>
-              
-              <div id="existing-party-field">
-                <select name="party" id="party">
-                  <option value="">Select Party</option>
-                  {% for party in parties %}
-                    <option value="{{ party.id }}">{{ party.party_name }}{% if party.phone %} - {{ party.phone }}{% endif %}</option>
-                  {% endfor %}
-                </select>
-              </div>
-              
+             <div id="existing-party-field">
+  <select name="party" id="party" class="tom-select w-full border rounded px-3 py-2">
+    <option value="">Select Party</option>
+    {% for party in parties %}
+      <option value="{{ party.id }}">{{ party.party_name }}{% if party.party_contact %} - {{ party.party_contact }}{% endif %}</option>
+    {% endfor %}
+  </select>
+</div>
               <div id="custom-party-fields" class="custom-party-fields">
                 <div>
                   <label for="party_name">Party Name:</label>
@@ -2349,7 +2349,65 @@ function addSampleItem() {
     invoiceItems.push(sampleItem);
     updateItemsDisplay();
 }
+document.addEventListener('DOMContentLoaded', function () {
+    setupFormSubmission();
+    loadProducts();
+    initializeBarcodeScanner();
+    initializeDates();
+    updateTotal();
+
+    const productSearchEl = document.getElementById('product-search');
+    const categoryFilterEl = document.getElementById('category-filter');
+    const discountTypeEl = document.getElementById('discount-type');
+    const globalDiscountEl = document.getElementById('global-discount');
+
+    if (productSearchEl) productSearchEl.addEventListener('input', filterProducts);
+    if (categoryFilterEl) categoryFilterEl.addEventListener('change', filterProducts);
+
+    if (discountTypeEl) {
+        discountTypeEl.addEventListener('change', function () {
+            discountType = this.value;
+            updateTotal();
+        });
+    }
+
+    if (globalDiscountEl) {
+        globalDiscountEl.addEventListener('input', function () {
+            globalDiscount = parseFloat(this.value) || 0;
+            updateTotal();
+        });
+    }
+
+    // ✅ Initialize Tom Select for party dropdown
+    if (document.getElementById('party')) {
+        new TomSelect('#party', {
+            create: false,
+            sortField: {
+                field: "text",
+                direction: "asc"
+            },
+            placeholder: 'Search party by name or phone...',
+            dropdownParent: 'body',
+            maxOptions: 1000,
+        });
+    }
+});
+
+// Modal and keyboard event handlers
+window.onclick = function (event) {
+    const modal = document.getElementById('product-modal');
+    if (modal && event.target === modal) {
+        closeProductModal();
+    }
+}
+
+document.addEventListener('keydown', function (e) {
+    const modal = document.getElementById('product-modal');
+    if (modal && modal.style.display === 'block' && e.key === 'Escape') {
+        closeProductModal();
+    }
+});
 </script>
 
-
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 {% endblock %}

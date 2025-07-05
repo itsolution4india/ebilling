@@ -174,42 +174,45 @@
                                     Select Items to Return
                                 </h5>
                                 
-                                <div id="itemsList">
-                                    {% for item in invoice_items %}
-                                        <div class="item-card p-3" data-item-id="{{ item.id }}">
-                                            <div class="flex justify-between">
-                                                <div class="col-md-1">
-                                                    <div class="form-check">
-                                                        <input class="form-check-input item-checkbox" type="checkbox" 
-                                                               id="item{{ item.id }}" data-item-id="{{ item.id }}">
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-4">
-                                                    <h6 class="mb-1">{{ item.product_name }}</h6>
-                                                    <small class="text-muted">{{ item.product_description }}</small>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <label class="form-label small">Original Qty</label>
-                                                    <div class="fw-bold">{{ item.quantity }}</div>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <label class="form-label small">Return Qty</label>
-                                                    <input type="number" class="form-control quantity-input" 
-                                                           min="1" max="{{ item.quantity }}" value="1" 
-                                                           data-item-id="{{ item.id }}" disabled>
-                                                </div>
-                                                <div class="col-md-2">
-                                                    <label class="form-label small">Rate</label>
-                                                    <div class="fw-bold">₹{{ item.rate }}</div>
-                                                </div>
-                                                <div class="col-md-1">
-                                                    <label class="form-label small">Amount</label>
-                                                    <div class="fw-bold text-success item-amount">₹{{ item.amount }}</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-                                </div>
+                             <div id="itemsList">
+    {% for item in invoice_items %}
+        {% if item.quantity > 0 %}
+            <div class="item-card p-3" data-item-id="{{ item.id }}">
+                <div class="flex justify-between">
+                    <div class="col-md-1">
+                        <div class="form-check">
+                            <input class="form-check-input item-checkbox" type="checkbox" 
+                                   id="item{{ item.id }}" data-item-id="{{ item.id }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="mb-1">{{ item.product_name }}</h6>
+                        <small class="text-muted">{{ item.product_description }}</small>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small">Original Qty</label>
+                        <div class="fw-bold">{{ item.quantity }}</div>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small">Return Qty</label>
+                        <input type="number" class="form-control quantity-input" 
+                               min="1" max="{{ item.quantity }}" value="1" 
+                               data-item-id="{{ item.id }}" disabled>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small">Rate</label>
+                        <div class="fw-bold">₹{{ item.rate }}</div>
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label small">Amount</label>
+                        <div class="fw-bold text-success item-amount">₹{{ item.amount }}</div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>
+
 
                                 <!-- Generate Return Button -->
                                 <div class="text-center mt-4">
