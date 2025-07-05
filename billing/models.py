@@ -94,7 +94,7 @@ class Invoice(models.Model):
         ('paid', 'Paid'),
         ('unpaid', 'Unpaid'),
         ('partial', 'Partial'),
-        ('refund', 'refund')
+        ('return', 'return')
     ]
     PAYMENT_MODE_CHOICES = [
         ('UPI', 'UPI'),
