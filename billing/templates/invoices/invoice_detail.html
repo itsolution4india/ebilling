@@ -316,6 +316,66 @@
                 font-size: 12px;
             }
         }
+        @media print {
+    body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        color: #000 !important;
+        background: #fff !important;
+        font-weight: 500 !important;
+    }
+
+    .invoice-wrapper,
+    .invoice-content {
+        color: #000 !important;
+    }
+
+    .pos-header,
+    .document-type,
+    .invoice-meta,
+    .customer-details,
+    .pos-items,
+    .pos-summary,
+    .payment-info,
+    .qr-section,
+    .terms-section,
+    .signature-section,
+    .thank-you {
+        color: #000 !important;
+        font-weight: 600 !important;
+    }
+
+    .summary-row span,
+    .item-header span,
+    .item-calculation span {
+        color: #000 !important;
+    }
+
+    .btn,
+    .action-buttons,
+    .no-print,
+    .btn-group {
+        display: none !important;
+    }
+
+    /* Optional: make font slightly larger and darker */
+    body {
+        font-size: 12pt;
+        font-family: 'Arial', sans-serif;
+    }
+
+    .summary-row.total,
+    .summary-row.paid,
+    .summary-row.balance {
+        font-weight: bold;
+        font-size: 13pt;
+    }
+
+    .qr-code-container img {
+        max-width: 120px;
+    }
+}
+        
     </style>
 {% endblock %}
 
