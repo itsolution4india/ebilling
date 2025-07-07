@@ -377,39 +377,41 @@
 
             <!-- Items Section -->
 <div class="pos-items">
-    {% with shown=0 %}
+    {% if items %}
         {% for i in items %}
-            {% if i.item.quantity > 0 %}
-                {% with shown=shown|add:"1" %}
-                <div class="pos-item">
-                    <div class="item-header">
-                        <span>{{ i.item.product_name }}</span>
-                        <span>₹{{ i.item.amount|add:i.tax_amount|floatformat:"2" }}</span>
-                    </div>
-                    {% if i.item.product_description %}
-                        <div class="item-details">{{ i.item.product_description }}</div>
-                    {% endif %}
-                    <div class="item-calculation">
-                        <span>{{ i.item.quantity }} {{ i.unit|default:"pcs" }} × ₹{{ i.item.rate|floatformat:"2" }}</span>
-                        <span>Tax: ₹{{ i.tax_amount|floatformat:"2" }} ({{ i.tax_rate|floatformat:"1" }}%)</span>
-                    </div>
-                    {% if i.item.discount %}
-                        <div class="item-calculation">
-                            <span>Discount: {{ i.item.discount }}</span>
-                        </div>
-                    {% endif %}
-                </div>
-                {% endwith %}
-            {% endif %}
-        {% endfor %}
-
-        {% if shown == 0 %}
             <div class="pos-item">
-                <div class="item-header text-danger">There are no products in this invoice.</div>
+                <div class="item-header">
+                    <span>{{ i.item.product_name }}</span>
+                    <span>₹{{ i.item.amount|add:i.tax_amount|floatformat:"2" }}</span>
+                </div>
+                {% if i.item.product_description %}
+                    <div class="item-details">{{ i.item.product_description }}</div>
+                {% endif %}
+                <div class="item-calculation">
+                    <span>{{ i.item.quantity }} {{ i.unit|default:"pcs" }} × ₹{{ i.item.rate|floatformat:"2" }}</span>
+                    <span>Tax: ₹{{ i.tax_amount|floatformat:"2" }} ({{ i.tax_rate|floatformat:"1" }}%)</span>
+                </div>
+                {% if i.item.discount %}
+                    <div class="item-calculation">
+                        <span>Discount: {{ i.item.discount }}</span>
+                    </div>
+                {% endif %}
             </div>
-        {% endif %}
-    {% endwith %}
+        {% endfor %}
+    {% else %}
+        <div class="pos-item">
+            <div class="item-header text-danger">There are no products in this invoice.</div>
+        </div>
+    {% endif %}
 </div>
+
+
+
+
+
+
+
+
 
 
 
@@ -429,7 +431,7 @@
                     <span>-₹{{ total_discount|floatformat:2 }}</span>
                 </div>
                 {% endif %}
-                {% if extra_amount > 0 %}
+                {% if extra_amount%}
                 <div class="summary-row">
                     <span>Extra Amount:</span>
                     <span>₹{{ extra_amount|floatformat:2 }}</span>

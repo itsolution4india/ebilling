@@ -525,20 +525,19 @@
     </div>
 
 
+<div class="summary-row mb-4 flex gap-6 items-center" style="gap: 15px;">
+  <label class="inline-flex items-center gap-4">
+    <input type="checkbox" name="is_full_paid" id="is_full_paid" class="form-checkbox h-4 w-4 mx-2 text-blue-600">
+    <span class="font-medium">Mark as Full Paid</span>
+  </label>
 
-        <div class="summary-row mb-4">
-          <label class="inline-flex items-center gap-2">
-            <input
-              type="checkbox"
-              name="is_full_paid"
-              id="is_full_paid"
-              class="form-checkbox h-4 w-4 text-blue-600"
-            />
-            <span class="summary-label font-medium mx-2">Mark as Full Paid</span>
-          </label>
-        </div>
-        <div class="summary-row mb-4" id="partial_payment_section">
-  <label for="amount_paid" class="summary-label font-semibold mx-2 block">Partial Amount Paid</label>
+  <label class="inline-flex items-center gap-4">
+    <input type="checkbox" name="is_partial_paid" id="is_partial_paid" class="form-checkbox h-4 w-4 mx-2 text-blue-600">
+    <span class="font-medium">Partial Paid</span>
+  </label>
+</div>
+<div id="partial_payment_section" class="mb-4 hidden">
+  <label for="amount_paid" class="block font-semibold mb-1">Partial Amount Paid</label>
   <input
     type="number"
     name="amount_paid"
@@ -550,36 +549,38 @@
   <input type="hidden" id="remaining_amount" name="remaining_amount"> 
 </div>
 
+<div id="payment_mode_section" class="mb-4 hidden">
+  <label class="font-semibold block mb-1" for="payment_mode">Payment Mode</label>
+  <select
+    name="payment_mode"
+    id="payment_mode"
+    required
+    class="border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 w-48 bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+  >
+    <option value="">-- Select --</option>
+    <option value="UPI">UPI</option>
+    <option value="Cash">Cash</option>
+    <option value="Bank Transfer">Bank Transfer</option>
+    <option value="Card">Card</option>
+    <option value="Cheque">Cheque</option>
+  </select>
+</div>
 
-        <div class="summary-row mb-4">
-          <label class="summary-label font-semibold mx-2" for="payment_mode">Payment Mode</label>
-          <select
-              name="payment_mode"
-              id="payment_mode"
-              class="border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 w-48 bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">-- Select --</option>
-              <option value="UPI">UPI</option>
-              <option value="Cash">Cash</option>
-              <option value="Bank Transfer">Bank Transfer</option>
-              <option value="Card">Card</option>
-              <option value="Cheque">Cheque</option>
-            </select>
-        </div>
+<div class="summary-row mb-4" id="bankSelectRow" style="display: none;">
+  <label class="font-semibold block mb-1" for="bank_name">Choose Bank</label>
+  <select
+    name="bank_name"
+    id="bank_name"
+    class="border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 w-48 bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+  >
+    <option value="">-- Select Bank --</option>
+    {% for i in banks %}
+      <option value="{{i.account_name}}">{{i.account_name}}</option>
+    {% endfor %}
+  </select>
+</div>
 
-        <div class="summary-row mb-4" id="bankSelectRow" style="display: none;">
-          <label class="summary-label font-semibold mx-2" for="bank_name">Choose Bank</label>
-          <select
-              name="bank_name"
-              id="bank_name"
-              class="border border-gray-300 dark:border-gray-700 rounded-md px-4 py-2 w-48 bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">-- Select Bank --</option>
-              {% for i in banks %}
-              <option value="{{i.account_name}}">{{i.account_name}}</option>
-              {% endfor %}
-          </select>
-        </div>
+
 
         <!-- Action Buttons -->
         <div class="flex space-x-3 pt-4">
@@ -640,7 +641,7 @@
     </div>
   </div>
 </div>
-<script>
+<!-- <script>
 document.addEventListener('DOMContentLoaded', function () {
   // Toggle Bank Select Row
   const paymentMode = document.getElementById('payment_mode');
@@ -690,7 +691,7 @@ document.addEventListener('DOMContentLoaded', function () {
   customPartyRadio.addEventListener('change', togglePartyFields);
   togglePartyFields();  // Initialize on load
 });
-</script>
+</script> -->
 
 
 <!-- <script>
@@ -1577,6 +1578,52 @@ document.addEventListener('DOMContentLoaded', function() {
             updateTotal();
         });
     }
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+  const fullPaidCheckbox = document.getElementById('is_full_paid');
+  const partialPaidCheckbox = document.getElementById('is_partial_paid');
+
+  const partialPaymentSection = document.getElementById('partial_payment_section');
+  const paymentModeSection = document.getElementById('payment_mode_section');
+  const paymentModeSelect = document.getElementById('payment_mode');
+  const bankSelectRow = document.getElementById('bankSelectRow');
+
+  function updatePaymentVisibility() {
+    const isFullPaid = fullPaidCheckbox.checked;
+    const isPartialPaid = partialPaidCheckbox.checked;
+
+    if (isFullPaid) {
+      paymentModeSection.classList.remove('hidden');
+      partialPaymentSection.classList.add('hidden');
+      partialPaidCheckbox.checked = false;
+    } 
+    else if (isPartialPaid) {
+      paymentModeSection.classList.remove('hidden');
+      partialPaymentSection.classList.remove('hidden');
+      fullPaidCheckbox.checked = false;
+    } else {
+      paymentModeSection.classList.add('hidden');
+      partialPaymentSection.classList.add('hidden');
+    }
+
+    toggleBankSelect();
+  }
+
+  function toggleBankSelect() {
+    const selected = paymentModeSelect.value;
+    const showBank = selected && selected !== 'Cash';
+    bankSelectRow.style.display = showBank ? 'block' : 'none';
+    if (!showBank) {
+      document.getElementById('bank_name').value = '';
+    }
+  }
+
+  fullPaidCheckbox.addEventListener('change', updatePaymentVisibility);
+  partialPaidCheckbox.addEventListener('change', updatePaymentVisibility);
+  paymentModeSelect.addEventListener('change', toggleBankSelect);
+
+  updatePaymentVisibility(); // Initial setup
 });
 
 // Initialize barcode scanner

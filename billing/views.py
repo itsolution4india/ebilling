@@ -638,18 +638,18 @@ def generate_hsn_code():
 @login_required
 def product_list(request):
     products = Product.objects.filter(user=request.user)
-    category_filter = request.GET.get('category', '')
+
+    category_filter = request.GET.get('category', '').strip()
     if category_filter:
         products = products.filter(category=category_filter)
-    categories = Product.objects.filter(user=request.user).values_list('category', flat=True).distinct()
-    
+
+    categories = Product.objects.filter(user=request.user).exclude(category__isnull=True).exclude(category__exact='').values_list('category', flat=True).distinct()
+
     context = {
         'products': products,
         'category_filter': category_filter,
         'categories': categories,
-       
     }
-    
     return render(request, 'products/product_list.html', context)
 
 @login_required
@@ -1281,6 +1281,7 @@ def invoice_detail(request, pk):
         total_discount += discount_value
         total_tax += tax_amount
 
+
         enriched_items.append({
             'item': item,
             'unit': unit,
@@ -1294,11 +1295,12 @@ def invoice_detail(request, pk):
     calculated_total = subtotal - total_discount + total_tax
     final_total = invoice.amount
     extra_amount = final_total - calculated_total  # ✅ can be positive or negative
+    valid_items = [i for i in enriched_items if i['item'].quantity > 0]
 
     context = {
         'invoice': invoice,
         'invoice_setting': invoice_setting,
-        'items': enriched_items,
+        'items': valid_items ,
         'subtotal': subtotal,
         'total_discount': total_discount,
         'total_tax': total_tax,
