@@ -1070,7 +1070,14 @@ def invoice_create(request):
                 else:
                     selected_party_name = party_name
                     selected_party_num = party_phone
-                    Party.objects.create(user=request.user, party_name=selected_party_name, party_contact=selected_party_num)
+                    party_exists = Party.objects.filter(user=request.user, party_name=selected_party_name).first()
+    
+                    if not party_exists:
+                        Party.objects.create(
+                            user=request.user,
+                            party_name=selected_party_name,
+                            party_contact=selected_party_num
+                        )
 
                 # 4. Load and validate items
                 items_data = request.POST.get('items_data')
