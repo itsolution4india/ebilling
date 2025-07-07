@@ -26,6 +26,7 @@
         }
         .quantity-input {
             width: 80px;
+            border: 1px solid black;
         }
         .total-section {
             background-color: #f8f9fa;
@@ -193,7 +194,7 @@
                         <label class="form-label small">Original Qty</label>
                         <div class="fw-bold">{{ item.quantity }}</div>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-2 grid">
                         <label class="form-label small">Return Qty</label>
                         <input type="number" class="form-control quantity-input" 
                                min="1" max="{{ item.quantity }}" value="1" 
