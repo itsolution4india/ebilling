@@ -294,12 +294,13 @@
             
             // Product details - using template variables
             const discount = '{{ product.discount }}';
+            const product_name = '{{ product.product_name }}';
             const mrp = '{{ product.mrp }}';
             const salePrice = '{{ product.sale_price }}';
-            
+
             // Discount
             ctx.font = '12px Arial';
-            ctx.fillText(`Discount: ${discount}%OFF`, canvas.width / 2, barcodeY + tempCanvas.height + 40);
+            ctx.fillText(`${product_name} (${discount}%OFF)`, canvas.width / 2, barcodeY + tempCanvas.height + 40);
             
             // MRP and Sale Price
             ctx.font = '12px Arial';
@@ -460,10 +461,6 @@
                     </style>
                 </head>
                 <body>
-                    <div class="product-info">
-                        <div><strong>Product:</strong> {{ product.product_name }}</div>
-                        <div><strong>Code:</strong> {{ product.product_code }}</div>
-                    </div>
                     <div class="barcode-container">
                         <img src="${canvas.toDataURL()}" alt="Barcode" style="max-width: 100%;">
                     </div>
