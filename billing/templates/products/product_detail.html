@@ -2,22 +2,20 @@
 {% load static %}
 {% block extra_css %}
 <style>
-@media print {
-    body * {
-        visibility: hidden;
-    }
-    
-    .print-content, .print-content * {
-        visibility: visible;
-    }
-    
-    .print-content {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-    }
-}
+  @page {
+    size: 50mm 25mm;
+    margin: 0;
+  }
+  body {
+    margin: 0;
+    padding: 0;
+    text-align: center;
+  }
+  img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
 
 .btn-sm {
     font-size: 0.75rem;
@@ -227,273 +225,233 @@
 
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 <script>
-        // Updated JavaScript functions - Replace the existing ones in your Django template
-
-        document.addEventListener('DOMContentLoaded', function() {
-            // Display current barcode if exists
-            const currentBarcodeId = '{{ product.barcode_id|default:"" }}';
-            if (currentBarcodeId) {
-                displayBarcode('currentBarcodeCanvas', currentBarcodeId);
-            }
-        });
-
-        function displayBarcode(canvasId, barcodeId) {
-            const canvas = document.getElementById(canvasId);
-            if (canvas && barcodeId) {
-                JsBarcode(canvas, barcodeId, {
-                    format: "CODE128",
-                    lineColor: "#000",
-                    width: 2,
-                    height: 60,
-                    displayValue: true,
-                    fontSize: 12,
-                    margin: 10
-                });
-            }
+    document.addEventListener('DOMContentLoaded', function () {
+        const currentBarcodeId = '{{ product.barcode_id|default:"" }}';
+        if (currentBarcodeId) {
+            displayBarcode('currentBarcodeCanvas', currentBarcodeId);
         }
+    });
 
-        // NEW: Function to create detailed barcode with product info
-        function createDetailedBarcodeCanvas(barcodeId) {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            // Set canvas size
-            canvas.width = 300;
-            canvas.height = 200;
-            
-            // Fill white background
-            ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Set text properties
-            ctx.fillStyle = 'black';
-            ctx.textAlign = 'center';
-            
-            // Store name
-            ctx.font = '12px Arial';
-            ctx.fillText('Bee Mart', canvas.width / 2, 20);
-            
-            // Generate barcode on temporary canvas
-            const tempCanvas = document.createElement('canvas');
-            JsBarcode(tempCanvas, barcodeId, {
+    function displayBarcode(canvasId, barcodeId) {
+        const canvas = document.getElementById(canvasId);
+        if (canvas && barcodeId) {
+            JsBarcode(canvas, barcodeId, {
                 format: "CODE128",
                 lineColor: "#000",
                 width: 2,
                 height: 60,
-                displayValue: false,
-                margin: 0
-            });
-            
-            // Draw barcode on main canvas
-            const barcodeY = 35;
-            ctx.drawImage(tempCanvas, (canvas.width - tempCanvas.width) / 2, barcodeY);
-            
-            // Barcode ID
-            ctx.font = 'bold 14px monospace';
-            ctx.fillText(barcodeId, canvas.width / 2, barcodeY + tempCanvas.height + 20);
-            
-            // Product details - using template variables
-            const discount = '{{ product.discount }}';
-            const product_name = '{{ product.product_name }}';
-            const mrp = '{{ product.mrp }}';
-            const salePrice = '{{ product.sale_price }}';
-
-            // Discount
-            ctx.font = '12px Arial';
-            ctx.fillText(`${product_name} (${discount}%OFF)`, canvas.width / 2, barcodeY + tempCanvas.height + 40);
-            
-            // MRP and Sale Price
-            ctx.font = '12px Arial';
-            ctx.fillText(`MRP: ₹${mrp}`, canvas.width / 2 - 60, barcodeY + tempCanvas.height + 60);
-            ctx.fillText(`Sale Price: ₹${salePrice}`, canvas.width / 2 + 60, barcodeY + tempCanvas.height + 60);
-            
-            return canvas;
-        }
-
-        function generateNewBarcode() {
-            let newBarcodeId = document.getElementById('newBarcodeInput').value.trim();
-            
-            if (!newBarcodeId) {
-                // Auto-generate barcode
-                const timestamp = Date.now().toString();
-                const randomPart = Math.random().toString(36).substr(2, 4).toUpperCase();
-                newBarcodeId = `{{ product.product_code }}${timestamp.slice(-4)}${randomPart}`;
-            }
-            
-            document.getElementById('newBarcodeInput').value = newBarcodeId;
-            document.getElementById('newBarcodeId').textContent = newBarcodeId;
-            
-            // Generate and display new barcode
-            displayBarcode('newBarcodeCanvas', newBarcodeId);
-            
-            // Show the preview container
-            document.getElementById('newBarcodeContainer').classList.remove('hidden');
-        }
-
-        function saveNewBarcode() {
-            const newBarcodeId = document.getElementById('newBarcodeInput').value.trim();
-            
-            if (!newBarcodeId) {
-                alert('Please generate a barcode first');
-                return;
-            }
-            
-            // Send AJAX request to save barcode
-            fetch(`/products/{{ product.pk }}/update-barcode/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                body: JSON.stringify({
-                    barcode_id: newBarcodeId
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Barcode saved successfully!');
-                    // Update current barcode display
-                    displayBarcode('currentBarcodeCanvas', newBarcodeId);
-                    document.querySelector('.font-mono').textContent = newBarcodeId;
-                    
-                    // Hide new barcode container
-                    document.getElementById('newBarcodeContainer').classList.add('hidden');
-                    document.getElementById('newBarcodeInput').value = '';
-                    
-                    // Show current barcode section if it was hidden
-                    const currentSection = document.querySelector('.bg-gray-50');
-                    if (currentSection) {
-                        currentSection.classList.remove('hidden');
-                    }
-                    
-                    // Reload page to show updated barcode
-                    location.reload();
-                } else {
-                    alert('Error saving barcode: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error saving barcode');
+                displayValue: true,
+                fontSize: 12,
+                margin: 10
             });
         }
+    }
 
-        // UPDATED: Download functions with detailed barcode
-        function downloadCurrentBarcode() {
-            const barcodeId = '{{ product.barcode_id }}';
-            if (!barcodeId) {
-                alert('No barcode to download');
-                return;
+    // ✅ Adjusted for 50mm x 25mm label size (203 DPI ≈ 8 dots/mm)
+    function createDetailedBarcodeCanvas(barcodeId) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = 400;  // 50mm * 8 (203dpi)
+    canvas.height = 200; // 25mm * 8
+
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = 'black';
+    ctx.textAlign = 'center';
+
+    ctx.font = '20px Arial';
+    ctx.fillText('Bee Mart', canvas.width / 2, 25);
+
+    const tempCanvas = document.createElement('canvas');
+    JsBarcode(tempCanvas, barcodeId, {
+        format: "CODE128",
+        lineColor: "#000",
+        width: 2,
+        height: 60,
+        displayValue: false,
+        margin: 0
+    });
+
+    const barcodeY = 40;
+    ctx.drawImage(tempCanvas, (canvas.width - tempCanvas.width) / 2, barcodeY);
+
+    ctx.font = '14px monospace';
+    ctx.fillText(barcodeId, canvas.width / 2, barcodeY + 70);
+
+    const discount = '{{ product.discount }}';
+    const product_name = '{{ product.product_name }}';
+    const mrp = '{{ product.mrp }}';
+    const salePrice = '{{ product.sale_price }}';
+
+    ctx.font = '14px Arial';
+    ctx.fillText(`${product_name} (${discount}% OFF)`, canvas.width / 2, barcodeY + 90);
+    ctx.fillText(`MRP ₹${mrp} | Sale ₹${salePrice}`, canvas.width / 2, barcodeY + 110);
+
+    return canvas;
+}
+
+
+    function generateNewBarcode() {
+        let newBarcodeId = document.getElementById('newBarcodeInput').value.trim();
+        if (!newBarcodeId) {
+            const timestamp = Date.now().toString();
+            const randomPart = Math.random().toString(36).substr(2, 4).toUpperCase();
+            newBarcodeId = `{{ product.product_code }}${timestamp.slice(-4)}${randomPart}`;
+        }
+
+        document.getElementById('newBarcodeInput').value = newBarcodeId;
+        document.getElementById('newBarcodeId').textContent = newBarcodeId;
+        displayBarcode('newBarcodeCanvas', newBarcodeId);
+        document.getElementById('newBarcodeContainer').classList.remove('hidden');
+    }
+
+    function saveNewBarcode() {
+        const newBarcodeId = document.getElementById('newBarcodeInput').value.trim();
+        if (!newBarcodeId) {
+            alert('Please generate a barcode first');
+            return;
+        }
+
+        fetch(`/products/{{ product.pk }}/update-barcode/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ barcode_id: newBarcodeId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Barcode saved successfully!');
+                displayBarcode('currentBarcodeCanvas', newBarcodeId);
+                document.querySelector('.font-mono').textContent = newBarcodeId;
+                document.getElementById('newBarcodeContainer').classList.add('hidden');
+                document.getElementById('newBarcodeInput').value = '';
+                const currentSection = document.querySelector('.bg-gray-50');
+                if (currentSection) {
+                    currentSection.classList.remove('hidden');
+                }
+                location.reload();
+            } else {
+                alert('Error saving barcode: ' + data.message);
             }
-            
-            const canvas = createDetailedBarcodeCanvas(barcodeId);
-            downloadBarcodeFromCanvas(canvas, barcodeId);
-        }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error saving barcode');
+        });
+    }
 
-        function downloadNewBarcode() {
-            const barcodeId = document.getElementById('newBarcodeId').textContent;
-            if (!barcodeId) {
-                alert('No barcode to download');
-                return;
-            }
-            
-            const canvas = createDetailedBarcodeCanvas(barcodeId);
-            downloadBarcodeFromCanvas(canvas, barcodeId);
-        }
+    function downloadBarcodeFromCanvas(canvas, barcodeId) {
+        const link = document.createElement('a');
+        link.download = `barcode_${barcodeId}.png`;
+        link.href = canvas.toDataURL();
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 
-        function downloadBarcodeFromCanvas(canvas, barcodeId) {
-            const link = document.createElement('a');
-            link.download = `barcode_${barcodeId}.png`;
-            link.href = canvas.toDataURL();
-            
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+    function downloadCurrentBarcode() {
+        const barcodeId = '{{ product.barcode_id }}';
+        if (!barcodeId) {
+            alert('No barcode to download');
+            return;
         }
+        const canvas = createDetailedBarcodeCanvas(barcodeId);
+        downloadBarcodeFromCanvas(canvas, barcodeId);
+    }
 
-        // UPDATED: Print functions with detailed barcode
-        function printCurrentBarcode() {
-            const barcodeId = '{{ product.barcode_id }}';
-            if (!barcodeId) {
-                alert('No barcode to print');
-                return;
-            }
-            printDetailedBarcode(barcodeId);
+    function downloadNewBarcode() {
+        const barcodeId = document.getElementById('newBarcodeId').textContent;
+        if (!barcodeId) {
+            alert('No barcode to download');
+            return;
         }
+        const canvas = createDetailedBarcodeCanvas(barcodeId);
+        downloadBarcodeFromCanvas(canvas, barcodeId);
+    }
 
-        function printNewBarcode() {
-            const barcodeId = document.getElementById('newBarcodeId').textContent;
-            if (!barcodeId) {
-                alert('No barcode to print');
-                return;
-            }
-            printDetailedBarcode(barcodeId);
+    function printCurrentBarcode() {
+        const barcodeId = '{{ product.barcode_id }}';
+        if (!barcodeId) {
+            alert('No barcode to print');
+            return;
         }
+        printDetailedBarcode(barcodeId);
+    }
 
-        function printDetailedBarcode(barcodeId) {
-            // Create detailed barcode canvas
-            const canvas = createDetailedBarcodeCanvas(barcodeId);
-            
-            // Create print window
-            const printWindow = window.open('', '_blank');
-            const printContent = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Print Barcode</title>
-                    <style>
-                        body { 
-                            margin: 0; 
-                            padding: 20px; 
-                            text-align: center; 
-                            font-family: Arial, sans-serif;
-                        }
-                        .product-info {
-                            margin-bottom: 20px;
-                        }
-                        .barcode-container {
-                            margin: 20px 0;
-                        }
-                        @media print {
-                            body { margin: 0; padding: 10px; }
-                        }
-                    </style>
-                </head>
-                <body>
-                    <div class="barcode-container">
-                        <img src="${canvas.toDataURL()}" alt="Barcode" style="max-width: 100%;">
-                    </div>
-                </body>
-                </html>
-            `;
-            
-            printWindow.document.write(printContent);
-            printWindow.document.close();
-            
-            // Wait for content to load, then print
-            printWindow.onload = function() {
-                setTimeout(() => {
-                    printWindow.print();
-                    printWindow.close();
-                }, 100);
-            };
+    function printNewBarcode() {
+        const barcodeId = document.getElementById('newBarcodeId').textContent;
+        if (!barcodeId) {
+            alert('No barcode to print');
+            return;
         }
+        printDetailedBarcode(barcodeId);
+    }
 
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
+    function printDetailedBarcode(barcodeId) {
+    const canvas = createDetailedBarcodeCanvas(barcodeId);
+
+    const printWindow = window.open('', '_blank');
+    const printContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Print Barcode</title>
+            <style>
+                @page {
+                    size: 50mm 25mm;
+                    margin: 0;
+                }
+                body {
+                    margin: 0;
+                    padding: 0;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100vh;
+                }
+                img {
+                    width: 100%;
+                    height: auto;
+                    display: block;
+                }
+            </style>
+        </head>
+        <body>
+            <img src="${canvas.toDataURL()}" alt="Barcode">
+        </body>
+        </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+
+    printWindow.onload = () => {
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 300);
+    };
+}
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
                 }
             }
-            return cookieValue;
         }
-    </script>
+        return cookieValue;
+    }
+</script>
+
 
 {% endblock %}
