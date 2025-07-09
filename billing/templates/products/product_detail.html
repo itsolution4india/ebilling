@@ -3,7 +3,7 @@
 {% block extra_css %}
 <style>
   @page {
-    size: 50mm 25mm;
+    size: 100mm 25mm; /* Two labels side by side */
     margin: 0;
   }
   body {
@@ -17,14 +17,33 @@
     display: block;
   }
 
-.btn-sm {
+  .label-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    width: 100mm; /* Width for 2 labels */
+  }
+
+  .label {
+    width: 49mm;
+    height: 25mm;
+    border: 1px dashed #ccc;
+    margin: 0.5mm;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    font-size: 10px;
+    font-family: Arial, sans-serif;
+  }
+
+  .btn-sm {
     font-size: 0.75rem;
     padding: 0.25rem 0.75rem;
     border-radius: 0.375rem;
     font-weight: 500;
     transition: all 0.15s ease-in-out;
-}
-
+  }
 </style>
 {% endblock %}
 {% block content %}
@@ -392,51 +411,82 @@
         printDetailedBarcode(barcodeId);
     }
 
-    function printDetailedBarcode(barcodeId) {
-    const canvas = createDetailedBarcodeCanvas(barcodeId);
+  function printDetailedBarcode(barcodeId) {
+  const canvas = createDetailedBarcodeCanvas(barcodeId);
+  const dataUrl = canvas.toDataURL();
+  const productName = "{{ product.product_name }}";
+  const mrp = "{{ product.mrp }}";
+  const salePrice = "{{ product.sale_price }}";
 
-    const printWindow = window.open('', '_blank');
-    const printContent = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Print Barcode</title>
-            <style>
-                @page {
-                    size: 50mm 25mm;
-                    margin: 0;
-                }
-                body {
-                    margin: 0;
-                    padding: 0;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    height: 100vh;
-                }
-                img {
-                    width: 100%;
-                    height: auto;
-                    display: block;
-                }
-            </style>
-        </head>
-        <body>
-            <img src="${canvas.toDataURL()}" alt="Barcode">
-        </body>
-        </html>
-    `;
+  const printWindow = window.open('', '_blank');
+  const printContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Print Barcode</title>
+      <style>
+        @page {
+          size: 100mm 25mm;
+          margin: 0;
+        }
+        body {
+          margin: 0;
+          padding: 0;
+          font-family: Arial, sans-serif;
+        }
+        .label-container {
+          display: flex;
+          justify-content: space-between;
+          width: 100mm;
+          height: 25mm;
+        }
+        .label {
+          width: 49mm;
+          height: 25mm;
+          padding: 2mm;
+          box-sizing: border-box;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          font-size: 9px;
+        }
+        .label img {
+          max-width: 100%;
+          height: auto;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="label-container">
+        <div class="label">
+        
+          <img src="${dataUrl}" alt="Barcode" />
+        
+         
+        </div>
+        <div class="label">
+       
+          <img src="${dataUrl}" alt="Barcode" />
+          
+          
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
 
-    printWindow.document.write(printContent);
-    printWindow.document.close();
+  printWindow.document.write(printContent);
+  printWindow.document.close();
 
-    printWindow.onload = () => {
-        setTimeout(() => {
-            printWindow.print();
-            printWindow.close();
-        }, 300);
-    };
+  printWindow.onload = () => {
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 500);
+  };
 }
+
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
