@@ -2,41 +2,40 @@
 {% load static %}
 {% block extra_css %}
 <style>
-  @page {
-    size: 100mm 25mm; /* Two labels side by side */
-    margin: 0;
-  }
-  body {
-    margin: 0;
-    padding: 0;
-    text-align: center;
-  }
-  img {
-    width: 100%;
-    height: auto;
-    display: block;
-  }
+   @page {
+      size: 100mm auto; /* Continuous length */
+      margin: 0;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    .label-sheet {
+      display: flex;
+      flex-wrap: wrap;
+      width: 100mm; /* Full sheet width: 2 labels per row */
+      box-sizing: border-box;
+    }
+    .label {
+      width: 50mm;
+      height: 25mm;
+      padding: 0;
+      margin: 0;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      page-break-inside: avoid;
+      overflow: hidden;
+    }
+    .label img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
 
-  .label-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    width: 100mm; /* Width for 2 labels */
-  }
 
-  .label {
-    width: 49mm;
-    height: 25mm;
-    border: 1px dashed #ccc;
-    margin: 0.5mm;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    font-size: 10px;
-    font-family: Arial, sans-serif;
-  }
-
+  
   .btn-sm {
     font-size: 0.75rem;
     padding: 0.25rem 0.75rem;
@@ -96,7 +95,12 @@
   <!-- Barcode Management Card -->
   <div class="bg-white dark:bg-gray-800 shadow-md rounded-xl p-6">
     <h4 class="text-lg font-semibold mb-4 text-gray-800 dark:text-white">Barcode Management</h4>
-    
+    <div class="my-4 flex items-center space-x-2">
+  <label for="numRows" class="text-sm text-gray-700 dark:text-gray-200">Number of Rows:</label>
+  <input type="number" id="numRows" value="1" min="1" max="100" class="border px-2 py-1 rounded w-20 text-sm">
+  <button onclick="printMultipleLabels()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">Print Labels</button>
+</div>
+
     <!-- Current Barcode Display -->
     <div class="mb-6">
       <div class="flex items-center justify-between mb-3">
@@ -106,9 +110,7 @@
             <button type="button" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded" onclick="downloadCurrentBarcode()">
               Download
             </button>
-            <button type="button" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded" onclick="printCurrentBarcode()">
-              Print
-            </button>
+         
           {% endif %}
         </div>
       </div>
@@ -197,7 +199,7 @@
     <h3 style="margin-bottom: 20px;">Product Barcode</h3>
     <div style="margin-bottom: 10px;">
       <strong>Product:</strong> {{ product.product_name }}
-    </div>
+    </div><br>
     <div style="margin-bottom: 20px;">
       <strong>Code:</strong> {{ product.product_code }}
     </div>
@@ -280,9 +282,11 @@
     ctx.fillStyle = 'black';
     ctx.textAlign = 'center';
 
+    // Title
     ctx.font = '20px Arial';
     ctx.fillText('Bee Mart', canvas.width / 2, 25);
 
+    // Barcode
     const tempCanvas = document.createElement('canvas');
     JsBarcode(tempCanvas, barcodeId, {
         format: "CODE128",
@@ -296,17 +300,20 @@
     const barcodeY = 40;
     ctx.drawImage(tempCanvas, (canvas.width - tempCanvas.width) / 2, barcodeY);
 
+    // Add some extra space (e.g., +15px) before writing the barcode ID
+    const barcodeIdY = barcodeY + tempCanvas.height + 25;
     ctx.font = '14px monospace';
-    ctx.fillText(barcodeId, canvas.width / 2, barcodeY + 70);
+    ctx.fillText(barcodeId, canvas.width / 2, barcodeIdY);
 
+    // Product name & pricing
     const discount = '{{ product.discount }}';
     const product_name = '{{ product.product_name }}';
     const mrp = '{{ product.mrp }}';
     const salePrice = '{{ product.sale_price }}';
 
     ctx.font = '14px Arial';
-    ctx.fillText(`${product_name} (${discount}% OFF)`, canvas.width / 2, barcodeY + 90);
-    ctx.fillText(`MRP ₹${mrp} | Sale ₹${salePrice}`, canvas.width / 2, barcodeY + 110);
+    ctx.fillText(`${product_name} (${discount}% OFF)`, canvas.width / 2, barcodeIdY + 20);
+    ctx.fillText(`MRP ₹${mrp} | Sale ₹${salePrice}`, canvas.width / 2, barcodeIdY + 40);
 
     return canvas;
 }
@@ -501,6 +508,82 @@
         }
         return cookieValue;
     }
+function printMultipleLabels() {
+  const barcodeId = '{{ product.barcode_id }}';
+  if (!barcodeId) {
+    alert('No barcode to print');
+    return;
+  }
+
+  const numRows = parseInt(document.getElementById('numRows').value || '1');
+  const canvas = createDetailedBarcodeCanvas(barcodeId);
+  const dataUrl = canvas.toDataURL();
+
+  // Repeat 2 labels per row
+  let labelsHTML = '';
+  for (let i = 0; i < numRows; i++) {
+    labelsHTML += `
+      <div class="label"><img src="${dataUrl}" alt="Barcode" /></div>
+      <div class="label"><img src="${dataUrl}" alt="Barcode" /></div>
+    `;
+  }
+
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Print Labels</title>
+      <style>
+        @page {
+          size: 100mm auto;
+          margin: 0;
+        }
+        html, body {
+          margin: 0;
+          padding: 0;
+        }
+        .label-sheet {
+          display: flex;
+          flex-wrap: wrap;
+          width: 100mm;
+          box-sizing: border-box;
+        }
+        .label {
+          width: 50mm;
+          height: 25mm;
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .label img {
+          width: 48mm;
+          height: auto;
+          max-height: 23mm;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="label-sheet">
+        ${labelsHTML}
+      </div>
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
+
+  printWindow.onload = () => {
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 500);
+  };
+}
+
+
 </script>
 
 
