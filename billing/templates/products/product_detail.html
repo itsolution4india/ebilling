@@ -269,7 +269,7 @@
     }
 
     // ✅ Adjusted for 50mm x 25mm label size (203 DPI ≈ 8 dots/mm)
-    function createDetailedBarcodeCanvas(barcodeId) {
+   function createDetailedBarcodeCanvas(barcodeId) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
@@ -282,9 +282,9 @@
     ctx.fillStyle = 'black';
     ctx.textAlign = 'center';
 
-    // Title
-    ctx.font = '20px Arial';
-    ctx.fillText('Bee Mart', canvas.width / 2, 25);
+    // Title - Make larger
+    ctx.font = 'bold 24px Arial';
+    ctx.fillText('Bee Mart', canvas.width / 2, 30);
 
     // Barcode
     const tempCanvas = document.createElement('canvas');
@@ -297,12 +297,12 @@
         margin: 0
     });
 
-    const barcodeY = 40;
+    const barcodeY = 45;
     ctx.drawImage(tempCanvas, (canvas.width - tempCanvas.width) / 2, barcodeY);
 
-    // Add some extra space (e.g., +15px) before writing the barcode ID
+    // Add some extra space before writing the barcode ID
     const barcodeIdY = barcodeY + tempCanvas.height + 25;
-    ctx.font = '14px monospace';
+    ctx.font = 'bold 18px monospace';  // Larger barcode ID
     ctx.fillText(barcodeId, canvas.width / 2, barcodeIdY);
 
     // Product name & pricing
@@ -311,9 +311,11 @@
     const mrp = '{{ product.mrp }}';
     const salePrice = '{{ product.sale_price }}';
 
-    ctx.font = '14px Arial';
-    ctx.fillText(`${product_name} (${discount}% OFF)`, canvas.width / 2, barcodeIdY + 20);
-    ctx.fillText(`MRP ₹${mrp} | Sale ₹${salePrice}`, canvas.width / 2, barcodeIdY + 40);
+    ctx.font = 'bold 16px Arial';
+    ctx.fillText(`${product_name} (${discount}% OFF)`, canvas.width / 2, barcodeIdY + 22);
+
+    ctx.font = 'bold 16px Arial';
+    ctx.fillText(`MRP ₹${mrp} | Sale ₹${salePrice}`, canvas.width / 2, barcodeIdY + 44);
 
     return canvas;
 }
