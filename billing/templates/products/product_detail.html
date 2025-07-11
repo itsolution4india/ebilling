@@ -522,12 +522,13 @@ function printMultipleLabels() {
   const canvas = createDetailedBarcodeCanvas(barcodeId);
   const dataUrl = canvas.toDataURL();
 
-  // Repeat 2 labels per row
   let labelsHTML = '';
   for (let i = 0; i < numRows; i++) {
     labelsHTML += `
-      <div class="label"><img src="${dataUrl}" alt="Barcode" /></div>
-      <div class="label"><img src="${dataUrl}" alt="Barcode" /></div>
+      <div class="label-row">
+        <div class="label"><img src="${dataUrl}" alt="Barcode" /></div>
+        <div class="label label2"><img src="${dataUrl}" alt="Barcode" /></div>
+      </div>
     `;
   }
 
@@ -547,25 +548,29 @@ function printMultipleLabels() {
           padding: 0;
         }
         .label-sheet {
-          display: flex;
-          flex-wrap: wrap;
           width: 100mm;
+        }
+        .label-row {
+          display: flex;
+          width: 100mm;
+          height: 25mm;
           box-sizing: border-box;
         }
         .label {
           width: 50mm;
           height: 25mm;
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
           display: flex;
           align-items: center;
           justify-content: center;
+          box-sizing: border-box;
         }
+          .label2{
+          margin-left:5mm;
+          }
         .label img {
-          width: 48mm;
-          height: auto;
+          max-width: 48mm;
           max-height: 23mm;
+          display: block;
         }
       </style>
     </head>
@@ -576,6 +581,7 @@ function printMultipleLabels() {
     </body>
     </html>
   `);
+
   printWindow.document.close();
 
   printWindow.onload = () => {
