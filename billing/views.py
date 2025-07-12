@@ -1033,14 +1033,22 @@ def download_invoices_csv(invoices, start_date=None, end_date=None):
 
 @login_required
 def invoice_create(request):
+    # Preload banks, parties, and products for form
+    banks = TotalBalance.objects.filter(user=request.user, payment_type='Bank').values('account_name').distinct()
+    parties = Party.objects.filter(user=request.user, status=True)
+    products = Product.objects.filter(user=request.user, status=True)
+
     if request.method == 'POST':
         try:
             with transaction.atomic():
-                # 1. Get form data
+                # 1. Lock settings row and get invoice number
+                settings = Sales_invoice_settings.objects.select_for_update().get(user=request.user)
+                invoice_no = f"INV-{settings.last_invoice_number + 1}"
+
+                # 2. Get form data
                 party_id = request.POST.get('party')
                 party_name = request.POST.get('party_name')
                 party_phone = request.POST.get('party_phone') or "0987654321"
-                invoice_no = request.POST.get('invoice_no')
                 invoice_date = request.POST.get('invoice_date')
                 due_date = request.POST.get('due_date')
                 payment_mode = request.POST.get('payment_mode')
@@ -1050,7 +1058,7 @@ def invoice_create(request):
                 total_amount = Decimal(request.POST.get('manual_total_amount') or '0')
                 amount_paid = Decimal(request.POST.get('amount_paid') or '0')
 
-                # 2. Determine status
+                # 3. Determine payment status
                 if invoice_status == 'on' or amount_paid >= total_amount:
                     status = 'paid'
                     amount_paid = total_amount
@@ -1062,7 +1070,7 @@ def invoice_create(request):
                     status = 'unpaid'
                     remaining_amount = total_amount
 
-                # 3. Handle party (new or existing)
+                # 4. Handle party (new or existing)
                 if party_id:
                     party = get_object_or_404(Party, id=party_id, user=request.user)
                     selected_party_name = party.party_name
@@ -1071,7 +1079,7 @@ def invoice_create(request):
                     selected_party_name = party_name
                     selected_party_num = party_phone
                     party_exists = Party.objects.filter(user=request.user, party_name=selected_party_name).first()
-    
+
                     if not party_exists:
                         Party.objects.create(
                             user=request.user,
@@ -1079,7 +1087,7 @@ def invoice_create(request):
                             party_contact=selected_party_num
                         )
 
-                # 4. Load and validate items
+                # 5. Load and validate items
                 items_data = request.POST.get('items_data')
                 parsed_data = json.loads(items_data) if items_data else {}
                 items = parsed_data.get('items', [])
@@ -1088,7 +1096,7 @@ def invoice_create(request):
                     messages.error(request, 'Please add at least one item.')
                     return redirect('invoice_create')
 
-                # 5. Create Invoice
+                # 6. Create invoice
                 invoice = Invoice.objects.create(
                     user=request.user,
                     name=selected_party_name,
@@ -1104,7 +1112,7 @@ def invoice_create(request):
                     remaining_amount=remaining_amount,
                 )
 
-                # 6. Handle bank balance update if any amount paid
+                # 7. Handle bank balance update if any amount paid
                 if bank and amount_paid > 0:
                     try:
                         money = TotalBalance.objects.get(user=request.user, payment_type='Bank', account_name=bank)
@@ -1116,7 +1124,7 @@ def invoice_create(request):
                     money.amount += amount_paid
                     money.save()
 
-                # 7. Create Invoice Items and update stock
+                # 8. Create invoice items and update stock
                 for item in items:
                     product = get_object_or_404(Product, id=item['product_id'], user=request.user)
 
@@ -1134,10 +1142,14 @@ def invoice_create(request):
                         product_description=item.get('description', ''),
                         quantity=item['quantity'],
                         rate=Decimal(str(item['rate'])),
-                        tax=Decimal(str(item.get('tax_rate', 0))),  # % stored
-                        discount=item.get('discount_rate', ''),     # % or ₹ as string
-                        amount=Decimal(str(item['amount']))         # includes calculation from frontend
+                        tax=Decimal(str(item.get('tax_rate', 0))),
+                        discount=item.get('discount_rate', ''),
+                        amount=Decimal(str(item['amount']))
                     )
+
+                # 9. Increment invoice number AFTER success
+                settings.last_invoice_number += 1
+                settings.save(update_fields=['last_invoice_number'])
 
                 messages.success(request, f'Invoice {invoice_no} created successfully!')
                 return redirect('invoice_detail', pk=invoice.pk)
@@ -1145,11 +1157,12 @@ def invoice_create(request):
         except Exception as e:
             messages.error(request, f'Error creating invoice: {str(e)}')
 
-    # Initial form load
-    banks = TotalBalance.objects.filter(user=request.user, payment_type='Bank').values('account_name').distinct()
-    parties = Party.objects.filter(user=request.user, status=True)
-    products = Product.objects.filter(user=request.user, status=True)
-    next_invoice_no = f"INV-{random.randint(10**9, 10**10 - 1)}"
+    # For GET request — safely fetch next invoice preview for display only
+    try:
+        settings = Sales_invoice_settings.objects.get(user=request.user)
+        next_invoice_no = f"INV-{settings.last_invoice_number + 1}"
+    except Sales_invoice_settings.DoesNotExist:
+        next_invoice_no = "INV-7035"
 
     context = {
         'parties': parties,
@@ -1395,7 +1408,8 @@ def invoicesetting(request):
             acc_bank_name=request.POST.get('acc_branch_name'),
             ifsc_code=request.POST.get('ifsc_code'),
             account_no=request.POST.get('account_no'),
-            upload_sign=request.FILES.get('upload_sign')
+            upload_sign=request.FILES.get('upload_sign'),
+            invoice_number=request.POST.get('invoice')
         )
         instance.save()
         messages.success(request, "Invoice settings saved successfully.")
@@ -1548,6 +1562,7 @@ def invoicesettingedit(request):
         invoice_setting.acc_bank_name = request.POST.get('acc_branch_name')
         invoice_setting.ifsc_code = request.POST.get('ifsc_code')
         invoice_setting.account_no = request.POST.get('account_no')
+        invoice_setting.last_invoice_number=request.POST.get('invoice')
 
         if 'qrcode' in request.FILES:
             invoice_setting.qrcode = request.FILES['qrcode']
