@@ -212,6 +212,7 @@ class Sales_invoice_settings(models.Model):
     address=models.TextField(null=True)
     gstin=models.CharField(max_length=300)
     mobile=models.CharField(max_length=20)
+    last_invoice_number = models.PositiveIntegerField(default=7034)
     email=models.CharField(max_length=50)
     terms1=models.TextField(null=True,blank=True)
     terms2=models.TextField(null=True,blank=True)
