@@ -69,6 +69,7 @@ class Product(models.Model):
     stock_quantity = models.IntegerField(default=0)
     unit_of_measure = models.CharField(max_length=50, default='pcs')
     category = models.CharField(max_length=100)
+    purchase_price=models.DecimalField(max_digits=12,decimal_places=2,null=True,blank=True)
     sale_price=models.DecimalField(max_digits=12,decimal_places=2)
     mrp=models.DecimalField(max_digits=12,decimal_places=2)
     barcode_id=models.CharField(max_length=40,blank=True)
