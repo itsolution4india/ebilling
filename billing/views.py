@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.db.models import Q
-from .models import Party, Product, Invoice, InvoiceItem, Payment, TotalBalance,Sales_invoice_settings
+from .models import Party, Product, Invoice, InvoiceItem, Payment, TotalBalance,Sales_invoice_settings,UserAccess
 from .serializers import PartySerializer, ProductSerializer, InvoiceSerializer, InvoiceListSerializer, InvoiceItemSerializer, PaymentSerializer
 from django.views.decorators.csrf import csrf_exempt
 import json
@@ -519,9 +519,20 @@ def login_page(request):
     
     return render(request, 'login.html')
 
+def check_user_permission(user, permission):
+    """Helper function to check a specific permission for a user."""
+    try:
+        user_access = UserAccess.objects.get(user=user)
+        return getattr(user_access, permission, False)
+    except UserAccess.DoesNotExist:
+        return False
+
 @login_required
 def dashboard(request):
     user = request.user
+    if not check_user_permission(request.user, 'can_view_dashboard'):
+           return redirect("access_denide")
+
     
     # Existing calculations
     to_collect = Invoice.objects.filter(user=user,status='unpaid').aggregate(total=Sum('amount'))['total'] or 0
@@ -637,6 +648,11 @@ def generate_hsn_code():
 
 @login_required
 def product_list(request):
+    if not check_user_permission(request.user, 'can_view_items'):
+           return redirect("access_denide")
+    
+    access=UserAccess.objects.get(user=request.user)
+
     products = Product.objects.filter(user=request.user)
 
     category_filter = request.GET.get('category', '').strip()
@@ -649,6 +665,7 @@ def product_list(request):
         'products': products,
         'category_filter': category_filter,
         'categories': categories,
+        'access':access
     }
     return render(request, 'products/product_list.html', context)
 
@@ -886,6 +903,9 @@ def product_delete(request, pk):
 
 @login_required
 def party_list(request):
+    if not check_user_permission(request.user, 'can_view_parties'):
+           return redirect("access_denide")
+    access=UserAccess.objects.get(user=request.user)
    
     parties = Party.objects.filter(user=request.user)
     types = Party.objects.filter(user=request.user).values_list('party_type', flat=True).distinct()
@@ -894,7 +914,8 @@ def party_list(request):
     context = {
         'parties': parties,
         'types': types,
-        'categories': categories
+        'categories': categories,
+        'access':access
     }
     return render(request, 'party/party_list.html', context)
 
@@ -938,7 +959,9 @@ def party_delete(request, pk):
 def invoice_list(request):
     """List all invoices for the current user with filtering, search, and pagination"""
     invoices = Invoice.objects.filter(user=request.user).order_by('-created_at')
-    
+    if not check_user_permission(request.user, 'can_view_sales_invoices'):
+           return redirect("access_denide")
+    access=UserAccess.objects.get(user=request.user)
     # Get filter parameters
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
@@ -987,6 +1010,7 @@ def invoice_list(request):
         'end_date': end_date,
         'search_query': search_query,
         'total_invoices': invoices.count(),
+        'access':access
     }
     
     return render(request, 'invoices/invoice_list.html', context)
@@ -1335,6 +1359,10 @@ def invoice_detail(request, pk):
     return render(request, 'invoices/invoice_detail.html', context)
 @login_required
 def return_invoice_detail(request, pk):
+    if not check_user_permission(request.user, 'can_view_return_invoices'):
+           return redirect("access_denide")
+
+
     invoice = get_object_or_404(Invoice, pk=pk, user=request.user)
     invoice_setting = get_object_or_404(Sales_invoice_settings, user=request.user)
     items = invoice.items.all()
@@ -1548,6 +1576,9 @@ def invoice_update(request, pk):
 
 @login_required
 def invoicesettingedit(request):
+    if not check_user_permission(request.user, 'can_edit_profile'):
+           return redirect("access_denide")
+
     invoice_setting = get_object_or_404(Sales_invoice_settings,user=request.user)
     if request.method == 'POST':
         invoice_setting.business_name = request.POST.get('business_name')
@@ -1648,9 +1679,14 @@ def get_party_details_ajax(request, party_id):
     
 @login_required
 def payments(request):
+    if not check_user_permission(request.user, 'can_view_payment_in'):
+           return redirect("access_denide")
+    access=UserAccess.objects.get(user=request.user)
     
     payment=Payment.objects.filter(user=request.user).order_by('-created_at')
-    context={'payment':payment
+    context={'payment':payment,
+             'access':access
+             
         }
     return render(request,'Payments/payment.html',context)
 
@@ -1759,7 +1795,9 @@ def paydelete(request, pk):
 
 @login_required
 def cashbank(request):
- 
+    if not check_user_permission(request.user, 'can_view_cash_and_bank'):
+           return redirect("access_denide")
+    access=UserAccess.objects.get(user=request.user)
     transactions = TotalBalance.objects.filter(user=request.user).order_by('-date')
     total_balance = TotalBalance.objects.filter(user=request.user).aggregate(total=Sum('amount'))['total'] or 0
     cash_in_hand = TotalBalance.objects.filter(user=request.user,payment_type='Cash').aggregate(total=Sum('amount'))['total'] or 0
@@ -1788,7 +1826,8 @@ def cashbank(request):
              'total_balance':total_balance,
              'cash_in_hand':cash_in_hand,
              'cash_in_bank':cash_in_bank,
-             'accounts':accounts
+             'accounts':accounts,
+             'access':access
             
              }
 
@@ -2028,3 +2067,7 @@ def update_balance(return_amount, user):
             remarks="Return Invoice Deduction",
             payment_type="Cash"
         )
+
+@login_required
+def access_denide(request):
+    return render(request, "access_denide.html") 

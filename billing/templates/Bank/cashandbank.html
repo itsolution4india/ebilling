@@ -549,20 +549,31 @@
                         <td class="px-4 py-2">{{ t.account_name|default:"—" }}</td>
                         <td class="px-4 py-2">₹{{ t.amount }}</td>
                         <td class="px-4 py-2">{{ t.payment_type }}</td>
-                        <td>
-     <a href="#" class="edit-entry-btn"
-   data-url="{% url 'cashedit' t.id %}"
-   data-payment="{{ t.payment_type }}"
-   data-account="{{ t.account_name }}"
-   data-amount="{{ t.amount }}"
-   data-date="{{ t.date|date:'Y-m-d' }}"
-   data-remarks="{{ t.remarks }}"
->
-   Edit
-</a>
- |
-          <a href="{% url 'cashdelete' t.id %}" class="text-red-600 hover:underline">Delete</a>
-        </td>
+<td class="text-center">
+  {% if access.can_edit_data or access.can_delete_data %}
+    {% if access.can_edit_data %}
+      <a href="#" class="edit-entry-btn"
+         data-url="{% url 'cashedit' t.id %}"
+         data-payment="{{ t.payment_type }}"
+         data-account="{{ t.account_name }}"
+         data-amount="{{ t.amount }}"
+         data-date="{{ t.date|date:'Y-m-d' }}"
+         data-remarks="{{ t.remarks }}">
+         Edit
+      </a>
+    {% endif %}
+
+    {% if access.can_edit_data and access.can_delete_data %}
+      |
+    {% endif %}
+
+    {% if access.can_delete_data %}
+      <a href="{% url 'cashdelete' t.id %}" class="text-red-600 hover:underline">
+        Delete
+      </a>
+    {% endif %}
+  {% endif %}
+</td>
                     </tr>
                     {% endfor %}
                 </tbody>
