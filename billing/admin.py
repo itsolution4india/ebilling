@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Party, Branch, Product, Invoice, InvoiceItem, Payment, TotalBalance,Sales_invoice_settings
+from .models import Party, Branch, Product, Invoice, InvoiceItem, Payment, TotalBalance,Sales_invoice_settings,UserAccess
 
 @admin.register(Party)
 class PartyAdmin(admin.ModelAdmin):
@@ -110,3 +110,37 @@ class TotalBalanceAdmin(admin.ModelAdmin):
 @admin.register(Sales_invoice_settings)
 class Sales_invoice_settingsAdmin(admin.ModelAdmin):
     list_display=('user','business_name','mobile')
+
+
+class UserAccessAdmin(admin.ModelAdmin):
+    list_display = (
+        'user',
+        'can_view_dashboard',
+        'can_view_items',
+        'can_view_parties',
+        'can_view_sales_invoices',
+        'can_view_return_invoices',
+        'can_view_payment_in',
+        'can_view_cash_and_bank',
+        'can_edit_profile',
+        'can_edit_data',
+        'can_delete_data',
+    )
+
+    list_filter = (
+        'can_view_dashboard',
+        'can_view_items',
+        'can_view_parties',
+        'can_view_sales_invoices',
+        'can_view_return_invoices',
+        'can_view_payment_in',
+        'can_view_cash_and_bank',
+        'can_edit_profile',
+        'can_edit_data',
+        'can_delete_data',
+    )
+
+    search_fields = ('user__email', 'user__username')
+
+
+admin.site.register(UserAccess, UserAccessAdmin)
