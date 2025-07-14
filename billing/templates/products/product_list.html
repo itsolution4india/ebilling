@@ -5,7 +5,9 @@
     <div class="p-4 pb-0 mb-0 rounded-t-4">
       <div class="flex justify-between items-center mb-4">
         <h6 class="mb-2 dark:text-white">Products</h6>
+      {% if access.add %}
         <a href="{% url 'product_create' %}" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-600 transition-colors">Add Product</a>
+        {% endif %}
       </div>
       {% if messages %}
   <div class="max-w-xl mx-auto mt-4">

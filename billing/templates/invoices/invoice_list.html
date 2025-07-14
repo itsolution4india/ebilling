@@ -16,10 +16,14 @@
       <div class="flex justify-between items-center flex-wrap">
         <h6 class="text-lg font-semibold dark:text-white">Invoice Management</h6>
    <div class="flex space-x-6">
+    {% if access.create %}
   <a href="{% url 'invoice_create' %}" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold mx-2">
     Create Invoice 
   </a>
-
+  <a href="{% url 'sales_invoice' %}" class="bg-blue-500 text-white px-4 py-2 mx-2 rounded-lg text-sm font-semibold">
+    Sales Invoice
+  </a>
+  {% endif %}
   {% if not setitings_invoice %}
     <a href="{% url 'invoicesetting' %}" class="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-semibold">
       Create Invoice Setting
@@ -30,9 +34,7 @@
     </a>
   {% endif %}
 
-  <a href="{% url 'sales_invoice' %}" class="bg-blue-500 text-white px-4 py-2 mx-2 rounded-lg text-sm font-semibold">
-    Sales Invoice
-  </a>
+
 </div>
 
       </div>

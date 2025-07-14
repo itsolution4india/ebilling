@@ -295,10 +295,10 @@ tr:has(.empty-state) {
                     </button>
                 </div> -->
             </div>
-            
+             {% if access.create %}
            <a href="{% url 'load_payment2' %}"> <button class="create-btn" >Create Payment In</button></a>
          
-          
+          {% endif %}
         </div>
         
         <!-- Table -->
