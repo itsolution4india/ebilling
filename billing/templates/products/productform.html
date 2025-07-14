@@ -458,23 +458,16 @@
                                 </div>
                               
                                 
+                                      <div class="form-group">
+                                    <label class="form-label">Purchase Price</label>
+                                    <div class="price-input-group">
+                                        <span class="price-symbol">₹</span>
+                                        <input type="number" class="price-input" placeholder="ex: ₹200" name="purchasess_price">
+                                       
+                                    </div>
                                 
-                             <div class="form-group" id="taxRateGroup">
-    <label class="form-label">Tax Rate (%)</label>
+                                </div>
 
-    <!-- Dropdown from backend -->
-    <select class="form-select" id="taxRateSelect" name="tax_rate">
-        <option value="">Select Tax Rate</option>
-        {% for rate in tax_rates %}
-            <option value="{{ rate }}">{{ rate }}%</option>
-        {% endfor %}
-        <option value="__new__">➕ Add New Tax Rate</option>
-    </select>
-
-    <!-- Input for adding new tax rate -->
-    <input type="number" step="0.01" min="0" id="taxRateInput" name="tax_rate"
-           class="form-control form-input mt-2 hidden" placeholder="Enter new tax rate (e.g. 18)">
-</div>
                             </div>
                             <br>
                             
@@ -505,21 +498,22 @@
                         <div class="advance-header" >Advance Details</div>
                         <!-- <form id="stockDetailsForm"> -->
                             <div class="form-grid">
-                                <div class="form-group">
-                                    <label class="form-label">Item Code</label>
-                                    <div style="display: flex; gap: 10px;">
-                                        <input type="text" class="form-input" id="itemCode" placeholder="ex: ITM12549" style="flex: 1;" name="itemCode" readonly>
-                                        <button type="button" class="btn btn-primary" onclick="generateBarcode()">Generate Barcode</button>
-                                    </div>
-                                    <div id="barcodeContainer" style="margin-top: 15px; display: none;">
-                                        <div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; padding: 15px; text-align: center;">
-                                            <div style="font-size: 12px; color: #666; margin-bottom: 10px;">Generated Barcode:</div>
-                                            <canvas id="barcodeCanvas" style="max-width: 100%;"></canvas>
-                                            <div id="barcodeId" style="font-family: monospace; font-size: 14px; margin-top: 8px; font-weight: 600;"></div>
-                                            <!-- <button type="button" class="btn btn-secondary" onclick="downloadBarcode()" style="margin-top: 10px; font-size: 12px;">Download Barcode</button> -->
-                                        </div>
-                                    </div>
-                                </div>
+                                     <div class="form-group" id="taxRateGroup">
+    <label class="form-label">Tax Rate (%)</label>
+
+    <!-- Dropdown from backend -->
+    <select class="form-select" id="taxRateSelect" name="tax_rate">
+        <option value="">Select Tax Rate</option>
+        {% for rate in tax_rates %}
+            <option value="{{ rate }}">{{ rate }}%</option>
+        {% endfor %}
+        <option value="__new__">➕ Add New Tax Rate</option>
+    </select>
+
+    <!-- Input for adding new tax rate -->
+    <input type="number" step="0.01" min="0" id="taxRateInput" name="tax_rate"
+           class="form-control form-input mt-2 hidden" placeholder="Enter new tax rate (e.g. 18)">
+</div>
                                 <div class="form-group">
                                     <label class="form-label">Expiry Date</label>
                                     <input type="date" class="date-input" value="2025-06-21" name="date">
@@ -542,7 +536,7 @@
     <!-- Input for new unit -->
     <input type="text" id="unitInput" name="unit_of_measure"
            class="form-control form-input mt-2 hidden" placeholder="Enter new unit (e.g. pcs, kg)">
-</div>
+</div>  
                                 <div class="form-group">
                                     <label class="form-label">Opening Stock</label>
                                     <div class="input-with-unit">
@@ -552,8 +546,27 @@
                                 </div>
                             </div>
                             
-                        
-                            
+                     <div class="form-group">
+  <label class="form-label">Item Code</label>
+  <div style="display: flex; gap: 10px; justify-content: center;">
+    <input type="text" class="form-input" id="itemCode" placeholder="ex: ITM12549" style="flex: 1;" name="itemCode" readonly>
+    <button type="button" class="btn btn-primary" onclick="generateBarcode()">Generate Barcode</button>
+  </div>
+
+  <div id="barcodeContainer" style="margin-top: 15px; display: none;">
+    <div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 6px; padding: 15px; text-align: center;">
+      <div style="font-size: 12px; color: #666; margin-bottom: 10px;">Generated Barcode:</div>
+
+      <!-- 🎯 Centered canvas wrapper -->
+      <div style="display: flex; justify-content: center;">
+        <canvas id="barcodeCanvas" style="max-width: 100%; height: auto;"></canvas>
+      </div>
+
+      <div id="barcodeId" style="font-family: monospace; font-size: 14px; margin-top: 8px; font-weight: 600;"></div>
+    </div>
+  </div>
+</div>
+
                             <div class="form-group full-width">
                                 <label class="form-label">Description</label>
                                 <textarea class="textarea" placeholder="Enter Description" name="description"></textarea>

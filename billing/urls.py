@@ -81,6 +81,7 @@ urlpatterns = [
     path("ajax/set-invoice-paid/", views.set_invoice_paid, name="set_invoice_paid"),
     path('return-invoice/', views.return_invoice_view, name='return_invoice'),
     path('process-return/', views.process_return, name='process_return'),
+    path('sales-invoice/', views.sales_invoice, name='sales_invoice'),
     # AJAX endpoints
     path('ajax/products/', views.get_products_ajax, name='get_products_ajax'),
     path('ajax/party/<int:party_id>/', views.get_party_details_ajax, name='get_party_details_ajax'),

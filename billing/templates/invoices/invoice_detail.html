@@ -439,24 +439,29 @@
 <div class="pos-items">
     {% if items %}
         {% for i in items %}
-            <div class="pos-item">
-                <div class="item-header">
-                    <span>{{ i.item.product_name }}</span>
-                    <span>₹{{ i.item.amount|add:i.tax_amount|floatformat:"2" }}</span>
-                </div>
-                {% if i.item.product_description %}
-                    <div class="item-details">{{ i.item.product_description }}</div>
-                {% endif %}
-                <div class="item-calculation">
-                    <span>{{ i.item.quantity }} {{ i.unit|default:"pcs" }} × ₹{{ i.item.rate|floatformat:"2" }}</span>
-                    <span>Tax: ₹{{ i.tax_amount|floatformat:"2" }} ({{ i.tax_rate|floatformat:"1" }}%)</span>
-                </div>
-                {% if i.item.discount %}
-                    <div class="item-calculation">
-                        <span>Discount: {{ i.item.discount }}</span>
+            {% if i.item.product_name %}
+                <div class="pos-item">
+                    <div class="item-header">
+                        <span>{{ i.item.product_name }}</span>
+                        <span>₹{{ i.item.amount|add:i.tax_amount|floatformat:"2" }}</span>
                     </div>
-                {% endif %}
-            </div>
+
+                    {% if i.item.product_description %}
+                        <div class="item-details">{{ i.item.product_description }}</div>
+                    {% endif %}
+
+                    <div class="item-calculation">
+                        <span>{{ i.item.quantity }} {{ i.unit|default:"pcs" }} × ₹{{ i.item.rate|floatformat:"2" }}</span>
+                        <span>Tax: ₹{{ i.tax_amount|floatformat:"2" }} ({{ i.tax_rate|floatformat:"1" }}%)</span>
+                    </div>
+
+                    {% if i.item.discount %}
+                        <div class="item-calculation">
+                            <span>Discount: {{ i.item.discount }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
         {% endfor %}
     {% else %}
         <div class="pos-item">
@@ -464,6 +469,7 @@
         </div>
     {% endif %}
 </div>
+
 
 
 

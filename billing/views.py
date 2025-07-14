@@ -779,6 +779,7 @@ def product_create(request):
             discount = float(discount_raw.replace('%', '').strip())
             expirydate_raw = request.POST.get('date', '').strip()
             expiry_date = datetime.strptime(expirydate_raw, '%Y-%m-%d').date() if expirydate_raw else None
+            purchasess_price=Decimal(request.POST.get('purchasess_price', '0').strip() or '0')
 
             # Category (new or existing)
             category = request.POST.get('category')
@@ -824,6 +825,7 @@ def product_create(request):
                 stock_quantity=stock_quantity,
                 barcode_id=barcode_id,
                 expiry_date=expiry_date,
+                purchase_price=purchasess_price,
                 user=user,
             )
 
@@ -880,6 +882,7 @@ def product_update(request, pk):
             expiry_date = datetime.strptime(expirydate_raw, '%Y-%m-%d').date() if expirydate_raw else None
             product.expiry_date=expiry_date
             product.barcode_id = request.POST.get('barcode_id', '').strip()
+            product.purchase_price=Decimal(request.POST.get('purchasess_price', '0') or '0')
 
             product.save()
             messages.success(request, "✅ Product updated successfully!")
@@ -2071,3 +2074,141 @@ def update_balance(return_amount, user):
 @login_required
 def access_denide(request):
     return render(request, "access_denide.html") 
+
+@login_required
+
+def sales_invoice(request):
+    banks = TotalBalance.objects.filter(user=request.user, payment_type='Bank').values('account_name').distinct()
+    parties = Party.objects.filter(user=request.user, status=True)
+    products = Product.objects.filter(user=request.user, status=True)  # Keep for item dropdown
+
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                settings = Sales_invoice_settings.objects.select_for_update().get(user=request.user)
+                invoice_no = f"INV-{settings.last_invoice_number + 1}"
+
+                party_id = request.POST.get('party')
+                party_name = request.POST.get('party_name')
+                party_phone = request.POST.get('party_phone') or "0987654321"
+                invoice_date = request.POST.get('invoice_date')
+                due_date = request.POST.get('due_date')
+                payment_mode = request.POST.get('payment_mode')
+                bank = request.POST.get('bank_name')
+                invoice_status = request.POST.get('is_full_paid')
+
+                total_amount = Decimal(request.POST.get('manual_total_amount') or '0')
+                amount_paid = Decimal(request.POST.get('amount_paid') or '0')
+
+                # Payment status logic
+                if invoice_status == 'on' or amount_paid >= total_amount:
+                    status = 'paid'
+                    amount_paid = total_amount
+                    remaining_amount = Decimal('0.00')
+                elif amount_paid > 0:
+                    status = 'partial'
+                    remaining_amount = total_amount - amount_paid
+                else:
+                    status = 'unpaid'
+                    remaining_amount = total_amount
+
+                # Handle party (new or existing)
+                if party_id:
+                    party = get_object_or_404(Party, id=party_id, user=request.user)
+                    selected_party_name = party.party_name
+                    selected_party_num = party_id
+                else:
+                    selected_party_name = party_name
+                    selected_party_num = party_phone
+                    party_exists = Party.objects.filter(user=request.user, party_name=selected_party_name).first()
+
+                    if not party_exists:
+                        Party.objects.create(
+                            user=request.user,
+                            party_name=selected_party_name,
+                            party_contact=selected_party_num
+                        )
+
+                # Load and validate items
+                items_data = request.POST.get('items_data')
+                parsed_data = json.loads(items_data) if items_data else {}
+                items = parsed_data.get('items', [])
+
+                if not isinstance(items, list) or not items:
+                    messages.error(request, 'Please add at least one item.')
+                    return redirect('invoice_create')
+
+                # Create invoice
+                invoice = Invoice.objects.create(
+                    user=request.user,
+                    name=selected_party_name,
+                    number=selected_party_num,
+                    invoice_no=invoice_no,
+                    invoice_date=invoice_date,
+                    due_date=due_date,
+                    status=status,
+                    payment_mode=payment_mode,
+                    bank=bank,
+                    amount=total_amount,
+                    amount_paid=amount_paid,
+                    remaining_amount=remaining_amount,
+                )
+
+                # Update bank balance
+                if bank and amount_paid > 0:
+                    try:
+                        money = TotalBalance.objects.get(user=request.user, payment_type='Bank', account_name=bank)
+                    except TotalBalance.MultipleObjectsReturned:
+                        money = TotalBalance.objects.filter(user=request.user, payment_type='Bank', account_name=bank).first()
+                    except TotalBalance.DoesNotExist:
+                        money = TotalBalance.objects.create(user=request.user, payment_type='Bank', account_name=bank, amount=0)
+
+                    money.amount += amount_paid
+                    money.save()
+
+                # Create invoice items and update stock
+                for item in items:
+                    product = get_object_or_404(Product, id=item['product_id'], user=request.user)
+
+                    if product.stock_quantity < item['quantity']:
+                        messages.error(request, f'Not enough stock for {product.product_name}')
+                        raise Exception(f'Insufficient stock for {product.product_name}')
+
+                    product.stock_quantity -= item['quantity']
+                    product.save()
+
+                    InvoiceItem.objects.create(
+                        invoice=invoice,
+                        product_id=item['product_id'],
+                        product_name="",
+                        product_description="",
+                        quantity=item['quantity'],
+                        rate=Decimal(str(item['rate'])),
+                        tax=Decimal(str(item.get('tax_rate', 0))),
+                        discount=item.get('discount_rate', ''),
+                        amount=Decimal(str(item['amount']))
+                    )
+                # Increment invoice number after all success
+                settings.last_invoice_number += 1
+                settings.save(update_fields=['last_invoice_number'])
+
+                messages.success(request, f'Invoice {invoice_no} created successfully!')
+                return redirect('invoice_detail', pk=invoice.pk)
+
+        except Exception as e:
+            messages.error(request, f'Error creating invoice: {str(e)}')
+
+    # For GET request
+    try:
+        settings = Sales_invoice_settings.objects.get(user=request.user)
+        next_invoice_no = f"INV-{settings.last_invoice_number + 1}"
+    except Sales_invoice_settings.DoesNotExist:
+        next_invoice_no = "INV-7035"
+
+    context = {
+        'parties': parties,
+        'products': products,
+        'next_invoice_no': next_invoice_no,
+        'banks': banks,
+    }
+    return render(request, "invoices/salesinvoice.html", context)
