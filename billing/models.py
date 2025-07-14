@@ -239,6 +239,8 @@ class UserAccess(models.Model):
     can_edit_profile = models.BooleanField(default=True)
     can_edit_data = models.BooleanField(default=False)
     can_delete_data = models.BooleanField(default=False)
+    add= models.BooleanField(default=False)
+    create= models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.user.email} - Access Rights"
