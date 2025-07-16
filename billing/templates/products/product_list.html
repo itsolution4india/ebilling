@@ -138,6 +138,37 @@
   {% endfor %}
 </tbody>
       </table>
+      {% if products.has_other_pages %}
+<div class="flex justify-center mt-6">
+  <nav class="inline-flex -space-x-px text-sm shadow-sm rounded-md" aria-label="Pagination">
+    {% if products.has_previous %}
+    <a href="?page={{ products.previous_page_number }}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}"
+       class="px-4 py-2 border rounded-l-lg bg-white text-gray-700 hover:bg-gray-100 dark:bg-slate-800 dark:text-white dark:border-slate-600">
+      Previous
+    </a>
+    {% endif %}
+
+    {% for num in products.paginator.page_range %}
+      {% if num == products.number %}
+        <span class="px-4 py-2 border bg-blue-500 text-white font-semibold dark:border-slate-600">{{ num }}</span>
+      {% elif num > products.number|add:'-3' and num < products.number|add:'3' %}
+        <a href="?page={{ num }}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}"
+           class="px-4 py-2 border text-gray-700 bg-white hover:bg-gray-100 dark:bg-slate-800 dark:text-white dark:border-slate-600">
+          {{ num }}
+        </a>
+      {% endif %}
+    {% endfor %}
+
+    {% if products.has_next %}
+    <a href="?page={{ products.next_page_number }}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}"
+       class="px-4 py-2 border rounded-r-lg bg-white text-gray-700 hover:bg-gray-100 dark:bg-slate-800 dark:text-white dark:border-slate-600">
+      Next
+    </a>
+    {% endif %}
+  </nav>
+</div>
+{% endif %}
+<br>
     </div>
   </div>
 </div>

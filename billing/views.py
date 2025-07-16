@@ -29,7 +29,7 @@ from decimal import Decimal
 from django.db import transaction
 
 import csv
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator, PageNotAnInteger,EmptyPage
 from django.http import HttpResponse
 from django.db.models.functions import TruncWeek, TruncMonth, TruncYear
 
@@ -652,14 +652,48 @@ def product_list(request):
            return redirect("access_denide")
     
     access=UserAccess.objects.get(user=request.user)
-
-    products = Product.objects.filter(user=request.user)
+    superadmin_user = User.objects.filter(is_superuser=True).first()
+    
+    if request.user.is_superuser:
+        # Admin sees only their own (global) products
+        products = Product.objects.filter(user=request.user)
+    else:
+        # Normal users see their own + superadmin's products
+        products = Product.objects.filter(Q(user=request.user) | Q(user=superadmin_user))
 
     category_filter = request.GET.get('category', '').strip()
     if category_filter:
         products = products.filter(category=category_filter)
 
-    categories = Product.objects.filter(user=request.user).exclude(category__isnull=True).exclude(category__exact='').values_list('category', flat=True).distinct()
+    
+    if request.user.is_superuser:
+        # Admin sees only their own products
+        categories = Product.objects.filter(
+            user=request.user
+        ).exclude(
+            category__isnull=True
+        ).exclude(
+            category__exact=''
+        ).values_list('category', flat=True).distinct()
+    else:
+        # Normal user sees their own + superadmin's (global) products
+        categories = Product.objects.filter(
+            Q(user=request.user) | Q(user=superadmin_user)
+        ).exclude(
+            category__isnull=True
+        ).exclude(
+            category__exact=''
+        ).values_list('category', flat=True).distinct()
+    page = request.GET.get('page', 1)
+    paginator = Paginator(products, 10)  # Show 20 products per page
+
+    try:
+        products = paginator.page(page)
+    except PageNotAnInteger:
+        products = paginator.page(1)
+    except EmptyPage:
+        products = paginator.page(paginator.num_pages)
+    # ------------------------
 
     context = {
         'products': products,
@@ -671,7 +705,19 @@ def product_list(request):
 
 @login_required
 def product_detail(request, pk):
-    product = get_object_or_404(Product, pk=pk, user=request.user)
+# Get the superadmin
+    superadmin_user = User.objects.filter(is_superuser=True).first()
+
+    # Filter based on current user type
+    if request.user.is_superuser:
+        # Admin sees only their own products
+        product = get_object_or_404(Product, pk=pk, user=request.user)
+    else:
+        # Normal user sees their own + superadmin's products
+        product = get_object_or_404(
+            Product,
+            Q(pk=pk) & (Q(user=request.user) | Q(user=superadmin_user))
+        )
     invoice_items = InvoiceItem.objects.filter(product_id=product.pk, invoice__user=request.user).select_related('invoice')
     
     party_prices = []
@@ -695,7 +741,18 @@ def update_product_barcode(request, product_id):
     Update the barcode for a specific product
     """
     try:
-        product = get_object_or_404(Product, pk=product_id, user=request.user)
+        superadmin_user = User.objects.filter(is_superuser=True).first()
+
+# Logic based on user type
+        if request.user.is_superuser:
+            # Superadmin: can access only their own products
+            product = get_object_or_404(Product, pk=product_id, user=request.user)
+        else:
+            # Normal user: can access own + superadmin's products
+            product = get_object_or_404(
+                Product,
+                Q(pk=product_id) & (Q(user=request.user) | Q(user=superadmin_user))
+            )
         
         # Parse JSON data from request
         data = json.loads(request.body)
@@ -836,17 +893,35 @@ def product_create(request):
 
 @login_required
 def product_update(request, pk):
-    product = get_object_or_404(Product, pk=pk, user=request.user)
-    unit_of_measure = Product.objects.filter(
-    user=request.user
-    ).exclude(
-        unit_of_measure__isnull=True
-    ).exclude(
-        unit_of_measure__exact=''
-    ).values_list(
-        'unit_of_measure', flat=True
-    ).distinct()
+    superadmin_user = User.objects.filter(is_superuser=True).first()
 
+# 🔐 Get the product
+    if request.user.is_superuser:
+        product = get_object_or_404(Product, pk=pk, user=request.user)
+    else:
+        product = get_object_or_404(Product, Q(pk=pk) & (Q(user=request.user) | Q(user=superadmin_user)))
+
+    # 📦 Get available units of measure
+    if request.user.is_superuser:
+        unit_of_measure = Product.objects.filter(
+            user=request.user
+        ).exclude(
+            unit_of_measure__isnull=True
+        ).exclude(
+            unit_of_measure__exact=''
+        ).values_list(
+            'unit_of_measure', flat=True
+        ).distinct()
+    else:
+        unit_of_measure = Product.objects.filter(
+            Q(user=request.user) | Q(user=superadmin_user)
+        ).exclude(
+            unit_of_measure__isnull=True
+        ).exclude(
+            unit_of_measure__exact=''
+        ).values_list(
+            'unit_of_measure', flat=True
+        ).distinct()
     if request.method == 'POST':
         try:
             product.product_name = request.POST.get('itemName', '').strip()
@@ -898,7 +973,18 @@ def product_update(request, pk):
 
 @login_required
 def product_delete(request, pk):
-    product = get_object_or_404(Product, pk=pk, user=request.user)
+    superadmin_user = User.objects.filter(is_superuser=True).first()
+
+# Apply access control based on user type
+    if request.user.is_superuser:
+        # Superadmin accesses only their own products
+        product = get_object_or_404(Product, pk=pk, user=request.user)
+    else:
+        # Normal users can access their own + superadmin's products
+        product = get_object_or_404(
+            Product,
+            Q(pk=pk) & (Q(user=request.user) | Q(user=superadmin_user))
+        )
     if request.method == 'POST':
         product.delete()
         return redirect('product_list')
@@ -1004,7 +1090,7 @@ def invoice_list(request):
     
     # Check if invoice settings exist
     setitings_invoice = Sales_invoice_settings.objects.filter(user=request.user).exists()
-    
+  
     context = {
         'page_obj': page_obj,
         'invoices': page_obj,  # For template compatibility
@@ -1013,7 +1099,8 @@ def invoice_list(request):
         'end_date': end_date,
         'search_query': search_query,
         'total_invoices': invoices.count(),
-        'access':access
+        'access':access,
+        
     }
     
     return render(request, 'invoices/invoice_list.html', context)
@@ -1063,7 +1150,17 @@ def invoice_create(request):
     # Preload banks, parties, and products for form
     banks = TotalBalance.objects.filter(user=request.user, payment_type='Bank').values('account_name').distinct()
     parties = Party.objects.filter(user=request.user, status=True)
-    products = Product.objects.filter(user=request.user, status=True)
+    superadmin_user = User.objects.filter(is_superuser=True).first()
+
+# Apply user-based filtering with status=True
+    if request.user.is_superuser:
+        # Superadmin sees only their own active products
+        products = Product.objects.filter(user=request.user, status=True)
+    else:
+        # Normal users see their own + superadmin's active products
+        products = Product.objects.filter(
+            Q(status=True) & (Q(user=request.user) | Q(user=superadmin_user))
+        )
 
     if request.method == 'POST':
         try:
@@ -1150,10 +1247,16 @@ def invoice_create(request):
 
                     money.amount += amount_paid
                     money.save()
-
+                superadmin_user = User.objects.filter(is_superuser=True).first()
                 # 8. Create invoice items and update stock
-                for item in items:
-                    product = get_object_or_404(Product, id=item['product_id'], user=request.user)
+                for item in items:  
+                    if request.user.is_superuser:
+                        product = get_object_or_404(Product, id=item['product_id'], user=request.user)
+                    else:
+                        product = get_object_or_404(
+                            Product,
+                            Q(id=item['product_id']) & (Q(user=request.user) | Q(user=superadmin_user))
+                        )
 
                     if product.stock_quantity < item['quantity']:
                         messages.error(request, f'Not enough stock for {product.product_name}')
@@ -1202,6 +1305,8 @@ def invoice_create(request):
 @csrf_exempt
 def scan_barcode(request):
     """Handle barcode scanning and return product details"""
+    superadmin_user = User.objects.filter(is_superuser=True).first()
+
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
@@ -1215,11 +1320,20 @@ def scan_barcode(request):
             
             # Search for product by barcode_id
             try:
-                product = Product.objects.get(
-                    barcode_id=barcode,
-                    user=request.user,
-                    status=True
-                )
+                if request.user.is_superuser:
+                    product = get_object_or_404(
+                        Product,
+                        barcode_id=barcode,
+                        user=request.user,
+                        status=True
+                    )
+                else:
+                    product = get_object_or_404(
+                        Product,
+                        Q(barcode_id=barcode, status=True) & (
+                            Q(user=request.user) | Q(user=superadmin_user)
+                        )
+                    )
                 
                 return JsonResponse({
                     'success': True,
@@ -1263,8 +1377,18 @@ def scan_barcode(request):
 @login_required
 def get_products_ajax(request):
     """Get products for AJAX requests"""
-    products = Product.objects.filter(user=request.user, status=True)
-    
+    superadmin_user = User.objects.filter(is_superuser=True).first()
+
+# Apply access logic
+    if request.user.is_superuser:
+        products = Product.objects.filter(user=request.user, status=True)
+    else:
+        products = Product.objects.filter(
+            Q(status=True) & (
+                Q(user=request.user) | Q(user=superadmin_user)
+            )
+        )
+        
     products_data = []
     for product in products:
         products_data.append({
@@ -1615,10 +1739,21 @@ def invoice_delete(request, pk):
     if request.method == 'POST':
         try:
             with transaction.atomic():
-                for item in invoice.items.all():
-                    product = Product.objects.get(id=item.product_id, user=request.user)
-                    product.stock_quantity += item.quantity
-                    product.save()
+             superadmin_user = User.objects.filter(is_superuser=True).first()
+
+            for item in invoice.items.all():
+                # Access control logic
+                if request.user.is_superuser:
+                    product = get_object_or_404(Product, id=item.product_id, user=request.user)
+                else:
+                    product = get_object_or_404(
+                        Product,
+                        Q(id=item.product_id) & (Q(user=request.user) | Q(user=superadmin_user))
+                    )
+
+                # Revert stock
+                product.stock_quantity += item.quantity
+                product.save()
                 if invoice.payment_mode in ['UPI', 'Card', 'NetBanking', 'Bank Transfer', 'Cheque']:
                     try:
                         balance = get_object_or_404(
@@ -1650,17 +1785,35 @@ def invoice_delete(request, pk):
 @login_required
 def get_products_ajax(request):
     """AJAX endpoint to get products with their details"""
-    products = Product.objects.filter(user=request.user, status=True).values(
-        'id',
-        'product_name',
-        'product_code',
-        'description',
-        'category',
-        'unit_price',
-        'stock_quantity',
-        'tax_rate',
-        'unit_of_measure',
-    )
+    superadmin_user = User.objects.filter(is_superuser=True).first()
+
+# Filter products with status=True and proper access control
+    if request.user.is_superuser:
+        products = Product.objects.filter(user=request.user, status=True).values(
+            'id',
+            'product_name',
+            'product_code',
+            'description',
+            'category',
+            'unit_price',
+            'stock_quantity',
+            'tax_rate',
+            'unit_of_measure',
+        )
+    else:
+        products = Product.objects.filter(
+            Q(status=True) & (Q(user=request.user) | Q(user=superadmin_user))
+        ).values(
+            'id',
+            'product_name',
+            'product_code',
+            'description',
+            'category',
+            'unit_price',
+            'stock_quantity',
+            'tax_rate',
+            'unit_of_measure',
+        )
     return JsonResponse(list(products), safe=False)
 
 @login_required
@@ -1994,7 +2147,15 @@ def create_return_invoice(original_invoice, selected_items, user):
 
         # Get tax
         try:
-            product = Product.objects.get(id=original_item.product_id, user=user)
+            superadmin_user = User.objects.filter(is_superuser=True).first()
+
+            if user.is_superuser:
+                product = get_object_or_404(Product, id=original_item.product_id, user=user)
+            else:
+                product = get_object_or_404(
+                    Product,
+                    Q(id=original_item.product_id) & (Q(user=user) | Q(user=superadmin_user))
+                )
             tax_rate = product.tax_rate
         except Product.DoesNotExist:
             tax_rate = Decimal('0.00')
@@ -2038,7 +2199,15 @@ def update_inventory(selected_items, user):
         return_quantity = int(item_data['quantity'])
         
         try:
-            product = Product.objects.get(id=original_item.product_id, user=user)
+            superadmin_user = User.objects.filter(is_superuser=True).first()
+
+            if user.is_superuser:
+                product = get_object_or_404(Product, id=original_item.product_id, user=user)
+            else:
+                product = get_object_or_404(
+                    Product,
+                    Q(id=original_item.product_id) & (Q(user=user) | Q(user=superadmin_user))
+                )
             product.stock_quantity += return_quantity
             product.save()
         except Product.DoesNotExist:
@@ -2080,7 +2249,14 @@ def access_denide(request):
 def sales_invoice(request):
     banks = TotalBalance.objects.filter(user=request.user, payment_type='Bank').values('account_name').distinct()
     parties = Party.objects.filter(user=request.user, status=True)
-    products = Product.objects.filter(user=request.user, status=True)  # Keep for item dropdown
+    superadmin_user = User.objects.filter(is_superuser=True).first()
+
+    if request.user.is_superuser:
+        products = Product.objects.filter(user=request.user, status=True)
+    else:
+        products = Product.objects.filter(
+            Q(status=True) & (Q(user=request.user) | Q(user=superadmin_user))
+        )
 
     if request.method == 'POST':
         try:
@@ -2168,7 +2344,13 @@ def sales_invoice(request):
 
                 # Create invoice items and update stock
                 for item in items:
-                    product = get_object_or_404(Product, id=item['product_id'], user=request.user)
+                    if request.user.is_superuser:
+                        product = get_object_or_404(Product, id=item['product_id'], user=request.user)
+                    else:
+                        product = get_object_or_404(
+                            Product,
+                            Q(id=item['product_id']) & (Q(user=request.user) | Q(user=superadmin_user))
+                        )
 
                     if product.stock_quantity < item['quantity']:
                         messages.error(request, f'Not enough stock for {product.product_name}')
