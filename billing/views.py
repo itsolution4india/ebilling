@@ -2262,7 +2262,7 @@ def sales_invoice(request):
         try:
             with transaction.atomic():
                 settings = Sales_invoice_settings.objects.select_for_update().get(user=request.user)
-                invoice_no = f"INV-{settings.last_invoice_number + 1}"
+                invoice_no = f"TEST-{random.randint(100000, 999999)}"
 
                 party_id = request.POST.get('party')
                 party_name = request.POST.get('party_name')
@@ -2383,9 +2383,9 @@ def sales_invoice(request):
     # For GET request
     try:
         settings = Sales_invoice_settings.objects.get(user=request.user)
-        next_invoice_no = f"INV-{settings.last_invoice_number + 1}"
+        next_invoice_no = f"TEST-{random.randint(100000, 999999)}"
     except Sales_invoice_settings.DoesNotExist:
-        next_invoice_no = "INV-7035"
+        next_invoice_no = f"TEST-{random.randint(100000, 999999)}"
 
     context = {
         'parties': parties,

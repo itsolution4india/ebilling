@@ -410,10 +410,13 @@
 
             <!-- Invoice Meta -->
             <div class="invoice-meta">
-                <div class="meta-row">
-                    <span>Invoice No:</span>
-                    <span>{{ invoice.invoice_no|default:"N/A" }}</span>
-                </div>
+                {% if invoice.invoice_no and not invoice.invoice_no|slice:":5" == "TEST-" %}
+                    <div class="meta-row">
+                        <span>Invoice No:</span>
+                        <span>{{ invoice.invoice_no }}</span>
+                    </div>
+                {% endif %}
+
                 <div class="meta-row">
                     <span>Date:</span>
                     <span>{{ invoice.invoice_date|date:"d/m/Y" }}</span>

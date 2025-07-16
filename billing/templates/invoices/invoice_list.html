@@ -128,47 +128,49 @@
           </tr>
         </thead>
       <tbody>
-  {% for invoice in page_obj %}
-  <tr>
-    <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.invoice_no }}</td>
-    <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.name }}</td>
-    <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.invoice_date }}</td>
-    <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.due_date }}</td>
-    <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.amount }}</td>
-    <td class="px-6 py-3 text-right text-sm text-slate-700 dark:text-white">₹{{ invoice.amount_paid }}</td>
+{% for invoice in page_obj %}
+  {% if invoice.invoice_no and not invoice.invoice_no|slice:":5" == "TEST-" %}
+    <tr>
+      <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.invoice_no }}</td>
+      <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.name }}</td>
+      <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.invoice_date }}</td>
+      <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.due_date }}</td>
+      <td class="px-6 py-3 text-sm text-slate-700 dark:text-white">{{ invoice.amount }}</td>
+      <td class="px-6 py-3 text-right text-sm text-slate-700 dark:text-white">₹{{ invoice.amount_paid }}</td>
 
-    <td class="px-6 py-3 text-center text-sm font-semibold 
-        {% if invoice.status == 'paid' %}
-            text-green-600
-        {% elif invoice.status == 'partial' %}
-            text-yellow-500
-        {% elif invoice.status == 'return' %}
-            text-yellow-600
-        {% else %}
-            text-red-600
-        {% endif %}
-    ">
-      {{ invoice.get_status_display }}
-    </td>
-
-     <td class="px-6 py-3 text-center">
-        {% if invoice.status == 'return' %}
-          <a href="{% url 'return_invoice_detail' invoice.pk %}" class="text-sm text-blue-600 hover:underline">View</a>
-        {% else %}
-          <a href="{% url 'invoice_detail' invoice.pk %}" class="text-sm text-blue-600 hover:underline">View</a>
-        {% endif %}
-
-        {% if access.can_delete_data %}
-          <span class="text-gray-400">|</span>
-          <a href="{% url 'invoice_delete' invoice.pk %}" 
-             class="text-sm text-red-600 hover:underline"
-             onclick="return confirm('Are you sure you want to delete this invoice?')">
-            Delete
-          </a>
-        {% endif %}
+      <td class="px-6 py-3 text-center text-sm font-semibold 
+          {% if invoice.status == 'paid' %}
+              text-green-600
+          {% elif invoice.status == 'partial' %}
+              text-yellow-500
+          {% elif invoice.status == 'return' %}
+              text-yellow-600
+          {% else %}
+              text-red-600
+          {% endif %}
+      ">
+        {{ invoice.get_status_display }}
       </td>
-  </tr>
-  {% empty %}
+
+      <td class="px-6 py-3 text-center">
+          {% if invoice.status == 'return' %}
+            <a href="{% url 'return_invoice_detail' invoice.pk %}" class="text-sm text-blue-600 hover:underline">View</a>
+          {% else %}
+            <a href="{% url 'invoice_detail' invoice.pk %}" class="text-sm text-blue-600 hover:underline">View</a>
+          {% endif %}
+
+          {% if access.can_delete_data %}
+            <span class="text-gray-400">|</span>
+            <a href="{% url 'invoice_delete' invoice.pk %}" 
+               class="text-sm text-red-600 hover:underline"
+               onclick="return confirm('Are you sure you want to delete this invoice?')">
+              Delete
+            </a>
+          {% endif %}
+        </td>
+    </tr>
+  {% endif %}
+{% empty %}
   <tr>
     <td colspan="8" class="text-center text-slate-400 dark:text-white/60 py-8">
       {% if search_query or start_date or end_date %}
@@ -178,7 +180,7 @@
       {% endif %}
     </td>
   </tr>
-  {% endfor %}
+{% endfor %}
 </tbody>
 
       </table>
