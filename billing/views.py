@@ -649,43 +649,43 @@ def generate_hsn_code():
 @login_required
 def product_list(request):
     if not check_user_permission(request.user, 'can_view_items'):
-           return redirect("access_denide")
-    
-    access=UserAccess.objects.get(user=request.user)
+        return redirect("access_denide")
+
+    access = UserAccess.objects.get(user=request.user)
     superadmin_user = User.objects.filter(is_superuser=True).first()
-    
+
+    # Get base products (normal users see their own + superadmin’s)
     if request.user.is_superuser:
-        # Admin sees only their own (global) products
         products = Product.objects.filter(user=request.user)
     else:
-        # Normal users see their own + superadmin's products
         products = Product.objects.filter(Q(user=request.user) | Q(user=superadmin_user))
 
+    # 🔍 Apply category filter
     category_filter = request.GET.get('category', '').strip()
     if category_filter:
         products = products.filter(category=category_filter)
 
-    
+    # ✅ NEW: Apply search filter
+    search_query = request.GET.get('search', '').strip()
+    if search_query:
+        products = products.filter(
+            Q(product_name__icontains=search_query) |
+            Q(product_code__icontains=search_query)
+        )
+
+    # Filter category options as before
     if request.user.is_superuser:
-        # Admin sees only their own products
         categories = Product.objects.filter(
             user=request.user
-        ).exclude(
-            category__isnull=True
-        ).exclude(
-            category__exact=''
-        ).values_list('category', flat=True).distinct()
+        ).exclude(category__isnull=True).exclude(category__exact='').values_list('category', flat=True).distinct()
     else:
-        # Normal user sees their own + superadmin's (global) products
         categories = Product.objects.filter(
             Q(user=request.user) | Q(user=superadmin_user)
-        ).exclude(
-            category__isnull=True
-        ).exclude(
-            category__exact=''
-        ).values_list('category', flat=True).distinct()
+        ).exclude(category__isnull=True).exclude(category__exact='').values_list('category', flat=True).distinct()
+
+    # Pagination
     page = request.GET.get('page', 1)
-    paginator = Paginator(products, 10)  # Show 20 products per page
+    paginator = Paginator(products, 10)
 
     try:
         products = paginator.page(page)
@@ -693,15 +693,16 @@ def product_list(request):
         products = paginator.page(1)
     except EmptyPage:
         products = paginator.page(paginator.num_pages)
-    # ------------------------
 
+    # Render
     context = {
         'products': products,
         'category_filter': category_filter,
         'categories': categories,
-        'access':access
+        'access': access,
     }
     return render(request, 'products/product_list.html', context)
+
 
 @login_required
 def product_detail(request, pk):
@@ -2261,7 +2262,6 @@ def sales_invoice(request):
     if request.method == 'POST':
         try:
             with transaction.atomic():
-                settings = Sales_invoice_settings.objects.select_for_update().get(user=request.user)
                 invoice_no = f"TEST-{random.randint(100000, 999999)}"
 
                 party_id = request.POST.get('party')
@@ -2371,8 +2371,7 @@ def sales_invoice(request):
                         amount=Decimal(str(item['amount']))
                     )
                 # Increment invoice number after all success
-                settings.last_invoice_number += 1
-                settings.save(update_fields=['last_invoice_number'])
+                
 
                 messages.success(request, f'Invoice {invoice_no} created successfully!')
                 return redirect('invoice_detail', pk=invoice.pk)
@@ -2382,7 +2381,6 @@ def sales_invoice(request):
 
     # For GET request
     try:
-        settings = Sales_invoice_settings.objects.get(user=request.user)
         next_invoice_no = f"TEST-{random.randint(100000, 999999)}"
     except Sales_invoice_settings.DoesNotExist:
         next_invoice_no = f"TEST-{random.randint(100000, 999999)}"
