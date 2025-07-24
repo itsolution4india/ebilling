@@ -738,6 +738,7 @@ document.addEventListener('DOMContentLoaded', function () {
 function initializeBarcodeScanner() {
     const barcodeInput = document.getElementById('barcode-input');
     if (!barcodeInput) return;
+    let isProcessing = false;
     
     setTimeout(() => {
         barcodeInput.focus();
@@ -751,17 +752,20 @@ function initializeBarcodeScanner() {
         }
         
         barcodeTimeout = setTimeout(() => {
-            if (barcode && barcode !== lastScannedBarcode) {
+            if (barcode && barcode !== lastScannedBarcode && !isProcessing) {
                 processBarcode(barcode);
             }
-        }, 500);
+        }, 150);
     });
     
     barcodeInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
             const barcode = e.target.value.trim();
-            if (barcode) {
+            if (barcode && !isProcessing) {
+                if (barcodeTimeout) {
+                    clearTimeout(barcodeTimeout);
+                }
                 processBarcode(barcode);
             }
         }
@@ -770,13 +774,13 @@ function initializeBarcodeScanner() {
 
 // Process scanned barcode
 function processBarcode(barcode) {
-    if (!barcode) return;
+    if (!barcode || isProcessing) return;
     
+    isProcessing = true;
     lastScannedBarcode = barcode;
     showBarcodeLoading(true);
     showBarcodeMessage('Searching for product...', 'info');
     
-    // Make AJAX request to find product
     fetch('/ajax/scan-barcode/', {
         method: 'POST',
         headers: {
@@ -809,6 +813,11 @@ function processBarcode(barcode) {
         showBarcodeLoading(false);
         showBarcodeMessage('Error processing barcode. Please try again.', 'error');
         console.error('Barcode scan error:', error);
+    })
+    .finally(() => {
+        setTimeout(() => {
+            isProcessing = false;
+        }, 1000);
     });
 }
 
@@ -822,14 +831,16 @@ function addScannedProductToInvoice(product) {
     const existingItemIndex = invoiceItems.findIndex(item => item.product_id === product.id);
     
     if (existingItemIndex !== -1) {
+        // Only increment by 1, regardless of how many times scanned
         invoiceItems[existingItemIndex].quantity += 1;
         invoiceItems[existingItemIndex].amount = calculateItemAmount(invoiceItems[existingItemIndex]);
+        console.log(`Updated existing item quantity to: ${invoiceItems[existingItemIndex].quantity}`);
     } else {
         const newItem = {
             product_id: product.id,
             product_name: product.product_name || 'Unknown Product',
             description: product.description || '',
-            quantity: 1,
+            quantity: 1, // ← Always start with 1
             rate: parseFloat(product.unit_price) || 0,
             tax_rate: parseFloat(product.tax_rate) || 0,
             discount_rate: 0,
@@ -838,6 +849,7 @@ function addScannedProductToInvoice(product) {
         };
         newItem.amount = calculateItemAmount(newItem);
         invoiceItems.push(newItem);
+        console.log('Added new item with quantity: 1');
     }
     
     updateItemsDisplay();
@@ -891,6 +903,7 @@ function clearBarcodeInput() {
         barcodeInput.value = '';
     }
     lastScannedBarcode = '';
+    isProcessing = false;
     showBarcodeMessage('', '');
     focusBarcodeInput();
 }
