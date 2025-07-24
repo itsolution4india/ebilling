@@ -738,7 +738,6 @@ document.addEventListener('DOMContentLoaded', function () {
 function initializeBarcodeScanner() {
     const barcodeInput = document.getElementById('barcode-input');
     if (!barcodeInput) return;
-    let isProcessing = false;
     
     setTimeout(() => {
         barcodeInput.focus();
@@ -752,7 +751,7 @@ function initializeBarcodeScanner() {
         }
         
         barcodeTimeout = setTimeout(() => {
-            if (barcode && barcode !== lastScannedBarcode && !isProcessing) {
+            if (barcode && barcode !== lastScannedBarcode) {
                 processBarcode(barcode);
             }
         }, 150);
@@ -762,10 +761,7 @@ function initializeBarcodeScanner() {
         if (e.key === 'Enter') {
             e.preventDefault();
             const barcode = e.target.value.trim();
-            if (barcode && !isProcessing) {
-                if (barcodeTimeout) {
-                    clearTimeout(barcodeTimeout);
-                }
+            if (barcode) {
                 processBarcode(barcode);
             }
         }
@@ -774,7 +770,7 @@ function initializeBarcodeScanner() {
 
 // Process scanned barcode
 function processBarcode(barcode) {
-    if (!barcode || isProcessing) return;
+    if (!barcode) return;
     
     isProcessing = true;
     lastScannedBarcode = barcode;
@@ -813,11 +809,6 @@ function processBarcode(barcode) {
         showBarcodeLoading(false);
         showBarcodeMessage('Error processing barcode. Please try again.', 'error');
         console.error('Barcode scan error:', error);
-    })
-    .finally(() => {
-        setTimeout(() => {
-            isProcessing = false;
-        }, 1000);
     });
 }
 
@@ -834,7 +825,6 @@ function addScannedProductToInvoice(product) {
         // Only increment by 1, regardless of how many times scanned
         invoiceItems[existingItemIndex].quantity += 1;
         invoiceItems[existingItemIndex].amount = calculateItemAmount(invoiceItems[existingItemIndex]);
-        console.log(`Updated existing item quantity to: ${invoiceItems[existingItemIndex].quantity}`);
     } else {
         const newItem = {
             product_id: product.id,
@@ -849,7 +839,6 @@ function addScannedProductToInvoice(product) {
         };
         newItem.amount = calculateItemAmount(newItem);
         invoiceItems.push(newItem);
-        console.log('Added new item with quantity: 1');
     }
     
     updateItemsDisplay();
@@ -903,7 +892,6 @@ function clearBarcodeInput() {
         barcodeInput.value = '';
     }
     lastScannedBarcode = '';
-    isProcessing = false;
     showBarcodeMessage('', '');
     focusBarcodeInput();
 }
